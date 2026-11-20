@@ -475,6 +475,8 @@ enum Prefs {
     /// The sidebar's pinned folders, as paths (S-032).
     static let pins = "pins"
     static let hiddenSidebarSections = "hiddenSidebarSections"
+    /// Home lists recent files (Settings › General › Show on Home); on unless turned off.
+    static let showRecentFiles = "showRecentFiles"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

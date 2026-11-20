@@ -3270,6 +3270,16 @@
           }
         }
       }
+    },
+    "Show on Home": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher dans Accueil"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

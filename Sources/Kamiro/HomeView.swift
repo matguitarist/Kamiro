@@ -9,6 +9,7 @@ struct HomeView: View {
     @State private var recents: [URL] = []
     @State private var volumes: [VolumeSpace] = []
     @State private var renaming: Volume?
+    @AppStorage(Prefs.showRecentFiles, store: Prefs.defaults) private var showRecentFiles = true
     private var pins: PinStore { .shared }
 
     var body: some View {
@@ -24,22 +25,24 @@ struct HomeView: View {
                         }
                     }
                 }
-                section("Recent Files", probe: "recents") {
-                    if recents.isEmpty {
-                        Text("Files you open show here.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        VStack(spacing: 0) {
-                            ForEach(recents, id: \.self) { url in
-                                RecentRow(url: url, model: model)
-                                    // An overlay, so the hairline doesn't push the rows off the grid.
-                                    .overlay(alignment: .bottom) {
-                                        if url != recents.last { Divider().padding(.leading, Space.section + Space.md) }
-                                    }
+                if showRecentFiles {
+                    section("Recent Files", probe: "recents") {
+                        if recents.isEmpty {
+                            Text("Files you open show here.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            VStack(spacing: 0) {
+                                ForEach(recents, id: \.self) { url in
+                                    RecentRow(url: url, model: model)
+                                        // An overlay, so the hairline doesn't push the rows off the grid.
+                                        .overlay(alignment: .bottom) {
+                                            if url != recents.last { Divider().padding(.leading, Space.section + Space.md) }
+                                        }
+                                }
                             }
+                            .padding(.vertical, Space.xs)
+                            .cardBackground(Radius.banner)
                         }
-                        .padding(.vertical, Space.xs)
-                        .cardBackground(Radius.banner)
                     }
                 }
                 section("Locations", probe: "locations") {
@@ -58,6 +61,7 @@ struct HomeView: View {
         }
         .volumeRenameAlert($renaming)
         .task(id: model.itemsVersion) { await load() }
+        .onChange(of: showRecentFiles) { Task { await load() } }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             Task { await load() }
         }
@@ -81,8 +85,11 @@ struct HomeView: View {
     private func load() async {
         // Test runs look in the sample tree, which Spotlight doesn't index.
         let root = Store.isOverridden ? Store.seedFolder : nil
+        let wanted = showRecentFiles
         async let files = Task.detached(priority: .utility) {
-            root.map { RecentFiles.walk(in: $0, limit: 10) } ?? RecentFiles.spotlight(limit: 10)
+            // Turned off in Settings: don't ask Spotlight at all.
+            guard wanted else { return [URL]() }
+            return root.map { RecentFiles.walk(in: $0, limit: 10) } ?? RecentFiles.spotlight(limit: 10)
         }.value
         async let spaces = Task.detached(priority: .utility) {
             Volumes.mounted().map { VolumeSpace(volume: $0, space: Volumes.space(at: $0.url)) }
