@@ -40,16 +40,27 @@ extension BrowserModel {
                 add(String(localized: "Show in Enclosing Folder"), "folder") { [weak self] in self?.showInEnclosingFolder() }
             }
             add(String(localized: "Quick Look"), "eye") { [weak self] in self?.quickLook?() }
+            // iCloud Drive and sync folders (S-058).
+            if canDownload {
+                add(String(localized: "Download Now"), "icloud.and.arrow.down") { [weak self] in self?.downloadSelection() }
+            }
+            if canRemoveDownload {
+                add(String(localized: "Remove Download"), "icloud.slash") { [weak self] in self?.removeDownloadOfSelection() }
+            }
             group()
-            add(String(localized: "Cut"), "scissors") { [weak self] in self?.cutSelection() }
+            // An app's folder in iCloud Drive stays where its app keeps it (S-057).
+            let locked = selectionHasAppFolder
+            if !locked { add(String(localized: "Cut"), "scissors") { [weak self] in self?.cutSelection() } }
             add(String(localized: "Copy"), "doc.on.doc") { [weak self] in self?.copySelection() }
             add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths(urls) }
             ItemActions.showCopyPathKey(menu.items.last)
             menu.addItem(ItemActions.copyInfoItem(for: urls))
             if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
-            add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
+            if !locked {
+                add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
+            }
             menu.addItem(sendToMenuItem(.copy))
-            menu.addItem(sendToMenuItem(.move))
+            if !locked { menu.addItem(sendToMenuItem(.move)) }
             if !compressTargets.isEmpty {
                 add(compressTitle, "archivebox") { [weak self] in self?.compressSelection() }
                 if compressTargets.count > 1 {
@@ -61,8 +72,10 @@ extension BrowserModel {
             }
             if let convert = convertMenuItem() { menu.addItem(convert) }
             group()
-            if chosen.count == 1 { add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() } }
-            add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }
+            if !locked {
+                if chosen.count == 1 { add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() } }
+                add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }
+            }
             group()
             let tags = tagsMenu()
             tags.image = NSImage(systemSymbolName: "tag", accessibilityDescription: nil)

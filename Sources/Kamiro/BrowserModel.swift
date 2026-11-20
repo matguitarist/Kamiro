@@ -79,6 +79,10 @@ final class BrowserModel {
     let sizes = FolderSizes()
     var folderSizes: [URL: Int64] { sizes.sizes }
     var sizesVersion: Int { sizes.version }
+    /// Each item's cloud status in iCloud Drive and sync folders (S-058), read after the list shows.
+    private(set) var cloud: [URL: CloudStatus] = [:]
+    private(set) var cloudVersion = 0
+    @ObservationIgnored private var cloudTask: Task<Void, Never>?
     @ObservationIgnored private var resortSoon: Task<Void, Never>?
     /// Opens a Properties window; set by the window.
     @ObservationIgnored var openProperties: ((URL) -> Void)?
@@ -177,7 +181,7 @@ final class BrowserModel {
     private func restoreView() {
         restoring = true
         defer { restoring = false }
-        let view = Store.views.view(for: folder)
+        let view = Store.views.view(for: folder, inCloud: Cloud.isInCloud(folder))
         order = view.order
         if mode != .columns { mode = view.mode }
         columns = view.columns
@@ -355,6 +359,9 @@ final class BrowserModel {
             state = .loading
             showsLoading = false
             selection = []
+            cloudTask?.cancel()
+            cloud = [:]
+            cloudVersion += 1
             watch(folder)
             sizes.start(in: folder) { [weak self] in self?.items ?? [] }
             publish()
@@ -393,6 +400,7 @@ final class BrowserModel {
                 } else if select != nil {
                     connectAllShares()
                 }
+                readCloud(list)
             case .failure(let error):
                 setItems([])
                 state = .failed(error)
@@ -416,7 +424,9 @@ final class BrowserModel {
             return .success((order.sorted(place.items(showHidden: showHidden, root: tagRoot)), nil))
         }
         do {
-            let list = try FolderReader.list(folder, showHidden: showHidden)
+            var list = try FolderReader.list(folder, showHidden: showHidden)
+            // iCloud Drive shows each app's folder among its own, like the Finder (S-057).
+            if folder.path == Cloud.drive.path { list += Cloud.appFolders(showHidden: showHidden) }
             return .success((order.sorted(list), Volumes.availableSpace(at: folder)))
         } catch {
             return .failure(error)
@@ -465,6 +475,49 @@ final class BrowserModel {
         let shown = Set(items.map(\.url))
         if !selection.isSubset(of: shown) { selection = selection.intersection(shown) }
         publish()
+    }
+
+    // MARK: Cloud status (S-058)
+
+    /// Reads each item's cloud status off the main thread, 100 at a time, and only in cloud
+    /// folders: it costs about 1 ms an item, a hundred times a plain listing. While something
+    /// downloads or uploads, it looks again every 2 seconds.
+    private func readCloud(_ list: [FileItem]) {
+        cloudTask?.cancel()
+        let folder = folder
+        guard Cloud.isInCloud(folder) else { return }
+        let urls = list.map(\.url)
+        cloudTask = Task { [weak self] in
+            var moving = false
+            for start in stride(from: 0, to: urls.count, by: 100) {
+                let part = await Self.cloudStatuses(Array(urls[start..<min(start + 100, urls.count)]))
+                guard !Task.isCancelled, let model = self, model.folder == folder else { return }
+                model.cloud.merge(part) { $1 }
+                model.cloudVersion += 1
+                moving = moving || part.values.contains { $0 == .downloading || $0 == .uploading }
+            }
+            guard moving else { return }
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled, let model = self, model.folder == folder else { return }
+            model.readCloud(model.allItems)
+        }
+    }
+
+    /// Reads the statuses again (after Download Now or Remove Download).
+    func refreshCloud() { readCloud(allItems) }
+
+    @concurrent
+    nonisolated private static func cloudStatuses(_ urls: [URL]) async -> [URL: CloudStatus] {
+        var found: [URL: CloudStatus] = [:]
+        for url in urls {
+            if let status = CloudStatus.read(url) { found[url] = status }
+        }
+        return found
+    }
+
+    /// For the self-test: wait until every item's status is read.
+    func waitForCloud() async {
+        await cloudTask?.value
     }
 
     private func watch(_ folder: URL) {

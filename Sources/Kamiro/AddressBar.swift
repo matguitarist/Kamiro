@@ -48,7 +48,7 @@ struct AddressBar: View {
                 case .more(let hidden):
                     Menu {
                         ForEach(hidden, id: \.self) { url in
-                            Button(FileManager.default.displayName(atPath: url.path)) { model.go(to: url) }
+                            Button(Cloud.displayName(of: url)) { model.go(to: url) }
                         }
                         Divider()
                         Button("Show Full Path") { model.beginEditingPath() }
@@ -69,7 +69,7 @@ struct AddressBar: View {
         .contentShape(Rectangle())
         .onTapGesture { model.beginEditingPath() }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(String(localized: "Path: \(Location(model.folder).crumbs.map { FileManager.default.displayName(atPath: $0.path) }.joined(separator: ", "))"))
+        .accessibilityLabel(String(localized: "Path: \(Location(model.folder).crumbs.map { Cloud.displayName(of: $0) }.joined(separator: ", "))"))
     }
 
     /// A tag's items: "Tags › Red", nothing to click; the Home page: "Home".
@@ -151,7 +151,7 @@ private struct Crumb: View {
                             .resizable()
                             .frame(width: 16, height: 16)
                     }
-                    Text(verbatim: FileManager.default.displayName(atPath: url.path))
+                    Text(verbatim: Cloud.displayName(of: url))
                         .fontWeight(isLast ? .semibold : .regular)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -167,7 +167,7 @@ private struct Crumb: View {
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.tertiary)
-            .help(String(localized: "Show the folders in \(FileManager.default.displayName(atPath: url.path))"))
+            .help(String(localized: "Show the folders in \(Cloud.displayName(of: url))"))
         }
     }
 }

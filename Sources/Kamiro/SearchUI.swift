@@ -43,7 +43,7 @@ struct SearchScopeBar: View {
             Picker("Search In", selection: scope) {
                 Text("This Mac").tag(URL?.none)
                 if let folder = search.scope ?? model.searchFolder {
-                    Text(String(localized: "“\(FileManager.default.displayName(atPath: folder.path))”")).tag(URL?.some(folder))
+                    Text(String(localized: "“\(Cloud.displayName(of: folder))”")).tag(URL?.some(folder))
                 }
             }
             .pickerStyle(.segmented)

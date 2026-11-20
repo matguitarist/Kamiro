@@ -547,6 +547,26 @@ Acceptance:
 Status: done
 Built: Right-click a server, share or disk in the sidebar › Icon: Automatic (named after the icon it would show), then Network, Server, NAS, PC, Mac, Laptop, Cloud, Internal Disk and External Disk. Servers keep their pick by name, shares by server and share, disks by UUID. Servers got a right-click menu (Open, Icon, Disconnect). Shares no SMB or AFP server owns (WebDAV, NFS, cloud mounts) now list under Network on their own; before, they showed nowhere in the sidebar.
 
+### S-057 iCloud Drive and sync folders
+As the user, I open iCloud Drive and my sync apps' folders (Google Drive, OneDrive, Dropbox…) from the sidebar and see them like the Finder shows them: iCloud Drive at the top of its path, with each app's folder named after its app.
+Depends: S-032
+Acceptance:
+- [unit] iCloud Drive and each folder in ~/Library/CloudStorage are a top of their path; an app's folder (its container's Documents) is inside iCloud Drive, named after the app; only apps that keep documents there show; sync folders are named after their app ("GoogleDrive-name@example.com" is Google Drive).
+- [self] iCloud Drive and Google Drive show under Locations on the test home; Go › iCloud Drive is ⇧⌘I; iCloud Drive lists its items and the apps' folders; Up from an app's folder goes to iCloud Drive; an app's folder can't be cut, renamed or trashed.
+- Surface: sidebar rows under Locations, the Go menu, the path
+Status: done
+Built: Locations lists iCloud Drive (when it's on) and each sync app's folder after the home folder; Go › iCloud Drive (⇧⌘I). iCloud Drive's page adds each app's folder that holds documents (Numbers, Obsidian…), named by macOS; the path reads "iCloud Drive › Numbers", Up goes from an app's folder to iCloud Drive, and iCloud Drive and sync folders are a top like a disk. App folders leave out Cut, Duplicate, Move To, Rename and Move to Trash, as in the Finder. Test runs use a home in /tmp/Kamiro-home (tools/seed-tree.sh).
+
+### S-058 Cloud status and downloads
+As the user, I see which files in iCloud Drive or a sync folder are only in the cloud, downloading or uploading, and I download them or remove their download from the right-click menu.
+Depends: S-057
+Acceptance:
+- [unit] A conflict shows first, then downloading, uploading, only in the cloud, else downloaded; a cloud folder never changed shows the Cloud Status column after Name.
+- [self] The test home's statuses (from an attribute) show in the column; Download Now and Remove Download follow the status and change it; folders outside the cloud read no status.
+- Performance: the status keys cost about 1 ms an item (a plain listing 0.01 ms), so they are read only in cloud folders, after the list shows, 100 at a time.
+Status: done
+Built: In iCloud Drive and sync folders, a narrow Cloud Status column (a cloud header) after Name shows the Finder's icons: only in the cloud, downloading, uploading, conflict; downloaded shows none. The icon view puts the same badge at the icon's corner, and the inspector has a Cloud Status row. Right-click › Download Now and Remove Download, on files by their status and on folders always. While something moves, statuses are read again every 2 seconds. Not in the column view yet.
+
 ## M6 System and polish (1.0.0)
 
 ### S-038 Make Kamiro the default file browser

@@ -76,7 +76,7 @@ extension BrowserModel {
     // MARK: Cut, copy, paste (S-011)
 
     func cutSelection() {
-        guard !selection.isEmpty else { return }
+        guard !selection.isEmpty, !selectionHasAppFolder else { return }
         FileClipboard.shared.put(orderedSelection, cut: true)
     }
 
@@ -153,7 +153,7 @@ extension BrowserModel {
     // MARK: Rename (S-014)
 
     func beginRename() {
-        guard let first = orderedSelection.first else { return }
+        guard let first = orderedSelection.first, !selectionHasAppFolder else { return }
         beginRename(first)
     }
 
@@ -209,7 +209,7 @@ extension BrowserModel {
 
     func trashSelection() {
         let urls = orderedSelection
-        guard !urls.isEmpty else { return }
+        guard !urls.isEmpty, !selectionHasAppFolder else { return }
         var moves: [FileMove] = []
         for url in urls {
             do {
@@ -223,7 +223,7 @@ extension BrowserModel {
     }
 
     func askDeleteImmediately() {
-        guard !selection.isEmpty else { return }
+        guard !selection.isEmpty, !selectionHasAppFolder else { return }
         pendingDelete = orderedSelection
     }
 

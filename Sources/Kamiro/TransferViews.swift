@@ -30,7 +30,7 @@ final class TransferTask: Identifiable {
 
     var title: String {
         if let label { return label }
-        let place = FileManager.default.displayName(atPath: destination.path)
+        let place = Cloud.displayName(of: destination)
         return kind == .copy ? String(localized: "Copying \(count) items to “\(place)”")
             : String(localized: "Moving \(count) items to “\(place)”")
     }

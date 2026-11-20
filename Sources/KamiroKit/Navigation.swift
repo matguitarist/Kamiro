@@ -130,9 +130,11 @@ public struct Location: Hashable, Sendable {
         return parts.reversed()
     }
 
-    /// The folder that holds this one, or nil at the root.
+    /// The folder that holds this one, or nil at the root. iCloud Drive and sync folders are a
+    /// root, and an app's folder in iCloud Drive is in iCloud Drive (S-057).
     public var parent: Location? {
         guard url.path != "/" else { return nil }
+        if let cloud = Cloud.parent(of: url) { return cloud.map(Location.init) }
         return Location(url.deletingLastPathComponent())
     }
 }

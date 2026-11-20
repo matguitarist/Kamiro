@@ -18,7 +18,7 @@ public enum IconSize {
 
 /// A column of the details view. Name is always shown.
 public enum ListColumn: String, Codable, Sendable, CaseIterable {
-    case name, modified, created, added, size, kind, ext, tags, comments
+    case name, modified, created, added, size, kind, ext, tags, comments, cloud
 
     /// What a new folder shows: the Finder's four.
     public static let standard: [ListColumn] = [.name, .modified, .size, .kind]
@@ -33,7 +33,7 @@ public enum ListColumn: String, Codable, Sendable, CaseIterable {
         case .size: .size
         case .kind: .kind
         case .ext: .ext
-        case .tags, .comments: nil
+        case .tags, .comments, .cloud: nil
         }
     }
 }
@@ -109,8 +109,13 @@ public struct ViewMemory: Codable, Equatable, Sendable {
         self.folders = folders
     }
 
-    public func view(for folder: URL) -> FolderView {
-        folders[folder.canonical.path] ?? standard
+    /// A cloud folder never changed shows the Cloud Status column after Name, like the Finder (S-058).
+    public func view(for folder: URL, inCloud: Bool = false) -> FolderView {
+        if let view = folders[folder.canonical.path] { return view }
+        guard inCloud, !standard.columns.contains(.cloud) else { return standard }
+        var view = standard
+        view.columns.insert(.cloud, at: 1)
+        return view
     }
 
     public mutating func remember(_ view: FolderView, for folder: URL) {
@@ -133,7 +138,7 @@ public final class ViewStore {
         memory = (try? Data(contentsOf: url)).flatMap { try? JSONDecoder().decode(ViewMemory.self, from: $0) } ?? ViewMemory()
     }
 
-    public func view(for folder: URL) -> FolderView { memory.view(for: folder) }
+    public func view(for folder: URL, inCloud: Bool = false) -> FolderView { memory.view(for: folder, inCloud: inCloud) }
 
     public func remember(_ view: FolderView, for folder: URL) {
         memory.remember(view, for: folder)

@@ -15,6 +15,7 @@ struct DetailsTable: NSViewRepresentable {
     let renameToken: Int
     let groupVersion: Int
     let sizesVersion: Int
+    let cloudVersion: Int
 
     func makeCoordinator() -> DetailsCoordinator { DetailsCoordinator(model: model) }
 
@@ -43,6 +44,14 @@ struct DetailsTable: NSViewRepresentable {
             }
             tableColumn.headerCell.alignment = column == .size ? .right : .left
             tableColumn.headerToolTip = column.title
+            // Cloud Status is narrow, like the Finder's: its header is a cloud.
+            // The window's resizing never widens it; people still can.
+            if column == .cloud { tableColumn.resizingMask = .userResizingMask }
+            if column == .cloud, let cloud = NSImage(systemSymbolName: "icloud", accessibilityDescription: column.title) {
+                let attachment = NSTextAttachment()
+                attachment.image = cloud
+                tableColumn.headerCell.attributedStringValue = NSAttributedString(attachment: attachment)
+            }
             table.addTableColumn(tableColumn)
         }
         let headerMenu = NSMenu()
@@ -89,6 +98,7 @@ extension ListColumn {
         case .ext: String(localized: "Extension")
         case .tags: String(localized: "Tags")
         case .comments: String(localized: "Comments")
+        case .cloud: String(localized: "Cloud Status")
         }
     }
 
@@ -101,10 +111,17 @@ extension ListColumn {
         case .ext: 84
         case .tags: 120
         case .comments: 200
+        case .cloud: 36
         }
     }
 
-    var minWidth: CGFloat { self == .name ? 160 : 60 }
+    var minWidth: CGFloat {
+        switch self {
+        case .name: 160
+        case .cloud: 28
+        default: 60
+        }
+    }
 
     /// Dates and sizes sort newest and biggest first on the first click, like the Finder.
     var ascendingFirst: Bool { ![.modified, .created, .added, .size].contains(self) }
@@ -119,6 +136,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     private var version = -1
     private var groupVersion = -1
     private var sizesVersion = -1
+    private(set) var cloudVersion = -1
 
     private var reveal = -1
     private var focus = -1
@@ -172,6 +190,14 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             table.reloadData()
             cutVersion = FileClipboard.shared.version
             sizesVersion = model.sizesVersion
+            cloudVersion = model.cloudVersion
+        }
+        if cloudVersion != model.cloudVersion {
+            cloudVersion = model.cloudVersion
+            let column = table.column(withIdentifier: ListColumn.cloud.identifier)
+            if column >= 0, !table.tableColumns[column].isHidden {
+                table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<rows.count), columnIndexes: [column])
+            }
         }
         if sizesVersion != model.sizesVersion {
             sizesVersion = model.sizesVersion
@@ -274,6 +300,11 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         if column == .name {
             cell.imageView?.image = IconCache.shared.icon(for: item)
             cell.toolTip = item.name
+        } else if column == .cloud {
+            let status = model.cloud[item.url]
+            cell.imageView?.image = status?.image
+            cell.toolTip = status?.title
+            cell.setAccessibilityLabel(status?.title)
         }
         // Hidden items (S-024) and cut items (S-011) show dimmed.
         cell.alphaValue = item.isHidden || FileClipboard.shared.isCut(item.url) ? 0.5 : 1
@@ -334,6 +365,18 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
                 image.heightAnchor.constraint(equalToConstant: 16),
                 text.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: Space.sm - 2),
             ]
+        } else if column == .cloud {
+            let image = NSImageView()
+            image.translatesAutoresizingMaskIntoConstraints = false
+            image.contentTintColor = .secondaryLabelColor
+            cell.addSubview(image)
+            cell.imageView = image
+            text.isHidden = true
+            constraints += [
+                image.centerXAnchor.constraint(equalTo: cell.centerXAnchor),
+                image.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+                text.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: Space.xs),
+            ]
         } else {
             constraints.append(text.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: Space.xs))
         }
@@ -358,6 +401,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         case .ext: item.isFolder ? "" : item.url.pathExtension
         case .tags: FileExtras.shared.tags(of: item.url).joined(separator: ", ")
         case .comments: FileExtras.shared.comment(of: item.url)
+        case .cloud: ""
         }
     }
 

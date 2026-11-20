@@ -32,6 +32,7 @@ private struct OneItem: View {
     let item: FileItem
     let size: Int64?
     @State private var media = MediaFacts()
+    @State private var cloud: CloudStatus?
 
     var body: some View {
         VStack(spacing: Space.md) {
@@ -55,7 +56,8 @@ private struct OneItem: View {
                 Text("Information")
                     .font(.subheadline.weight(.semibold))
                 Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: Space.sm, verticalSpacing: Space.xs) {
-                    ForEach(InspectorFacts.rows(item: item, size: size, media: media, tags: ItemFacts.tags(of: item.url))) { row in
+                    ForEach(InspectorFacts.rows(item: item, size: size, media: media, tags: ItemFacts.tags(of: item.url),
+                                                cloud: cloud)) { row in
                         GridRow {
                             Text(row.label)
                                 .foregroundStyle(.secondary)
@@ -75,11 +77,15 @@ private struct OneItem: View {
         }
         .task(id: item.url) {
             media = await ItemFacts.media(of: item.url)
+            cloud = await Self.cloudStatus(of: item.url)
             InspectorProbe.shown = [item.name] + InspectorFacts.rows(item: item, size: size, media: media,
-                                                                     tags: ItemFacts.tags(of: item.url)).map(\.label)
+                                                                     tags: ItemFacts.tags(of: item.url), cloud: cloud).map(\.label)
         }
         .onDisappear { InspectorProbe.shown = [] }
     }
+
+    @concurrent
+    nonisolated private static func cloudStatus(of url: URL) async -> CloudStatus? { CloudStatus.read(url) }
 }
 
 /// What the inspector last showed (the name, then the Information labels), for the self-test:
@@ -122,7 +128,7 @@ enum InspectorFacts {
         var isPath = false
     }
 
-    static func rows(item: FileItem, size: Int64?, media: MediaFacts, tags: [String]) -> [Row] {
+    static func rows(item: FileItem, size: Int64?, media: MediaFacts, tags: [String], cloud: CloudStatus? = nil) -> [Row] {
         var rows: [Row] = [Row(label: String(localized: "Kind"), value: KindCache.shared.kind(of: item))]
         rows.append(Row(label: String(localized: "Size"), value: size?.bytesText ?? "—"))
         if let text = media.dimensionsText { rows.append(Row(label: String(localized: "Dimensions"), value: text)) }
@@ -131,6 +137,7 @@ enum InspectorFacts {
         if let date = item.created { rows.append(Row(label: String(localized: "Created"), value: format(date))) }
         if let date = item.modified { rows.append(Row(label: String(localized: "Modified"), value: format(date))) }
         if let date = item.added { rows.append(Row(label: String(localized: "Added"), value: format(date))) }
+        if let cloud { rows.append(Row(label: String(localized: "Cloud Status"), value: cloud.title)) }
         if !tags.isEmpty { rows.append(Row(label: String(localized: "Tags"), value: tags.formatted(.list(type: .and)))) }
         rows.append(Row(label: String(localized: "Where"), value: PathInput.display(item.url.deletingLastPathComponent()),
                         isPath: true))

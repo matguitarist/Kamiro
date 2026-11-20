@@ -15,6 +15,7 @@ struct IconGrid: NSViewRepresentable {
     let focus: Int
     let cutVersion: Int
     let renameToken: Int
+    let cloudVersion: Int
     let iconSize: Double
 
     func makeCoordinator() -> GridCoordinator { GridCoordinator(model: model) }
@@ -61,6 +62,7 @@ final class GridCoordinator: NSObject, NSCollectionViewDataSource, NSCollectionV
     private var reveal = -1
     private var focus = -1
     private var cutVersion = -1
+    private var cloudVersion = -1
     private var renameToken = 0
     private var pendingRename: URL?
     private(set) var iconSize: Double = 0
@@ -93,9 +95,11 @@ final class GridCoordinator: NSObject, NSCollectionViewDataSource, NSCollectionV
             rowOf = Dictionary(items.enumerated().map { ($1.url, $0) }, uniquingKeysWith: { first, _ in first })
             grid.reloadData()
             cutVersion = FileClipboard.shared.version
+            cloudVersion = model.cloudVersion
         }
-        if cutVersion != FileClipboard.shared.version {
+        if cutVersion != FileClipboard.shared.version || cloudVersion != model.cloudVersion {
             cutVersion = FileClipboard.shared.version
+            cloudVersion = model.cloudVersion
             refreshVisible()
         }
         let wanted = Set(model.selection.compactMap { rowOf[$0] }.map { IndexPath(item: $0, section: 0) })
@@ -134,7 +138,7 @@ final class GridCoordinator: NSObject, NSCollectionViewDataSource, NSCollectionV
         guard items.indices.contains(index) else { return }
         let file = items[index]
         item.show(file, size: iconSize, dimmed: file.isHidden || FileClipboard.shared.isCut(file.url),
-                  scale: grid?.window?.backingScaleFactor ?? 2)
+                  cloud: model.cloud[file.url], scale: grid?.window?.backingScaleFactor ?? 2)
     }
 
     // MARK: Data source and delegate
@@ -355,9 +359,10 @@ final class IconItem: NSCollectionViewItem {
         isRenaming = false
     }
 
-    func show(_ file: FileItem, size: Double, dimmed: Bool, scale: CGFloat) {
+    func show(_ file: FileItem, size: Double, dimmed: Bool, cloud: CloudStatus? = nil, scale: CGFloat) {
         url = file.url
         cell.iconSize = size
+        cell.cloud = cloud
         cell.label.stringValue = file.name
         cell.toolTip = file.name
         cell.alphaValue = dimmed ? 0.5 : 1
@@ -380,6 +385,16 @@ final class IconCell: NSView {
     let icon = NSImageView()
     let label = NSTextField(wrappingLabelWithString: "")
     private let labelBack = NSView()
+    /// The cloud status badge at the icon's corner (S-058).
+    private let badge = NSImageView()
+    var cloud: CloudStatus? {
+        didSet {
+            guard cloud != oldValue else { return }
+            badge.image = cloud?.image
+            badge.isHidden = badge.image == nil
+            badge.toolTip = cloud?.title
+        }
+    }
     var iconSize: Double = IconSize.standard { didSet { if iconSize != oldValue { needsLayout = true } } }
     var isSelected = false { didSet { updateLook() } }
     var isRenaming = false
@@ -414,7 +429,12 @@ final class IconCell: NSView {
         label.lineBreakMode = .byTruncatingMiddle
         label.cell?.truncatesLastVisibleLine = true
         label.font = .systemFont(ofSize: NSFont.systemFontSize)
-        [tile, icon, labelBack, label].forEach(addSubview)
+        badge.wantsLayer = true
+        badge.layer?.cornerRadius = Space.sm + Space.xs / 2
+        badge.contentTintColor = .secondaryLabelColor
+        badge.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        badge.isHidden = true
+        [tile, icon, badge, labelBack, label].forEach(addSubview)
         updateLook()
     }
 
@@ -431,6 +451,9 @@ final class IconCell: NSView {
         let tileSide = size + Space.sm * 2
         tile.frame = NSRect(x: (bounds.width - tileSide) / 2, y: 0, width: tileSide, height: tileSide)
         icon.frame = tile.frame.insetBy(dx: Space.sm, dy: Space.sm)
+        let badgeSide = Space.lg + Space.xs
+        badge.frame = NSRect(x: icon.frame.maxX - badgeSide + Space.xs, y: icon.frame.maxY - badgeSide + Space.xs,
+                             width: badgeSide, height: badgeSide)
         let top = tile.frame.maxY + Space.xs
         let width = bounds.width - Space.xs * 2
         let fitted = label.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: width, height: bounds.height - top)) ?? .zero
@@ -450,6 +473,7 @@ final class IconCell: NSView {
         effectiveAppearance.performAsCurrentDrawingAppearance {
             tile.layer?.backgroundColor = isSelected ? NSColor.quaternaryLabelColor.cgColor : nil
             labelBack.layer?.backgroundColor = isSelected ? NSColor.selectedContentBackgroundColor.cgColor : nil
+            badge.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         }
         label.textColor = isSelected ? .alternateSelectedControlTextColor : .labelColor
     }

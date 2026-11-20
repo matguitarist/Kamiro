@@ -51,6 +51,12 @@ public struct FileItem: Identifiable, Hashable, Sendable {
         self.added = added
         self.fileID = fileID
     }
+
+    /// The same item under another name (an app's folder in iCloud Drive shows the app's name).
+    public func named(_ name: String) -> FileItem {
+        FileItem(canonicalURL: url, name: name, isFolder: isFolder, isPackage: isPackage, isHidden: isHidden,
+                 size: size, modified: modified, created: created, added: added, fileID: fileID)
+    }
 }
 
 /// Why a folder can't be listed.

@@ -3661,6 +3661,86 @@
           }
         }
       }
+    },
+    "Downloaded": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargé"
+          }
+        }
+      }
+    },
+    "Not Downloaded": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non téléchargé"
+          }
+        }
+      }
+    },
+    "Downloading": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargement en cours"
+          }
+        }
+      }
+    },
+    "Uploading": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoi en cours"
+          }
+        }
+      }
+    },
+    "Conflict": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conflit"
+          }
+        }
+      }
+    },
+    "Cloud Status": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "État dans le nuage"
+          }
+        }
+      }
+    },
+    "Download Now": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Télécharger maintenant"
+          }
+        }
+      }
+    },
+    "Remove Download": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le téléchargement"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

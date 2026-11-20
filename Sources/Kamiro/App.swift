@@ -21,6 +21,11 @@ struct KamiroApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var model = AppModel(log: Store.log)
 
+    init() {
+        // Test runs find iCloud Drive and a sync folder in /tmp/Kamiro-home (tools/seed-tree.sh).
+        if Store.isOverridden { Cloud.configure(home: Store.cloudHome, fakeStatuses: true) }
+    }
+
     var body: some Scene {
         WindowGroup(id: Self.browserID, for: WindowStart.self) { $start in
             ContentView(start: start?.url ?? Store.startFolder)
@@ -120,6 +125,8 @@ enum Store {
 
     /// The sample tree snapshots and the self-test browse (tools/seed-tree.sh).
     static let seedFolder = URL(filePath: "/tmp/Kamiro-seed")
+    /// The home test runs look for iCloud Drive and sync folders in (tools/seed-tree.sh).
+    static let cloudHome = URL(filePath: "/tmp/Kamiro-home")
 
     /// Where a new window opens: the Home page (S-031), or the sample tree in a test run.
     static var startFolder: URL {

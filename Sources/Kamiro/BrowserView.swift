@@ -97,6 +97,7 @@ extension BrowserView {
             IconGrid(model: model, version: model.itemsVersion, selection: model.selection,
                      reveal: model.revealToken, focus: model.focusToken,
                      cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
+                     cloudVersion: model.cloudVersion,
                      iconSize: min(max(iconSize, IconSize.range.lowerBound), IconSize.range.upperBound))
         case .columns:
             ColumnBrowser(model: model, version: model.itemsVersion, selection: model.selection, folder: model.folder,
@@ -106,7 +107,8 @@ extension BrowserView {
             DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
                          reveal: model.revealToken, focus: model.focusToken,
                          cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
-                         groupVersion: model.groupVersion, sizesVersion: model.sizesVersion)
+                         groupVersion: model.groupVersion, sizesVersion: model.sizesVersion,
+                         cloudVersion: model.cloudVersion)
         }
     }
 }

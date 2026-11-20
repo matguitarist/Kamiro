@@ -25,6 +25,14 @@
 
 `SelfTest` (+Views) drives a real window on a /tmp tree; `Snapshot` shoots every page.
 
+## Cloud folders (S-057, S-058)
+
+`Cloud` (KamiroKit/Cloud.swift) knows iCloud Drive (~/Library/Mobile Documents/com~apple~CloudDocs), the
+apps' containers next to it, and ~/Library/CloudStorage. `Location.parent` asks it first, so iCloud Drive
+and sync folders are a top and an app's folder sits in iCloud Drive. BrowserModel reads `CloudStatus`
+only in cloud folders, after the list, in a task like folder sizes (`cloud`, `cloudVersion`). Test runs
+point `Cloud` at /tmp/Kamiro-home and read statuses from an extended attribute.
+
 ## Places that aren't folders (M4)
 
 A window shows either a folder (a file URL) or a VirtualPlace (KamiroKit/Places.swift): a tag's items

@@ -25,6 +25,8 @@ enum Snapshot {
         case searchResults = "search-results"
         case tabs
         case home
+        case icloud
+        case icloudIcons = "icloud-icons"
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
@@ -99,6 +101,11 @@ enum Snapshot {
                 PinStore.shared.pin([seed.appending(path: "Projects"), seed.appending(path: "Photos")])
                 browser.go(to: VirtualPlace.home.url)
                 try? await Task.sleep(for: .seconds(1))
+            case .icloud, .icloudIcons:
+                browser.go(to: Cloud.drive, select: [Cloud.drive.appending(path: "Scan.pdf")])
+                await browser.waitUntilLoaded()
+                await browser.waitForCloud()
+                if self == .icloudIcons { browser.mode = .icons }
             case .tabs:
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
@@ -156,7 +163,7 @@ enum Snapshot {
             case .connectServer:
                 browser.connectShown = false
                 ServerHistory.recent = RecentServers()
-            case .icons: browser.mode = .details
+            case .icons, .icloudIcons: browser.mode = .details
             case .columns:
                 // Views are kept per folder: put the sample folder back in details, not Projects.
                 browser.go(to: Store.seedFolder)

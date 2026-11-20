@@ -9,6 +9,8 @@ import UniformTypeIdentifiers
 struct Sidebar: View {
     let browser: BrowserModel
     @State private var volumes = Volumes.mounted()
+    /// iCloud Drive and the sync apps' folders (S-057).
+    @State private var clouds = Cloud.places()
     @State private var renaming: Volume?
     private var pins: PinStore { .shared }
 
@@ -35,6 +37,11 @@ struct Sidebar: View {
                     Label(GoPlace.name(of: GoPlace.home), systemImage: "person.crop.circle")
                         .tag(GoPlace.home)
                         .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: GoPlace.home) }
+                    ForEach(clouds, id: \.url) { place in
+                        Label(place.name, systemImage: place.isICloud ? "icloud" : "cloud")
+                            .tag(place.url)
+                            .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: place.url) }
+                    }
                     // Servers go under Network, unless that part is hidden.
                     ForEach(volumes.filter { !$0.isNetwork || !pins.shows(.network) }) { volume in
                         VolumeRow(volume: volume, browser: browser, renaming: $renaming)
@@ -50,6 +57,11 @@ struct Sidebar: View {
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             volumes = Volumes.mounted()
+            clouds = Cloud.places()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // A sync app set up meanwhile shows up.
+            clouds = Cloud.places()
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
             volumes = Volumes.mounted()
@@ -65,6 +77,7 @@ struct Sidebar: View {
         Binding {
             let here = browser.folder
             return pins.list.contains(here) || here == GoPlace.home || volumes.contains { $0.url == here && !$0.isNetwork }
+                || clouds.contains { $0.url == here }
                 || VirtualPlace(here) != nil ? here : nil
         } set: { url in
             guard let url, !NetworkSection.act(on: url, browser: browser) else { return }
@@ -173,7 +186,13 @@ struct GoPlace: Identifiable {
 
     static let home = URL.homeDirectory.canonical
 
-    static let all: [GoPlace] = [
+    /// The Finder's places, then iCloud Drive (⇧⌘I) when it's on.
+    static var all: [GoPlace] {
+        standard + (Cloud.isDriveAvailable
+            ? [GoPlace(url: Cloud.drive, symbol: "icloud", key: "i", modifiers: [.command, .shift])] : [])
+    }
+
+    private static let standard: [GoPlace] = [
         GoPlace(url: home, symbol: "person.crop.circle", key: "h", modifiers: [.command, .shift]),
         GoPlace(url: URL(filePath: "/Applications"), symbol: "square.grid.2x2", key: "a", modifiers: [.command, .shift]),
         GoPlace(url: home.appending(path: "Desktop"), symbol: "menubar.dock.rectangle", key: "d", modifiers: [.command, .shift]),
@@ -181,7 +200,7 @@ struct GoPlace: Identifiable {
         GoPlace(url: home.appending(path: "Downloads"), symbol: "arrow.down.circle", key: "l", modifiers: [.command, .option]),
     ]
 
-    static func name(of url: URL) -> String { FileManager.default.displayName(atPath: url.path) }
+    static func name(of url: URL) -> String { Cloud.displayName(of: url) }
 
     /// The known folders keep their Finder symbol; any other pin is a folder.
     static func symbol(for url: URL) -> String {
@@ -189,6 +208,8 @@ struct GoPlace: Identifiable {
                                        "Movies": "film", "Music": "music.note", "Pictures": "photo"]
         if url == URL(filePath: "/Applications").canonical { return "square.grid.2x2" }
         if url == home { return "person.crop.circle" }
+        if url == Cloud.drive { return "icloud" }
+        if Cloud.isTop(url) { return "cloud" }
         if url.deletingLastPathComponent().canonical == home, let symbol = known[url.lastPathComponent] { return symbol }
         return "folder"
     }

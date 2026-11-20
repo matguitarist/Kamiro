@@ -58,4 +58,25 @@ os.chdir('10k')
 for i in range(1, 10001): open(f'Photo {i}.jpg', 'w').close()
 "
 chmod 000 Locked
-print "seeded $root"
+# A home with iCloud Drive, two apps' folders, an app folder with nothing in it, and a sync app's
+# folder (S-057, S-058). Test runs read each item's cloud status from its com.mathieuares.kamiro.cloud
+# attribute, since nothing here is really in the cloud; no attribute means downloaded.
+home=/tmp/Kamiro-home
+rm -rf $home
+lib=$home/Library
+md="$lib/Mobile Documents"
+drive="$md/com~apple~CloudDocs"
+mkdir -p "$drive/Projects" "$md/com~apple~Numbers/Documents" "$md/iCloud~md~obsidian/Documents/Vault" \
+  "$md/com~apple~mail/Documents" "$lib/CloudStorage/GoogleDrive-someone@example.com/My Drive"
+print "Milk, eggs" > "$drive/Shopping.txt"
+mkfile -n 2400k "$drive/Scan.pdf"
+mkfile -n 900k "$drive/Slides.key"
+print "# Plan" > "$drive/Projects/Plan.md"
+mkfile -n 300k "$md/com~apple~Numbers/Documents/Budget.numbers"
+print "# Vault" > "$md/iCloud~md~obsidian/Documents/Vault/Index.md"
+print "Shared notes" > "$lib/CloudStorage/GoogleDrive-someone@example.com/My Drive/Notes.txt"
+xattr -w com.mathieuares.kamiro.cloud notDownloaded "$drive/Scan.pdf"
+xattr -w com.mathieuares.kamiro.cloud uploading "$drive/Slides.key"
+xattr -w com.mathieuares.kamiro.cloud notDownloaded "$lib/CloudStorage/GoogleDrive-someone@example.com/My Drive/Notes.txt"
+stamp 202611181415 "$drive"/*(N) "$drive/Projects/Plan.md"
+print "seeded $root and $home"
