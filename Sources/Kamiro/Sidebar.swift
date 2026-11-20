@@ -36,10 +36,21 @@ struct Sidebar: View {
                         .tag(GoPlace.home)
                         .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: GoPlace.home) }
                     ForEach(volumes) { volume in
-                        Label(volume.name, systemImage: volume.symbol)
-                            .tag(volume.url)
-                            .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
-                            .contextMenu { VolumeMenu(volume: volume, model: browser, renaming: $renaming) }
+                        HStack(spacing: Space.xs) {
+                            Label(volume.name, systemImage: volume.symbol)
+                            Spacer(minLength: 0)
+                            // Disks that can go show ⏏ at the end of their row, like the Finder.
+                            if volume.actions.contains(.eject) {
+                                Button("Eject", systemImage: "eject") { ItemActions.eject(volume, from: browser) }
+                                    .labelStyle(.iconOnly)
+                                    .buttonStyle(.borderless)
+                                    .foregroundStyle(.secondary)
+                                    .help(String(localized: "Eject “\(volume.name)”"))
+                            }
+                        }
+                        .tag(volume.url)
+                        .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
+                        .contextMenu { VolumeMenu(volume: volume, model: browser, renaming: $renaming) }
                     }
                 }
             }

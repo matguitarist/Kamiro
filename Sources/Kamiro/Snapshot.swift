@@ -16,7 +16,7 @@ enum Snapshot {
     enum Page: String, CaseIterable {
         case browse, selected, details10k = "details-10k", addressEdit = "address-edit", accessDenied = "access-denied", empty
         case cutDimmed = "cut-dimmed", rename, transferProgress = "transfer-progress", conflictSheet = "conflict-sheet"
-        case deleteConfirm = "delete-confirm"
+        case deleteConfirm = "delete-confirm", connectServer = "connect-server"
         case icons, columns
         case columnsMenu = "columns-menu"
         case grouped, hidden, inspector
@@ -51,7 +51,7 @@ enum Snapshot {
             case .cutDimmed, .deleteConfirm:
                 browser.go(to: seed, select: [seed.appending(path: "Invoice 1.pdf"), seed.appending(path: "Invoice 2.pdf")])
             case .rename: browser.go(to: seed, select: [seed.appending(path: "notes.md")])
-            case .transferProgress, .conflictSheet: browser.go(to: seed)
+            case .transferProgress, .conflictSheet, .connectServer: browser.go(to: seed)
             case .icons:
                 browser.go(to: seed, select: [seed.appending(path: "Owl.jpg")])
                 browser.mode = .icons
@@ -136,6 +136,10 @@ enum Snapshot {
                 let conflict = Conflict(source: seed.appending(path: "notes.md"), existing: seed.appending(path: "Projects/notes.md"), remaining: 2)
                 browser.conflicts = [ConflictQuestion(conflict: conflict, kind: .copy) { _ in browser.conflicts = [] }]
             case .deleteConfirm: browser.askDeleteImmediately()
+            case .connectServer:
+                // Snapshots run on the test settings: these addresses never reach the real ones.
+                ServerHistory.recent = RecentServers(["smb://nas.local/Media", "afp://old-mac.local", "https://dav.example.com/files"])
+                browser.showConnectToServer()
             default: break
             }
         }
@@ -149,6 +153,9 @@ enum Snapshot {
             case .transferProgress: TransferCenter.shared.hideSample()
             case .conflictSheet: browser.conflicts = []
             case .deleteConfirm: browser.pendingDelete = nil
+            case .connectServer:
+                browser.connectShown = false
+                ServerHistory.recent = RecentServers()
             case .icons: browser.mode = .details
             case .columns:
                 // Views are kept per folder: put the sample folder back in details, not Projects.

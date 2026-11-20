@@ -171,6 +171,9 @@ struct KamiroCommands: Commands {
                     .keyboardShortcut(place.key, modifiers: place.modifiers)
             }
             Divider()
+            Button("Connect to Server…") { menu.browser?.showConnectToServer() }
+                .keyboardShortcut("k")
+                .disabled(menu.browser == nil)
             Button("Go to Folder…") { menu.browser?.beginEditingPath() }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
             Button("Edit Address") { menu.browser?.beginEditingPath() }

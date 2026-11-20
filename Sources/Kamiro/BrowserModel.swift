@@ -99,6 +99,8 @@ final class BrowserModel {
     var renameTarget: URL?
     /// Name conflicts waiting for an answer, first one shown.
     var conflicts: [ConflictQuestion] = []
+    /// Go › Connect to Server… shows its sheet on this window (S-037).
+    var connectShown = false
     /// Items waiting for "Delete Immediately?".
     var pendingDelete: [URL]?
     var pendingExtension: ExtensionQuestion?
@@ -468,6 +470,8 @@ enum Prefs {
     static let terminal = "terminal"
     /// The bundle ID of the code editor Open in Editor uses (Settings › General).
     static let editor = "editor"
+    /// Connect to Server's recent addresses, newest first (S-037).
+    static let recentServers = "recentServers"
     /// The sidebar's pinned folders, as paths (S-032).
     static let pins = "pins"
     static let hiddenSidebarSections = "hiddenSidebarSections"

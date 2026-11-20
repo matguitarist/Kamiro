@@ -443,7 +443,8 @@ Built: Open With came with S-033. Holding ⌥ in the right-click menu turns it i
 As the user, I eject a volume from the sidebar and connect to an SMB or AFP server (⌘K).
 Screens: connect-server
 Depends: S-001
-Status: todo
+Status: done
+Built: Disks that can be ejected show ⏏ at the end of their sidebar row (Eject was already in their right-click menu, S-033). Go › Connect to Server… (⌘K) opens a sheet: an address (a bare name means smb://; afp://, nfs://, https:// for WebDAV, ftp:// and a Windows \\server\share work too), the last ten servers (right-click to remove one), and Connect. macOS asks for the name and password itself (NetFS, keychain), and the share opens in the window once mounted; failures say so in the sheet and the log.
 
 ### S-044 New file from the clipboard
 As the user, I choose New File from Clipboard and get a file whose type follows the clipboard: text, JSON, a table as CSV, a link as .webloc, an image as PNG.

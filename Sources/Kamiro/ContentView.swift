@@ -42,6 +42,9 @@ struct ContentView: View {
         .sheet(item: conflictBinding) { question in
             ConflictSheet(question: question)
         }
+        .sheet(isPresented: Binding { browser.connectShown } set: { browser.connectShown = $0 }) {
+            ConnectServerSheet(browser: browser)
+        }
         .alert(deleteTitle, isPresented: deleteShown) {
             Button("Delete", role: .destructive) { browser.deleteImmediately() }
             Button("Cancel", role: .cancel) { browser.pendingDelete = nil }

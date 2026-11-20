@@ -157,6 +157,16 @@ extension SelfTest {
         try? FileManager.default.removeItem(at: url("\(archive).zip"))
         await browser.waitUntilLoaded()
 
+        // S-037: Go › Connect to Server… (⌘K) opens its sheet on this window.
+        let connect = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Connect to Server…") }
+        check("Go › Connect to Server… is ⌘K", connect?.keyEquivalent == "k" && connect?.keyEquivalentModifierMask == .command)
+        let window = browser.details?.table?.window
+        browser.showConnectToServer()
+        for _ in 0..<30 where window?.attachedSheet == nil { try? await Task.sleep(for: .milliseconds(100)) }
+        check("…and shows the Connect to Server sheet", window?.attachedSheet != nil)
+        browser.connectShown = false
+        for _ in 0..<30 where window?.attachedSheet != nil { try? await Task.sleep(for: .milliseconds(100)) }
+
         // Disks: Properties shows space without walking the disk.
         let startup = Volumes.facts(at: URL(filePath: "/"))
         let rows = startup.map(PropertiesFacts.rows) ?? []

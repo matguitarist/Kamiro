@@ -3150,6 +3150,116 @@
           }
         }
       }
+    },
+    "Connect to Server": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter au serveur"
+          }
+        }
+      }
+    },
+    "Connect to Server…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter au serveur…"
+          }
+        }
+      }
+    },
+    "Server Address": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresse du serveur"
+          }
+        }
+      }
+    },
+    "Recent Servers": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serveurs récents"
+          }
+        }
+      }
+    },
+    "Remove from Recent Servers": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer des serveurs récents"
+          }
+        }
+      }
+    },
+    "Connecting…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion…"
+          }
+        }
+      }
+    },
+    "Connect": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter"
+          }
+        }
+      }
+    },
+    "Connecting was cancelled.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La connexion a été annulée."
+          }
+        }
+      }
+    },
+    "The server can’t be reached, or the share doesn’t exist (error %lld).": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur est injoignable ou le partage n’existe pas (erreur %lld)."
+          }
+        }
+      }
+    },
+    "Eject “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éjecter « %@ »"
+          }
+        }
+      }
+    },
+    "A name alone connects with SMB; afp://, nfs://, https:// (WebDAV) and \\\\server\\share work too.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un nom seul se connecte en SMB ; afp://, nfs://, https:// (WebDAV) et \\\\serveur\\partage fonctionnent aussi."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
