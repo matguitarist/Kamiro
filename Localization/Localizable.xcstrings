@@ -421,6 +421,16 @@
         }
       }
     },
+    "Blue": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bleu"
+          }
+        }
+      }
+    },
     "Calculating…": {
       "localizations": {
         "fr": {
@@ -981,6 +991,26 @@
         }
       }
     },
+    "Gray": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gris"
+          }
+        }
+      }
+    },
+    "Green": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vert"
+          }
+        }
+      }
+    },
     "Group By": {
       "localizations": {
         "fr": {
@@ -1511,6 +1541,16 @@
         }
       }
     },
+    "Nothing Is Tagged “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun élément n’a le tag « %@ »"
+          }
+        }
+      }
+    },
     "Off, Return renames, like the Finder. On, Return opens, like Windows, and F2 renames.": {
       "localizations": {
         "fr": {
@@ -1557,6 +1597,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Options"
+          }
+        }
+      }
+    },
+    "Orange": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orange"
           }
         }
       }
@@ -1681,6 +1731,16 @@
         }
       }
     },
+    "Purple": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Violet"
+          }
+        }
+      }
+    },
     "Quick Look": {
       "localizations": {
         "fr": {
@@ -1707,6 +1767,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lecture seule"
+          }
+        }
+      }
+    },
+    "Red": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rouge"
           }
         }
       }
@@ -2207,6 +2277,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Écriture seule"
+          }
+        }
+      }
+    },
+    "Yellow": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaune"
           }
         }
       }

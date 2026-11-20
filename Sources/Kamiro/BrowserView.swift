@@ -44,7 +44,9 @@ struct BrowserView: View {
         default:
             list
                 .overlay {
-                    if model.state == .ready, model.items.isEmpty {
+                    if model.state == .ready, model.items.isEmpty, let place = model.place {
+                        ContentUnavailableView(String(localized: "Nothing Is Tagged “\(place.title)”"), systemImage: "tag")
+                    } else if model.state == .ready, model.items.isEmpty {
                         ContentUnavailableView("Folder Is Empty", systemImage: "folder")
                     } else if model.showsLoading {
                         ProgressView("Loading…")
@@ -57,7 +59,8 @@ struct BrowserView: View {
 extension BrowserView {
     @ViewBuilder
     private var list: some View {
-        switch model.mode {
+        // A tag's items come from many folders: no columns there.
+        switch model.isVirtual && model.mode == .columns ? .details : model.mode {
         case .icons:
             IconGrid(model: model, version: model.itemsVersion, selection: model.selection,
                      reveal: model.revealToken, focus: model.focusToken,
@@ -195,6 +198,7 @@ struct Sidebar: View {
                         .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
                 }
             }
+            TagsSection()
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             volumes = Volumes.mounted()
@@ -208,7 +212,8 @@ struct Sidebar: View {
     private var selection: Binding<URL?> {
         Binding {
             let here = browser.folder
-            return Pinned.defaults.contains { $0.url == here } || volumes.contains { $0.url == here } ? here : nil
+            return Pinned.defaults.contains { $0.url == here } || volumes.contains { $0.url == here }
+                || VirtualPlace(here) != nil ? here : nil
         } set: { url in
             if let url { browser.go(to: url) }
         }
@@ -247,7 +252,7 @@ struct BrowserToolbar: ToolbarContent {
             ControlGroup {
             Menu {
                 ForEach(Array(model.history.backList.reversed().enumerated()), id: \.offset) { index, url in
-                    Button(FileManager.default.displayName(atPath: url.path)) { model.goBack(index + 1) }
+                    Button(BrowserModel.name(of: url)) { model.goBack(index + 1) }
                 }
             } label: {
                 Label("Back", systemImage: "chevron.left")
@@ -259,7 +264,7 @@ struct BrowserToolbar: ToolbarContent {
             .help("Go back (⌘[)")
             Menu {
                 ForEach(Array(model.history.forwardList.reversed().enumerated()), id: \.offset) { index, url in
-                    Button(FileManager.default.displayName(atPath: url.path)) { model.goForward(index + 1) }
+                    Button(BrowserModel.name(of: url)) { model.goForward(index + 1) }
                 }
             } label: {
                 Label("Forward", systemImage: "chevron.right")

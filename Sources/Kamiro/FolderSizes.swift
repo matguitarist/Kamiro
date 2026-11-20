@@ -37,9 +37,9 @@ final class FolderSizes {
         version += 1
         self.folder = folder
         self.items = items
-        watcher = TreeWatcher(folder: folder) { [weak self] paths in
+        watcher = folder.isFileURL ? TreeWatcher(folder: folder) { [weak self] paths in
             Task { @MainActor in self?.changed(paths) }
-        }
+        } : nil
     }
 
     /// Adds folders to the queue.

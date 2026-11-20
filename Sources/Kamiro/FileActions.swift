@@ -68,7 +68,7 @@ enum FileUndo {
 }
 
 extension BrowserModel {
-    var canPaste: Bool { FileClipboard.shared.hasFiles && state == .ready }
+    var canPaste: Bool { FileClipboard.shared.hasFiles && state == .ready && !isVirtual }
 
     /// The selection in list order.
     var orderedSelection: [URL] { items.filter { selection.contains($0.url) }.map(\.url) }
@@ -89,7 +89,7 @@ extension BrowserModel {
     func paste(move: Bool = false) {
         let clipboard = FileClipboard.shared
         let urls = clipboard.urls
-        guard !urls.isEmpty, state == .ready else { return }
+        guard !urls.isEmpty, state == .ready, !isVirtual else { return }
         let cutHere = clipboard.isCutActive && Set(urls).isSubset(of: clipboard.cut)
         transfer(move || cutHere ? .move : .copy, urls, into: folder)
         if move || cutHere { clipboard.clearCut() }
@@ -105,7 +105,7 @@ extension BrowserModel {
         let flags = NSEvent.modifierFlags
         let kind = DropRule.kind(sources: urls, destination: destination,
                                  option: flags.contains(.option), command: flags.contains(.command))
-        guard !urls.isEmpty, !DropRule.isNoOp(sources: urls, destination: destination, kind: kind) else { return false }
+        guard !urls.isEmpty, destination.isFileURL, !DropRule.isNoOp(sources: urls, destination: destination, kind: kind) else { return false }
         transfer(kind, urls, into: destination)
         return true
     }
@@ -113,7 +113,7 @@ extension BrowserModel {
     // MARK: New items (S-015)
 
     func newFolder() {
-        guard state == .ready else { return }
+        guard state == .ready, !isVirtual else { return }
         let url = folder.appending(path: Naming.untitled(String(localized: "untitled folder"), in: folder)).canonical
         do {
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
@@ -125,7 +125,7 @@ extension BrowserModel {
     }
 
     func newFile(_ template: FileTemplate) {
-        guard state == .ready else { return }
+        guard state == .ready, !isVirtual else { return }
         do {
             let url = try template.make(in: folder, base: String(localized: "untitled"))
             FileUndo.record(.made([url]), name: String(localized: "New File"))
@@ -216,6 +216,7 @@ extension BrowserModel {
     /// nothing is selected.
     func showProperties() {
         let chosen = items.filter { selection.contains($0.url) }.map(\.url)
+        if chosen.isEmpty, isVirtual { return }
         for url in (chosen.isEmpty ? [folder] : Array(chosen.prefix(10))) { openProperties?(url) }
     }
 

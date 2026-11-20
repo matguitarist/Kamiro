@@ -66,6 +66,46 @@ extension SelfTest {
         await hiddenFiles(browser: browser, seed: seed, pause: pause, open: open)
         await inspector(browser: browser, seed: seed, pause: pause, open: open)
         await properties(browser: browser, seed: seed, pause: pause, open: open)
+        await tags(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-027: tags.
+    private static func tags(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        func url(_ path: String) -> URL { seed.appending(path: path).canonical }
+        let red = ColorTag.red.name
+        let chosen = [url("notes.md"), url("data.json")]
+        await open("")
+        browser.selection = Set(chosen)
+        let tagsItem = browser.details?.contextMenu(onItems: true).items.first { $0.title == String(localized: "Tags") }
+        let redItem = tagsItem?.submenu?.items.first { $0.title == red }
+        check("right-click › Tags offers the seven color tags", (tagsItem?.submenu?.items.count ?? 0) >= 7 && redItem != nil)
+        if let redItem, let action = redItem.action { NSApp.sendAction(action, to: redItem.target, from: redItem) }
+        await pause(0.3)
+        await browser.waitUntilLoaded()
+        check("…and Red tags every selected item", chosen.allSatisfy { Tags.of($0).contains(red) }, "\(chosen.map(Tags.of))")
+        let hadColumn = browser.columns.contains(.tags)
+        if !hadColumn { browser.toggleColumn(.tags) }
+        await pause(0.5)
+        let column = browser.details?.table?.column(withIdentifier: ListColumn.tags.identifier) ?? -1
+        let row = browser.details?.rowOf[url("notes.md")] ?? -1
+        let cell = (browser.details?.table?.view(atColumn: column, row: row, makeIfNecessary: true) as? NSTableCellView)?.textField?.stringValue
+        check("the Tags column shows it", cell?.contains(red) == true, cell ?? "no cell")
+        if !hadColumn { browser.toggleColumn(.tags) }
+
+        browser.go(to: ColorTag.red.place.url)
+        await browser.waitUntilLoaded()
+        await pause(0.2)
+        check("sidebar › Red lists every item with the tag", Set(browser.items.map(\.url)) == Set(chosen) && browser.title == red,
+              "\(browser.items.map(\.name)) \(browser.title)")
+        let emptyMenu = browser.details?.contextMenu(onItems: false).items.map(\.title) ?? []
+        check("…with nothing to make or paste there", !MenuState.shared.isReady && !browser.canGoUp
+              && !emptyMenu.contains(String(localized: "New Folder")), "\(emptyMenu)")
+        browser.goBack()
+        await browser.waitUntilLoaded()
+        browser.selection = Set(chosen)
+        browser.toggleTag(red)
+        await browser.waitUntilLoaded()
+        check("choosing Red again takes it off", chosen.allSatisfy { !Tags.of($0).contains(red) })
     }
 
     // S-026: Properties.

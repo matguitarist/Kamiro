@@ -29,3 +29,4 @@
 | New Folder | Make "untitled folder" here (⇧⌘N) | Create folder | Nouveau dossier |
 | New File | Make a file from a template here | Create file, new document | Nouveau fichier |
 | Transfers | The toolbar popover with copies and moves under way | Jobs, queue, activity | Transferts |
+| Tag | A Finder tag on an item, with a color for the seven standard ones | Label, color label | Tag |

@@ -338,7 +338,17 @@ Built: File › Properties (⌘I), ⌥↩ like Alt+Enter, and Properties at the 
 As the user, I add Finder tags from the right-click menu and see them in a Tags column and the sidebar's Tags section.
 Screens: tags
 Depends: S-021
-Status: todo
+UX:
+- Flow: right-click › Tags › Red → the tag goes on every selected item (or comes off when they all have it) → the Tags column shows it; sidebar › Tags › Red → every item with that tag, from any folder → Back returns
+- Surface: a submenu of the right-click menu; a sidebar section; the tag's items show in the window like a folder (a place that isn't a folder)
+- States: a tag nothing has: "Nothing Is Tagged “Red”"; the menu checks a tag all selected items have, and shows a dash when only some have it; in a tag's items New Folder, New File and Paste are left out and columns show as details
+- Words: "Tags" / « Tags », Red, Orange, Yellow, Green, Blue, Purple, Gray / Rouge, Orange, Jaune, Vert, Bleu, Violet, Gris (the Finder's names); address bar "Tags › Red"
+- Access: each tag's color dot carries its name for VoiceOver; the tag names are words, never color alone
+Acceptance:
+- [unit] Tagging adds or removes one tag and keeps the others; a tag place survives as a URL; the Spotlight query escapes the name.
+- [self] Right-click › Tags › Red tags every selected item and the Tags column shows it; sidebar › Red lists them, with nothing to make or paste there; choosing Red again takes it off.
+Status: done
+Built: Right-click › Tags lists the seven color tags (named in the Mac's language, as the Finder names them) and the selection's other tags, checked or dashed by how many selected items have them; choosing one tags every selected item, or untags them when they all have it. The sidebar has a Tags section; a tag opens a place that isn't a folder (a kamiro: URL, so Back, views and sorting work) listing every item with that tag from Spotlight, or by walking the test tree in test runs since Spotlight doesn't index /tmp. There, New Folder, New File, Paste and drops are left out and the column view shows as details. The address bar reads "Tags › Red". The Tags column came with S-021.
 
 ### S-028 Filter this folder
 As the user, I type in the toolbar search to filter the current folder by name as I type.

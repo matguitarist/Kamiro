@@ -21,6 +21,7 @@ enum Snapshot {
         case columnsMenu = "columns-menu"
         case grouped, hidden, inspector
         case properties, propertiesFolder = "properties-folder"
+        case tags
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
@@ -77,6 +78,14 @@ enum Snapshot {
                 await browser.waitUntilLoaded()
                 browser.showProperties()
                 try? await Task.sleep(for: .seconds(1.5))
+            case .tags:
+                let red = ColorTag.red.name
+                try? Tags.set(red, present: true, on: ["Owl.jpg", "Lotus.png", "notes.md"].map { seed.appending(path: $0) })
+                try? Tags.set(ColorTag.blue.name, present: true, on: [seed.appending(path: "notes.md")])
+                browser.go(to: ColorTag.red.place.url)
+                await browser.waitUntilLoaded()
+                if !browser.columns.contains(.tags) { browser.toggleColumn(.tags) }
+                try? await Task.sleep(for: .seconds(0.5))
             case .inspector:
                 Prefs.defaults.set(true, forKey: Prefs.showInspector)
                 try? await Task.sleep(for: .seconds(1))
@@ -126,6 +135,14 @@ enum Snapshot {
             case .grouped: browser.groupBy = .none
             case .hidden: HiddenFiles.set(false)
             case .inspector: Prefs.defaults.set(false, forKey: Prefs.showInspector)
+            case .tags:
+                let seed = Store.seedFolder
+                for name in ["Owl.jpg", "Lotus.png", "notes.md"] {
+                    try? Tags.set(ColorTag.red.name, present: false, on: [seed.appending(path: name)])
+                }
+                try? Tags.set(ColorTag.blue.name, present: false, on: [seed.appending(path: "notes.md")])
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
             case .properties, .propertiesFolder:
                 NSApp.windows.filter { $0.identifier?.rawValue.contains(KamiroApp.propertiesID) == true }.forEach { $0.close() }
             default: return

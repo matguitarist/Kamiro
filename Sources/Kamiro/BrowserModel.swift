@@ -121,9 +121,9 @@ final class BrowserModel {
     }
 
     var folder: URL { history.current }
-    var title: String { FileManager.default.displayName(atPath: folder.path) }
+    var title: String { Self.name(of: folder) }
     var selectedItems: [FileItem] { items.filter { selection.contains($0.url) } }
-    var canGoUp: Bool { Location(folder).parent != nil }
+    var canGoUp: Bool { folder.isFileURL && Location(folder).parent != nil }
     var isFailed: Bool { if case .failed = state { true } else { false } }
     var counts: StatusCounts { StatusCounts(items: items, selection: selection, available: available, sizes: folderSizes) }
     /// Folder sizes are being measured.
@@ -227,7 +227,7 @@ final class BrowserModel {
 
     /// Up to the enclosing folder, with the folder we came from selected.
     func goUp() {
-        guard let parent = Location(folder).parent else { return }
+        guard folder.isFileURL, let parent = Location(folder).parent else { return }
         go(to: parent.url, select: [folder])
     }
 
@@ -261,7 +261,7 @@ final class BrowserModel {
     // MARK: The address bar
 
     func beginEditingPath() {
-        pathText = PathInput.display(folder)
+        pathText = folder.isFileURL ? PathInput.display(folder) : ""
         pathError = nil
         isEditingPath = true
     }
@@ -313,7 +313,11 @@ final class BrowserModel {
         // The read starts at once, off the main thread, instead of waiting behind the redraw
         // that clearing the list causes (about 50 ms on 10,000 files).
         let hidden = HiddenFiles.shown
-        let reading = Task.detached(priority: .userInitiated) { await Self.read(folder, order: order, showHidden: hidden) }
+        // Test runs look for tags in the test tree, which Spotlight doesn't index.
+        let tagRoot = Store.isOverridden ? Store.seedFolder : nil
+        let reading = Task.detached(priority: .userInitiated) {
+            await Self.read(folder, order: order, showHidden: hidden, tagRoot: tagRoot)
+        }
         loadTask = Task {
             let spinner = Task {
                 try? await Task.sleep(for: .milliseconds(500))
@@ -347,7 +351,11 @@ final class BrowserModel {
     }
 
     @concurrent
-    nonisolated private static func read(_ folder: URL, order: ItemOrder, showHidden: Bool) async -> Result<([FileItem], Int64?), FolderError> {
+    nonisolated private static func read(_ folder: URL, order: ItemOrder, showHidden: Bool,
+                                         tagRoot: URL?) async -> Result<([FileItem], Int64?), FolderError> {
+        if let place = VirtualPlace(folder) {
+            return .success((order.sorted(place.items(showHidden: showHidden, root: tagRoot)), nil))
+        }
         do {
             let list = try FolderReader.list(folder, showHidden: showHidden)
             return .success((order.sorted(list), Volumes.availableSpace(at: folder)))
@@ -387,6 +395,7 @@ final class BrowserModel {
     }
 
     private func watch(_ folder: URL) {
+        guard folder.isFileURL else { watcher = nil; return }
         watcher = FolderWatcher(folder: folder) { [weak self] in
             Task { @MainActor in self?.refresh() }
         }

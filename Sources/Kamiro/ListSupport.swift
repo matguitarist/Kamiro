@@ -236,15 +236,21 @@ extension BrowserModel {
             menu.addItem(.separator())
             add(String(localized: "Cut")) { [weak self] in self?.cutSelection() }
             add(String(localized: "Copy")) { [weak self] in self?.copySelection() }
+            menu.addItem(.separator())
+            menu.addItem(tagsMenu())
         }
         if canPaste { add(String(localized: "Paste")) { [weak self] in self?.paste() } }
-        if menu.items.last.map({ !$0.isSeparatorItem }) ?? false { menu.addItem(.separator()) }
-        add(String(localized: "New Folder")) { [weak self] in self?.newFolder() }
-        let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
-        newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
-        menu.addItem(newFile)
-        menu.addItem(.separator())
-        add(String(localized: "Properties")) { [weak self] in self?.showProperties() }
+        if !isVirtual {
+            if menu.items.last.map({ !$0.isSeparatorItem }) ?? false { menu.addItem(.separator()) }
+            add(String(localized: "New Folder")) { [weak self] in self?.newFolder() }
+            let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
+            newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
+            menu.addItem(newFile)
+        }
+        if onItems || !isVirtual {
+            menu.addItem(.separator())
+            add(String(localized: "Properties")) { [weak self] in self?.showProperties() }
+        }
         return menu
     }
 

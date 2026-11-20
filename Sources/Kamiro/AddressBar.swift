@@ -10,7 +10,7 @@ struct AddressBar: View {
 
     var body: some View {
         Group {
-            if model.isEditingPath { field } else { crumbs }
+            if model.isEditingPath { field } else if let place = model.place { placeCrumbs(place) } else { crumbs }
         }
         .frame(minWidth: 200, idealWidth: 480, maxWidth: 520)
     }
@@ -70,6 +70,21 @@ struct AddressBar: View {
         .onTapGesture { model.beginEditingPath() }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "Path: \(Location(model.folder).crumbs.map { FileManager.default.displayName(atPath: $0.path) }.joined(separator: ", "))"))
+    }
+
+    /// A tag's items: "Tags › Red", nothing to click.
+    private func placeCrumbs(_ place: VirtualPlace) -> some View {
+        HStack(spacing: Space.xs) {
+            Image(systemName: "tag").foregroundStyle(.secondary)
+            Text("Tags").foregroundStyle(.secondary)
+            Image(systemName: "chevron.compact.right").foregroundStyle(.tertiary)
+            Text(verbatim: place.title).fontWeight(.semibold)
+            Spacer(minLength: Space.lg)
+        }
+        .padding(.horizontal, Space.md)
+        .contentShape(Rectangle())
+        .onTapGesture { model.beginEditingPath() }
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: Field

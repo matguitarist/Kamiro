@@ -30,7 +30,8 @@ final class MenuState: ObservableObject {
         canGoForward = browser.history.canGoForward
         canGoUp = browser.canGoUp
         hasSelection = !browser.selection.isEmpty
-        isReady = browser.state == .ready
+        // A tag's items aren't a folder: nothing can be made or pasted there.
+        isReady = browser.state == .ready && !browser.isVirtual
         mode = browser.mode
         groupBy = browser.groupBy
         showsHidden = HiddenFiles.shown
@@ -56,7 +57,7 @@ struct KamiroCommands: Commands {
                 .disabled(!menu.hasSelection)
             Button("Properties") { menu.browser?.showProperties() }
                 .keyboardShortcut("i")
-                .disabled(!menu.isReady)
+                .disabled(!(menu.isReady || menu.hasSelection))
             Divider()
             Button("New Folder") { menu.browser?.newFolder() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])

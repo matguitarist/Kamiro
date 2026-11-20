@@ -6,7 +6,9 @@ extension URL {
     /// One spelling per file: standardized, no trailing slash, so a folder from a listing,
     /// a typed path, and a crumb compare equal.
     public var canonical: URL {
-        URL(filePath: standardizedFileURL.path, directoryHint: .notDirectory)
+        // Places that aren't folders (kamiro:tag?name=Red) stay as they are.
+        guard isFileURL else { return self }
+        return URL(filePath: standardizedFileURL.path, directoryHint: .notDirectory)
     }
 }
 
