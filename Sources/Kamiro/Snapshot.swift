@@ -19,7 +19,7 @@ enum Snapshot {
         case deleteConfirm = "delete-confirm"
         case icons, columns
         case columnsMenu = "columns-menu"
-        case grouped
+        case grouped, hidden
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -62,6 +62,13 @@ enum Snapshot {
                    case .header(let header) = last {
                     browser.toggleGroup(header.id)
                 }
+            case .hidden:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                HiddenFiles.set(true)
+                try? await Task.sleep(for: .seconds(0.3))
+                await browser.waitUntilLoaded()
+                browser.go(to: seed, select: [seed.appending(path: ".hidden-notes")])
             }
             await browser.waitUntilLoaded()
             if self != .addressEdit { browser.focusList() }
@@ -92,6 +99,7 @@ enum Snapshot {
                 browser.toggleColumn(.created)
                 browser.toggleColumn(.ext)
             case .grouped: browser.groupBy = .none
+            case .hidden: HiddenFiles.set(false)
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))

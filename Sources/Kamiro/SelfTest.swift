@@ -38,7 +38,9 @@ enum SelfTest {
             // S-001, S-002: the sample tree, Finder's order, folders first.
             browser.go(to: seed)
             await browser.waitUntilLoaded()
-            let onDisk = (try? FileManager.default.contentsOfDirectory(atPath: seed.path).filter { !$0.hasPrefix(".") }) ?? []
+            // Hidden items (dotfiles and the hidden flag) show only with View › Show Hidden Files (S-024).
+            let onDisk = ((try? FileManager.default.contentsOfDirectory(at: seed, includingPropertiesForKeys: [.isHiddenKey])) ?? [])
+                .filter { (try? $0.resourceValues(forKeys: [.isHiddenKey]).isHidden) != true }
             check("the window lists every visible item", browser.items.count == onDisk.count, "\(browser.items.count) vs \(onDisk.count)")
             let names = browser.items.map(\.name)
             let firstFile = browser.items.firstIndex { !$0.isFolder } ?? 0

@@ -297,7 +297,8 @@ Screens: hidden
 Depends: S-002
 Acceptance:
 - [self] Dotfiles and hidden-flag items appear at half opacity; the choice is global.
-Status: todo
+Status: done
+Built: View › Show Hidden Files (⇧⌘.), and Hide Hidden Files to turn it off. One choice for every window, kept between launches; open windows (columns too) read their folders again. Dotfiles and items with the hidden flag show at half opacity in every view.
 
 ## M4 Know your files (0.4.0)
 

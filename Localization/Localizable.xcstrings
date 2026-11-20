@@ -901,6 +901,16 @@
         }
       }
     },
+    "Hide Hidden Files": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer les fichiers masqués"
+          }
+        }
+      }
+    },
     "Hide Status Bar": {
       "localizations": {
         "fr": {
@@ -1567,6 +1577,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher le groupe"
+          }
+        }
+      }
+    },
+    "Show Hidden Files": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les fichiers masqués"
           }
         }
       }

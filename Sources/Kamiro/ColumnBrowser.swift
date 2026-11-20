@@ -88,10 +88,29 @@ final class ColumnCoordinator: NSObject, NSBrowserDelegate {
     private(set) var renaming: URL?
     private var applying = false
 
-    init(model: BrowserModel) { self.model = model }
+    nonisolated(unsafe) private var hiddenWatch: (any NSObjectProtocol)?
+
+    init(model: BrowserModel) {
+        self.model = model
+        super.init()
+        // Hidden files shown or hidden (S-024): every column is read again.
+        hiddenWatch = NotificationCenter.default.addObserver(forName: HiddenFiles.changed, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.readAgain() }
+        }
+    }
+
+    deinit {
+        if let hiddenWatch { NotificationCenter.default.removeObserver(hiddenWatch) }
+    }
 
     func start() {
         setRoot(model.folder)
+    }
+
+    private func readAgain() {
+        guard let root else { return }
+        setRoot(root.url)
+        show(model.folder, selecting: model.selection)
     }
 
     private func setRoot(_ url: URL) {

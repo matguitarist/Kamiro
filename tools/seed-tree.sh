@@ -19,6 +19,8 @@ print '{"name": "Kamiro", "version": 1}' > data.json
 print "item,price\napples,3\npears,4" > budget.csv
 print "Kamiro sample" > "A file with a very long name that does not fit in the name column at all.txt"
 print "secret" > .hidden-notes
+print "flagged" > "Flagged Hidden.txt"
+chflags hidden "Flagged Hidden.txt"
 print "<plist version=\"1.0\"><dict/></plist>" > Sample.app/Contents/Info.plist
 print "readme" > Projects/Kamiro/README.md
 print "# Notes\n\nAn older copy." > Projects/notes.md

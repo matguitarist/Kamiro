@@ -13,6 +13,8 @@ final class MenuState: ObservableObject {
     @Published private(set) var isReady = false
     @Published private(set) var mode: ViewMode = .details
     @Published private(set) var groupBy: GroupBy = .none
+    /// View › Show or Hide Hidden Files; set by HiddenFiles.
+    @Published var showsHidden = HiddenFiles.shown
     /// The key window's list has the keyboard: Delete shortcuts go to it, not to a text field.
     @Published var listFocused = false
     private(set) weak var browser: BrowserModel?
@@ -31,6 +33,7 @@ final class MenuState: ObservableObject {
         isReady = browser.state == .ready
         mode = browser.mode
         groupBy = browser.groupBy
+        showsHidden = HiddenFiles.shown
     }
 }
 
@@ -89,6 +92,9 @@ struct KamiroCommands: Commands {
             .disabled(menu.mode != .details)
             Button("Use as Defaults") { menu.browser?.useAsDefaults() }
                 .help("Show folders you haven't changed like this one")
+            Divider()
+            Button(menu.showsHidden ? "Hide Hidden Files" : "Show Hidden Files") { HiddenFiles.toggle() }
+            .keyboardShortcut(".", modifiers: [.command, .shift])
             Divider()
         }
         CommandGroup(after: .toolbar) {

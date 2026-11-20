@@ -63,6 +63,41 @@ extension SelfTest {
         await chosenColumns(browser: browser, seed: seed, pause: pause, open: open)
         await groups(browser: browser, seed: seed, pause: pause, open: open)
         await folderSizes(browser: browser, seed: seed, pause: pause, open: open)
+        await hiddenFiles(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-024: hidden files.
+    private static func hiddenFiles(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        func url(_ path: String) -> URL { seed.appending(path: path).canonical }
+        HiddenFiles.set(false)
+        await open("")
+        check("hidden items stay out of the list by default",
+              !browser.items.contains { $0.name == ".hidden-notes" || $0.name == "Flagged Hidden.txt" })
+        HiddenFiles.toggle()
+        await pause(0.2)
+        await browser.waitUntilLoaded()
+        await pause(0.3)
+        func dimmed(_ path: String) -> Bool {
+            guard let table = browser.details?.table, let row = browser.details?.rowOf[url(path)] else { return false }
+            return table.view(atColumn: 0, row: row, makeIfNecessary: true)?.alphaValue == 0.5
+        }
+        check("⇧⌘. shows dotfiles and flagged hidden items at half opacity",
+              dimmed(".hidden-notes") && dimmed("Flagged Hidden.txt") && !dimmed("notes.md"))
+        let other = BrowserModel(start: seed, log: Store.log)
+        other.startIfNeeded()
+        await other.waitUntilLoaded()
+        check("the choice is the same in every window", other.items.contains { $0.name == ".hidden-notes" })
+        // SwiftUI fills a menu when it opens.
+        let menus = NSApp.mainMenu?.items.compactMap(\.submenu) ?? []
+        menus.forEach { $0.delegate?.menuNeedsUpdate?($0) }
+        await pause(0.2)
+        let hiddenItems = menus.flatMap(\.items).filter { $0.keyEquivalent == "." }.map(\.title)
+        check("the View menu offers to hide them again",
+              hiddenItems.contains(String(localized: "Hide Hidden Files")) && MenuState.shared.showsHidden, "\(hiddenItems)")
+        HiddenFiles.toggle()
+        await pause(0.2)
+        await browser.waitUntilLoaded()
+        check("⇧⌘. again hides them", !browser.items.contains { $0.name == ".hidden-notes" })
     }
 
     // S-023: folder sizes.

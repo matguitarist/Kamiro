@@ -98,6 +98,7 @@ final class BrowserModel {
     @ObservationIgnored private var loadTask: Task<Void, Never>?
     @ObservationIgnored private var remembered: [URL: Set<URL>] = [:]
     @ObservationIgnored private var started = false
+    @ObservationIgnored nonisolated(unsafe) private var hiddenWatch: (any NSObjectProtocol)?
     /// Opens a folder in a new window (set by the window's view).
     @ObservationIgnored var openWindow: ((URL) -> Void)?
     /// Shows or hides Quick Look (set by the table).
@@ -107,6 +108,13 @@ final class BrowserModel {
     init(start: URL, log: LogStore) {
         history = History(start)
         self.log = log
+        hiddenWatch = NotificationCenter.default.addObserver(forName: HiddenFiles.changed, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+    }
+
+    deinit {
+        if let hiddenWatch { NotificationCenter.default.removeObserver(hiddenWatch) }
     }
 
     var folder: URL { history.current }
@@ -301,7 +309,8 @@ final class BrowserModel {
         }
         // The read starts at once, off the main thread, instead of waiting behind the redraw
         // that clearing the list causes (about 50 ms on 10,000 files).
-        let reading = Task.detached(priority: .userInitiated) { await Self.read(folder, order: order) }
+        let hidden = HiddenFiles.shown
+        let reading = Task.detached(priority: .userInitiated) { await Self.read(folder, order: order, showHidden: hidden) }
         loadTask = Task {
             let spinner = Task {
                 try? await Task.sleep(for: .milliseconds(500))
@@ -335,9 +344,9 @@ final class BrowserModel {
     }
 
     @concurrent
-    nonisolated private static func read(_ folder: URL, order: ItemOrder) async -> Result<([FileItem], Int64?), FolderError> {
+    nonisolated private static func read(_ folder: URL, order: ItemOrder, showHidden: Bool) async -> Result<([FileItem], Int64?), FolderError> {
         do {
-            let list = try FolderReader.list(folder)
+            let list = try FolderReader.list(folder, showHidden: showHidden)
             return .success((order.sorted(list), Volumes.availableSpace(at: folder)))
         } catch {
             return .failure(error)
