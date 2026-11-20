@@ -2771,16 +2771,6 @@
         }
       }
     },
-    "Open in Terminal": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir dans Terminal"
-          }
-        }
-      }
-    },
     "Other…": {
       "localizations": {
         "fr": {
@@ -2901,22 +2891,42 @@
         }
       }
     },
-    "Open in Terminal uses": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrir dans Terminal utilise"
-          }
-        }
-      }
-    },
     "Terminal": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Terminal"
+          }
+        }
+      }
+    },
+    "Open in %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir dans %@"
+          }
+        }
+      }
+    },
+    "Open %@ Here": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir %@ ici"
+          }
+        }
+      }
+    },
+    "Open folders in": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les dossiers dans"
           }
         }
       }

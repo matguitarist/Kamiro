@@ -18,7 +18,7 @@ extension SelfTest {
               [t("Open"), t("Open With"), t("Cut"), t("Copy"), t("Copy Path"), t("Duplicate"), t("Rename"), t("Move to Trash"),
                t("Tags"), t("Properties")].allSatisfy(file.contains), "\(file)")
         check("…and leaves out what's only for folders or empty space",
-              ![t("Open in New Tab"), t("Pin to Sidebar"), t("Open in Terminal"), t("New Folder"), t("New File")].contains(where: file.contains),
+              ![t("Open in New Tab"), t("Pin to Sidebar"), t("Open in \("Terminal")"), t("New Folder"), t("New File")].contains(where: file.contains),
               "\(file)")
         let openWith = fileMenu.items.first { $0.title == t("Open With") }?.submenu
         let main = ItemActions.apps(for: [url("Guide.pdf")]).default.map(ItemActions.appName) ?? "none"
@@ -30,7 +30,7 @@ extension SelfTest {
         browser.selection = [url("Projects")]
         let folder = titles(browser.contextMenu(onItems: true))
         check("a folder's menu has Open in New Tab, Open in Terminal and Pin to Sidebar, without Open With",
-              [t("Open in New Tab"), t("Open in Terminal")].allSatisfy(folder.contains) && !folder.contains(t("Open With")), "\(folder)")
+              [t("Open in New Tab"), t("Open in \("Terminal")")].allSatisfy(folder.contains) && !folder.contains(t("Open With")), "\(folder)")
 
         // Several items.
         browser.selection = [url("Guide.pdf"), url("Projects")]
@@ -41,9 +41,21 @@ extension SelfTest {
         browser.selection = []
         let empty = browser.contextMenu(onItems: false)
         let space = titles(empty)
-        check("empty space has New Folder, New File, Open in Terminal, Copy Path and Properties, and nothing for items",
-              [t("New Folder"), t("New File"), t("Open in Terminal"), t("Copy Path"), t("Properties")].allSatisfy(space.contains)
+        check("empty space has New Folder, New File, Open Terminal Here, Copy Path and Properties, and nothing for items",
+              [t("New Folder"), t("New File"), t("Open \("Terminal") Here"), t("Copy Path"), t("Properties")].allSatisfy(space.contains)
               && ![t("Open"), t("Cut"), t("Rename"), t("Move to Trash")].contains(where: space.contains), "\(space)")
+        // Another terminal chosen in Settings names itself in the menu.
+        if let other = ItemActions.installedTerminals.last(where: { $0 != .apple }) {
+            Prefs.defaults.set(other.bundleID, forKey: Prefs.terminal)
+            let spaceOther = titles(browser.contextMenu(onItems: false))
+            browser.selection = [url("Projects")]
+            let folderOther = titles(browser.contextMenu(onItems: true))
+            browser.selection = []
+            Prefs.defaults.removeObject(forKey: Prefs.terminal)
+            check("with \(other.name) chosen, the menus say Open \(other.name) Here and Open in \(other.name)",
+                  spaceOther.contains(t("Open \(other.name) Here")) && folderOther.contains(t("Open in \(other.name)")),
+                  "\(spaceOther) \(folderOther)")
+        }
         FileClipboard.shared.put([url("Guide.pdf")], cut: false)
         check("…and Paste once something is copied", titles(browser.contextMenu(onItems: false)).first == t("Paste"))
 

@@ -206,7 +206,7 @@ struct PinMenu: View {
     var body: some View {
         Button("Open", systemImage: "arrow.up.forward.app") { model.go(to: url) }
         Button("Open in New Tab", systemImage: "plus.square.on.square") { model.openWindow?(url, true) }
-        Button("Open in Terminal", systemImage: "terminal") { ItemActions.openInTerminal(url) }
+        Button(ItemActions.openInTerminalTitle, systemImage: "terminal") { ItemActions.openInTerminal(url) }
         Divider()
         Button("Copy Path", systemImage: "link") { ItemActions.copyPaths([url]) }
         Button("Properties", systemImage: "info.circle") { model.openProperties?(url) }

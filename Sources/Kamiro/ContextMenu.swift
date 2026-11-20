@@ -52,7 +52,7 @@ extension BrowserModel {
             group()
             if folders.count == 1, files.isEmpty {
                 let folder = folders[0].url
-                add(String(localized: "Open in Terminal"), "terminal") { ItemActions.openInTerminal(folder) }
+                add(ItemActions.openInTerminalTitle, "terminal") { ItemActions.openInTerminal(folder) }
             }
             // A disk listed in /Volumes ejects from here too.
             if chosen.count == 1, let volume = Volumes.volume(at: chosen[0].url), volume.actions.contains(.eject) {
@@ -68,7 +68,7 @@ extension BrowserModel {
             menu.addItem(newFile)
             group()
             let here = folder
-            add(String(localized: "Open in Terminal"), "terminal") { ItemActions.openInTerminal(here) }
+            add(ItemActions.openTerminalHereTitle, "terminal") { ItemActions.openInTerminal(here) }
             add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths([here]) }
         }
         if (onItems && !chosen.isEmpty) || (!isVirtual && state == .ready) {
@@ -112,6 +112,12 @@ enum ItemActions {
     static var terminal: TerminalApp {
         TerminalApp.chosen(Prefs.defaults.string(forKey: Prefs.terminal), installed: installedTerminals)
     }
+
+    /// "Open in Ghostty", for a folder that's chosen (an item, a pin, a disk).
+    static var openInTerminalTitle: String { String(localized: "Open in \(terminal.name)") }
+
+    /// "Open Ghostty Here", for the folder on screen (right-click on empty space).
+    static var openTerminalHereTitle: String { String(localized: "Open \(terminal.name) Here") }
 
     /// Opens a window of the chosen terminal in `folder`.
     static func openInTerminal(_ folder: URL) {
@@ -234,15 +240,15 @@ enum ItemActions {
 // MARK: - SwiftUI menus for the Home page and the sidebar
 
 extension VolumeAction {
-    var title: LocalizedStringKey {
+    var title: String {
         switch self {
-        case .open: "Open"
-        case .openInNewTab: "Open in New Tab"
-        case .openInTerminal: "Open in Terminal"
-        case .rename: "Rename…"
-        case .copyPath: "Copy Path"
-        case .properties: "Properties"
-        case .eject: "Eject"
+        case .open: String(localized: "Open")
+        case .openInNewTab: String(localized: "Open in New Tab")
+        case .openInTerminal: ItemActions.openInTerminalTitle
+        case .rename: String(localized: "Rename…")
+        case .copyPath: String(localized: "Copy Path")
+        case .properties: String(localized: "Properties")
+        case .eject: String(localized: "Eject")
         }
     }
 

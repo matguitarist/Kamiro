@@ -74,7 +74,7 @@ struct GeneralSettings: View {
         }
         Section("Terminal") {
             // A terminal removed since it was chosen shows as Terminal, the one now used.
-            Picker("Open in Terminal uses", selection: Binding(
+            Picker("Open folders in", selection: Binding(
                 get: { TerminalApp.chosen(terminal, installed: terminals).bundleID },
                 set: { terminal = $0 })) {
                 ForEach(terminals) { app in

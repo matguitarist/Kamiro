@@ -507,7 +507,7 @@ As the user, I pick which terminal Open in Terminal uses (Terminal, Ghostty, iTe
 Acceptance:
 - [unit] Apple's Terminal is always offered; a chosen terminal that was removed falls back to it; terminals that take a folder on their command line get it there.
 Status: done
-Built: Settings › General › Terminal, a picker with each installed terminal's icon. Terminal, Ghostty, iTerm, Warp and Hyper open the folder like a document; kitty, Alacritty and WezTerm start a new instance with the folder as an argument. The menu item keeps its name, "Open in Terminal".
+Built: Settings › General › Terminal, a picker with each installed terminal's icon. Terminal, Ghostty, iTerm, Warp and Hyper open the folder like a document; kitty, Alacritty and WezTerm start a new instance with the folder as an argument. The menus name the chosen app: "Open in Ghostty" on a folder, pin or disk, "Open Ghostty Here" on empty space.
 
 ## Later
 - Dual pane (side-by-side folders in one tab), with F5 copy / F6 move to the other pane.
