@@ -49,6 +49,7 @@ extension BrowserModel {
             if !extractTargets.isEmpty {
                 add(String(localized: "Extract Here"), "arrow.up.bin") { [weak self] in self?.extractSelection() }
             }
+            if let convert = convertMenuItem() { menu.addItem(convert) }
             group()
             if chosen.count == 1 { add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() } }
             add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }

@@ -80,7 +80,7 @@ public enum Archive {
     }
 
     /// A private folder on the same disk as `folder`, so the last step is a rename.
-    private static func stagingFolder(near folder: URL) throws -> URL {
+    static func stagingFolder(near folder: URL) throws -> URL {
         if let url = try? FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask,
                                                   appropriateFor: folder, create: true) {
             return url

@@ -460,7 +460,8 @@ Depends: S-033, S-012
 Acceptance:
 - [unit] Each image format round-trips with ImageIO; a video converts with AVFoundation; nothing leaves the Mac.
 - [unit] Converted files never overwrite: "photo.png" becomes "photo.jpg", or "photo 2.jpg" if taken.
-Status: todo
+Status: done
+Built: Right-click › Convert lists what fits the whole selection. Pictures: JPEG, PNG, HEIC, TIFF, GIF and Icon (ICNS), leaving out the format they're already in (WebP is read but only offered where ImageIO can write it, which macOS 26 can't), and Smaller for Email (1600 pixels, JPEG). Videos: MP4 Video, Animated GIF (the first 30 seconds, 10 frames a second, 480 pixels) and Audio Only (M4A). PDFs, alone or with pictures: Smaller for Email (images as JPEG, optimized for screen). Each file is a job in the transfers popover with Stop, made in a staging folder so a stopped one leaves nothing, lands next to the original as “photo.jpg” (“photo 2.jpg” when taken) or “Guide (smaller).pdf”, gets selected, and Undo takes it away. ImageIO, AVFoundation and PDFKit only: nothing leaves the Mac.
 
 ### S-046 Copy To and Move To
 As the user, I copy or move the selection to a folder chosen from my pinned and recent folders, or Other….

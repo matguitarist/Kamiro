@@ -3280,6 +3280,87 @@
           }
         }
       }
+    },
+    "Convert": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convertir"
+          }
+        }
+      }
+    },
+    "Icon (ICNS)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icône (ICNS)"
+          }
+        }
+      }
+    },
+    "MP4 Video": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidéo MP4"
+          }
+        }
+      }
+    },
+    "Animated GIF": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF animé"
+          }
+        }
+      }
+    },
+    "Audio Only (M4A)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio seulement (M4A)"
+          }
+        }
+      }
+    },
+    "Smaller for Email": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus léger pour le courriel"
+          }
+        }
+      }
+    },
+    "smaller": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "allégé"
+          }
+        }
+      },
+      "comment": "Ends the name of a file made smaller for email: “photo (smaller).jpg”"
+    },
+    "Converting “%@” to %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conversion de « %1$@ » en %2$@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

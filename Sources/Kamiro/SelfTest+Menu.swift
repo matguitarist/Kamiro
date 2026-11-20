@@ -157,6 +157,31 @@ extension SelfTest {
         try? FileManager.default.removeItem(at: url("\(archive).zip"))
         await browser.waitUntilLoaded()
 
+        // S-045: Convert, next to the original, as a transfer that can be undone.
+        browser.selection = [url("Lotus.png")]
+        let convert = browser.contextMenu(onItems: true).items.first { $0.title == t("Convert") }?.submenu
+        let formats = convert?.items.map(\.title) ?? []
+        check("a picture's Convert submenu has JPEG and Smaller for Email, not PNG",
+              formats.contains("JPEG") && formats.contains(t("Smaller for Email")) && !formats.contains("PNG"), "\(formats)")
+        browser.convertSelection(to: .jpeg)
+        await TransferCenter.shared.waitUntilIdle()
+        for _ in 0..<30 where browser.selection != [url("Lotus.jpg")] { try? await Task.sleep(for: .milliseconds(100)) }
+        check("Convert › JPEG makes “Lotus.jpg” beside it, selected", exists("Lotus.jpg") && browser.selection == [url("Lotus.jpg")],
+              "\(browser.selection.map(\.lastPathComponent))")
+        FileUndo.manager.undo()
+        check("Undo takes the converted file away", !exists("Lotus.jpg") && exists("Lotus.png"))
+        browser.selection = [url("Guide.pdf")]
+        check("a PDF offers only Smaller for Email",
+              browser.contextMenu(onItems: true).items.first { $0.title == t("Convert") }?.submenu?.items.map(\.title) == [t("Smaller for Email")])
+        browser.convertSelection(to: .smaller)
+        await TransferCenter.shared.waitUntilIdle()
+        let smaller = "Guide (\(t("smaller"))).pdf"
+        check("Smaller for Email makes “\(smaller)”", exists(smaller))
+        try? FileManager.default.removeItem(at: url(smaller))
+        browser.selection = [url("notes.md")]
+        check("a text file has no Convert", !titles(browser.contextMenu(onItems: true)).contains(t("Convert")))
+        await browser.waitUntilLoaded()
+
         // S-037: Go › Connect to Server… (⌘K) opens its sheet on this window.
         let connect = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Connect to Server…") }
         check("Go › Connect to Server… is ⌘K", connect?.keyEquivalent == "k" && connect?.keyEquivalentModifierMask == .command)
