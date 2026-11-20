@@ -14,6 +14,7 @@ struct DetailsTable: NSViewRepresentable {
     let cutVersion: Int
     let renameToken: Int
     let groupVersion: Int
+    let sizesVersion: Int
 
     func makeCoordinator() -> DetailsCoordinator { DetailsCoordinator(model: model) }
 
@@ -115,6 +116,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     private(set) var rowOf: [URL: Int] = [:]
     private var version = -1
     private var groupVersion = -1
+    private var sizesVersion = -1
     private var reveal = -1
     private var focus = -1
     private var cutVersion = -1
@@ -160,12 +162,20 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             if version != model.itemsVersion { FileExtras.shared.forget() }
             version = model.itemsVersion
             groupVersion = model.groupVersion
-            rows = ListRow.make(model.items, by: model.groupBy, collapsed: model.collapsedGroups)
+            rows = ListRow.make(model.items, by: model.groupBy, collapsed: model.collapsedGroups, sizes: model.folderSizes)
             rowOf = Dictionary(rows.enumerated().compactMap { index, row in
                 if case .item(let item) = row { (item.url, index) } else { nil }
             }, uniquingKeysWith: { first, _ in first })
             table.reloadData()
             cutVersion = FileClipboard.shared.version
+            sizesVersion = model.sizesVersion
+        }
+        if sizesVersion != model.sizesVersion {
+            sizesVersion = model.sizesVersion
+            let column = table.column(withIdentifier: ListColumn.size.identifier)
+            if column >= 0 {
+                table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<rows.count), columnIndexes: [column])
+            }
         }
         if cutVersion != FileClipboard.shared.version {
             cutVersion = FileClipboard.shared.version
@@ -254,7 +264,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
               let item = item(at: row) else { return nil }
         let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: nil) as? NSTableCellView
             ?? Self.makeCell(column)
-        cell.textField?.stringValue = Self.text(column, item)
+        cell.textField?.stringValue = Self.text(column, item, sizes: model.folderSizes)
         if column == .name {
             cell.imageView?.image = IconCache.shared.icon(for: item)
             cell.toolTip = item.name
@@ -324,13 +334,19 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         return cell
     }
 
-    private static func text(_ column: ListColumn, _ item: FileItem) -> String {
+    /// A folder's size, or "—" until it's measured (S-023).
+    static func sizeText(_ item: FileItem, sizes: [URL: Int64]) -> String {
+        guard let size = item.size ?? sizes[item.url] else { return "—" }
+        return ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
+    }
+
+    private static func text(_ column: ListColumn, _ item: FileItem, sizes: [URL: Int64]) -> String {
         switch column {
         case .name: item.name
         case .modified: item.modified.map(dates.string(from:)) ?? "--"
         case .created: item.created.map(dates.string(from:)) ?? "--"
         case .added: item.added.map(dates.string(from:)) ?? "--"
-        case .size: item.size.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "--"
+        case .size: sizeText(item, sizes: sizes)
         case .kind: KindCache.shared.kind(of: item)
         case .ext: item.isFolder ? "" : item.url.pathExtension
         case .tags: FileExtras.shared.tags(of: item.url).joined(separator: ", ")
@@ -353,9 +369,9 @@ enum ListRow {
     case header(GroupHeader)
     case item(FileItem)
 
-    static func make(_ items: [FileItem], by: GroupBy, collapsed: Set<String>) -> [ListRow] {
+    static func make(_ items: [FileItem], by: GroupBy, collapsed: Set<String>, sizes: [URL: Int64]) -> [ListRow] {
         guard by != .none else { return items.map(ListRow.item) }
-        return Grouping.groups(items, by: by).flatMap { group -> [ListRow] in
+        return Grouping.groups(items, by: by, sizes: sizes).flatMap { group -> [ListRow] in
             let shut = collapsed.contains(group.key.id)
             let header = ListRow.header(GroupHeader(id: group.key.id, title: group.key.title, count: group.items.count, collapsed: shut))
             return shut ? [header] : [header] + group.items.map(ListRow.item)

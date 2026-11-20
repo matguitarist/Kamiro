@@ -288,7 +288,8 @@ Depends: S-002
 Acceptance:
 - [unit] Sizes use allocated size, count hard links once, and cancel when I leave the folder.
 - [self] Folders show "—" until computed, then the size; sorting by size works once computed.
-Status: todo
+Status: done
+Built: After a folder loads, its subfolders and packages are measured one at a time off the main thread (allocated size, hard links once, hidden files included, other apps' containers in ~/Library left out so no permission prompts), and leaving the folder cancels it. Sizes show "—" until known (and stay "—" for folders Kamiro can't read); sorting and grouping by size use them, and so does the status bar's selection size. An FSEvents watch on the whole tree re-measures a subfolder when something inside it changes.
 
 ### S-024 Show hidden files
 As the user, I toggle hidden files (⇧⌘.) and see them dimmed.

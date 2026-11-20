@@ -62,6 +62,51 @@ extension SelfTest {
         await columns(browser: browser, seed: seed, pause: pause, open: open)
         await chosenColumns(browser: browser, seed: seed, pause: pause, open: open)
         await groups(browser: browser, seed: seed, pause: pause, open: open)
+        await folderSizes(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-023: folder sizes.
+    private static func folderSizes(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        func url(_ path: String) -> URL { seed.appending(path: path).canonical }
+        func allocated(_ folder: URL) -> Int64 {
+            let files = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.totalFileAllocatedSizeKey])
+            return (files?.allObjects as? [URL] ?? []).reduce(0) {
+                $0 + Int64((try? $1.resourceValues(forKeys: [.totalFileAllocatedSizeKey]))?.totalFileAllocatedSize ?? 0)
+            }
+        }
+        let photos = FileItem(url: url("Photos"), name: "Photos", isFolder: true)
+        check("a folder shows “—” until it's measured", DetailsCoordinator.sizeText(photos, sizes: [:]) == "—")
+        await open("")
+        for _ in 0..<50 where browser.isMeasuring || browser.folderSizes[url("Photos")] == nil { await pause(0.1) }
+        let measured = browser.folderSizes[url("Photos")]
+        check("folders get their size in the background", measured == allocated(url("Photos")) && (measured ?? 0) > 100_000,
+              "\(measured ?? -1) vs \(allocated(url("Photos")))")
+        let row = browser.details?.rowOf[url("Photos")] ?? -1
+        let column = browser.details?.table?.column(withIdentifier: ListColumn.size.identifier) ?? -1
+        let shown = (browser.details?.table?.view(atColumn: column, row: row, makeIfNecessary: true) as? NSTableCellView)?.textField?.stringValue
+        check("a folder Kamiro can't open keeps its “—”", browser.folderSizes[url("Locked")] == nil && !browser.isMeasuring)
+        check("…and the Size column shows it", shown == ByteCountFormatter.string(fromByteCount: measured ?? 0, countStyle: .file), shown ?? "no cell")
+
+        browser.order = ItemOrder(key: .size, ascending: false)
+        await pause(0.6)
+        let folders = browser.items.filter(\.isFolder).map(\.name)
+        check("sorting by size puts the biggest folder first", folders.first == "Photos"
+              && folders.firstIndex(of: "Projects") ?? 0 < folders.firstIndex(of: "Empty") ?? 0, "\(folders)")
+
+        try? Data(repeating: 9, count: 2_000_000).write(to: url("Photos/Big.raw"))
+        for _ in 0..<40 where (browser.folderSizes[url("Photos")] ?? 0) < (measured ?? 0) + 2_000_000 { await pause(0.1) }
+        check("a folder's size follows changes made inside it", (browser.folderSizes[url("Photos")] ?? 0) >= (measured ?? 0) + 2_000_000,
+              "\(browser.folderSizes[url("Photos")] ?? -1)")
+        try? FileManager.default.removeItem(at: url("Photos/Big.raw"))
+        browser.order = ItemOrder()
+        await pause(0.3)
+
+        browser.go(to: url("Projects"))
+        await browser.waitUntilLoaded()
+        await pause(0.1)
+        browser.go(to: url("Empty"))
+        await browser.waitUntilLoaded()
+        check("leaving a folder stops measuring it", !browser.isMeasuring && browser.folderSizes.isEmpty)
     }
 
     // S-022: groups with headers that fold.

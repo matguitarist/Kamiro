@@ -151,7 +151,8 @@ public struct ItemOrder: Equatable, Sendable, Codable {
         self.foldersFirst = foldersFirst
     }
 
-    public func sorted(_ items: [FileItem], kinds: KindCache = .shared) -> [FileItem] {
+    /// `sizes` gives folders their sizes once measured (S-023); until then they sort as smallest.
+    public func sorted(_ items: [FileItem], sizes: [URL: Int64] = [:], kinds: KindCache = .shared) -> [FileItem] {
         let keyed = items.map { (item: $0, kind: key == .kind ? kinds.kind(of: $0) : "") }
         return keyed.sorted { a, b in
             if foldersFirst, a.item.isFolder != b.item.isFolder { return a.item.isFolder }
@@ -160,7 +161,7 @@ public struct ItemOrder: Equatable, Sendable, Codable {
             case .modified: Self.compare(a.item.modified ?? .distantPast, b.item.modified ?? .distantPast)
             case .created: Self.compare(a.item.created ?? .distantPast, b.item.created ?? .distantPast)
             case .added: Self.compare(a.item.added ?? .distantPast, b.item.added ?? .distantPast)
-            case .size: Self.compare(a.item.size ?? -1, b.item.size ?? -1)
+            case .size: Self.compare(a.item.size ?? sizes[a.item.url] ?? -1, b.item.size ?? sizes[b.item.url] ?? -1)
             case .kind: a.kind.localizedStandardCompare(b.kind)
             case .ext: a.item.url.pathExtension.localizedStandardCompare(b.item.url.pathExtension)
             }
@@ -180,16 +181,16 @@ public struct ItemOrder: Equatable, Sendable, Codable {
 public struct StatusCounts: Equatable, Sendable {
     public let items: Int
     public let selected: Int
-    /// The selected files' total, or nil when only folders are selected.
+    /// The selection's total (folders once measured), or nil when nothing selected has a size yet.
     public let selectedBytes: Int64?
     public let available: Int64?
 
-    public init(items: [FileItem], selection: Set<URL>, available: Int64?) {
+    public init(items: [FileItem], selection: Set<URL>, available: Int64?, sizes: [URL: Int64] = [:]) {
         self.items = items.count
         let chosen = items.filter { selection.contains($0.url) }
         selected = chosen.count
-        let sizes = chosen.compactMap(\.size)
-        selectedBytes = sizes.isEmpty ? nil : sizes.reduce(0, +)
+        let known = chosen.compactMap { $0.size ?? sizes[$0.url] }
+        selectedBytes = known.isEmpty ? nil : known.reduce(0, +)
         self.available = available
     }
 }
