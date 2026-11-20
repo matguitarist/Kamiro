@@ -8,11 +8,10 @@ import UniformTypeIdentifiers
 /// Settings › General (S-032).
 struct Sidebar: View {
     let browser: BrowserModel
-    @State private var volumes = Volumes.mounted()
-    /// iCloud Drive and the sync apps' folders (S-057).
-    @State private var clouds = Cloud.places()
     @State private var renaming: Volume?
     private var pins: PinStore { .shared }
+    private var volumes: [Volume] { VolumeStore.shared.volumes }
+    private var clouds: [Cloud.Place] { VolumeStore.shared.clouds }
 
     var body: some View {
         List(selection: selection) {
@@ -54,20 +53,6 @@ struct Sidebar: View {
             if pins.shows(.tags) {
                 TagsSection()
             }
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
-            volumes = Volumes.mounted()
-            clouds = Cloud.places()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            // A sync app set up meanwhile shows up.
-            clouds = Cloud.places()
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
-            volumes = Volumes.mounted()
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didRenameVolumeNotification)) { _ in
-            volumes = Volumes.mounted()
         }
         .volumeRenameAlert($renaming)
     }

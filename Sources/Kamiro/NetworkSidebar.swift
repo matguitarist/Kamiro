@@ -43,7 +43,7 @@ extension BrowserModel {
     /// Opens a share: at once when it's mounted, else mounted first (macOS asks for a password
     /// when the keychain has none).
     func openShare(_ url: URL) {
-        if let volume = Volumes.mounted().first(where: { volume in
+        if let volume = VolumeStore.shared.volumes.first(where: { volume in
             volume.remoteURL.map { ServerHost.same($0, url) && ServerHost.share(of: $0)?.lowercased() == ServerHost.share(of: url)?.lowercased() } ?? false
         }) {
             go(to: volume.url)
