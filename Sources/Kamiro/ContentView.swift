@@ -9,6 +9,7 @@ struct ContentView: View {
     @Environment(\.openSettings) private var openSettings
     @State private var browser: BrowserModel
     @AppStorage(Prefs.showStatusBar, store: Prefs.defaults) private var showStatusBar = true
+    @AppStorage(Prefs.showInspector, store: Prefs.defaults) private var showInspector = false
 
     init(start: URL) {
         _browser = State(initialValue: BrowserModel(start: start, log: Store.log))
@@ -20,6 +21,10 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 280)
         } detail: {
             BrowserView(model: browser, showStatusBar: showStatusBar)
+                .inspector(isPresented: $showInspector) {
+                    InspectorView(model: browser)
+                        .inspectorColumnWidth(min: 220, ideal: 260, max: 400)
+                }
         }
         .navigationTitle(browser.title)
         // The address bar shows where the window is; the title stays for the Window menu and Mission Control.

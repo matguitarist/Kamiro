@@ -26,7 +26,9 @@ struct DetailsTable: NSViewRepresentable {
         table.allowsMultipleSelection = true
         table.allowsColumnReordering = true
         table.allowsColumnResizing = true
-        table.columnAutoresizingStyle = .firstColumnOnlyAutoresizingStyle
+        // Name grows and shrinks with the window; once it's at its smallest, the next columns give
+        // way, so the inspector or a narrow window never pushes Size and Kind out of sight.
+        table.columnAutoresizingStyle = .reverseSequentialColumnAutoresizingStyle
         table.focusRingType = .none
         table.allowsTypeSelect = true
         table.floatsGroupRows = true
@@ -117,6 +119,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     private var version = -1
     private var groupVersion = -1
     private var sizesVersion = -1
+
     private var reveal = -1
     private var focus = -1
     private var cutVersion = -1
@@ -219,6 +222,8 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             tableColumn.isHidden = !shown.contains(column)
             tableColumn.width = model.widths[column].map { CGFloat($0) } ?? column.width
         }
+        // Saved widths can be wider than the room there is: fit them (Name gives first).
+        table.sizeToFit()
         let sort = NSSortDescriptor(key: model.order.key.rawValue, ascending: model.order.ascending)
         if table.sortDescriptors.first != sort { table.sortDescriptors = [sort] }
     }
@@ -229,7 +234,8 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     }
 
     func tableViewColumnDidResize(_ notification: Notification) {
-        guard !applying, table?.inLiveResize == false,
+        // Only widths people drag are remembered, not the Name column following the window.
+        guard !applying, table?.inLiveResize == false, (table?.headerView?.resizedColumn ?? -1) >= 0,
               let tableColumn = notification.userInfo?["NSTableColumn"] as? NSTableColumn,
               let column = ListColumn(rawValue: tableColumn.identifier.rawValue), !tableColumn.isHidden else { return }
         model.setWidth(Double(tableColumn.width), of: column)

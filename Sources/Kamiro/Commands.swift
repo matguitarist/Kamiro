@@ -41,6 +41,7 @@ struct KamiroCommands: Commands {
     @ObservedObject var menu: MenuState
     @Environment(\.openWindow) private var openWindow
     @AppStorage(Prefs.showStatusBar, store: Prefs.defaults) private var showStatusBar = true
+    @AppStorage(Prefs.showInspector, store: Prefs.defaults) private var showInspector = false
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -100,6 +101,8 @@ struct KamiroCommands: Commands {
         CommandGroup(after: .toolbar) {
             Button(showStatusBar ? "Hide Status Bar" : "Show Status Bar") { showStatusBar.toggle() }
                 .keyboardShortcut("/")
+            Button(showInspector ? "Hide Inspector" : "Show Inspector") { showInspector.toggle() }
+                .keyboardShortcut("i", modifiers: [.command, .option])
             Button("Refresh") { menu.browser?.refresh() }
                 .keyboardShortcut("r")
         }

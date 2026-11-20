@@ -404,6 +404,7 @@ enum Prefs {
     static let showStatusBar = "showStatusBar"
     static let iconSize = "iconSize"
     static let showHidden = "showHidden"
+    static let showInspector = "showInspector"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

@@ -306,7 +306,17 @@ Built: View › Show Hidden Files (⇧⌘.), and Hide Hidden Files to turn it of
 As the user, I open the inspector (⌥⌘I) to see a preview and the selection's details: kind, size, dates, where, tags, dimensions or duration.
 Screens: inspector, inspector-dark
 Depends: S-002
-Status: todo
+UX:
+- Flow: ⌥⌘I or View › Show Inspector → a pane at the right of the list follows the selection → ⌥⌘I or View › Hide Inspector closes it; the choice is kept between launches
+- Surface: inspector (details of the selection while working); no toolbar button, the toolbar is already full at narrow widths
+- States: nothing selected shows the folder itself; one item shows a preview, name, kind and Information; several show "3 items" and their total size; a folder's size is "—" until measured; facts that don't apply (Dimensions, Duration, Pages, Tags) are left out
+- Words: "Show Inspector" / « Afficher l’inspecteur », "Hide Inspector" / « Masquer l’inspecteur », "Information" / « Informations », Kind, Size, Created, Modified, Added, Where, Tags, Dimensions, Duration, Pages
+- Access: VoiceOver reads each label with its value; the path in Where shows in full on hover
+Acceptance:
+- [unit] Image dimensions, audio and video duration and PDF page counts are read from the file; other files have none.
+- [self] ⌥⌘I shows the inspector with the selected item's name, kind, size and dimensions; nothing selected shows the folder; ⌥⌘I again hides it.
+Status: done
+Built: An inspector pane at the right of the window (⌥⌘I, View › Show Inspector), using SwiftUI's inspector: a Quick Look preview, name and kind, then Information (kind, size with folder sizes, dimensions, duration, pages, created, modified, added, tags, where). Nothing selected shows the folder; several items show the count and total size. Media facts are read in KamiroKit (ImageIO, AVFoundation, PDF). The details list now resizes its columns in reverse sequence (Name first, then the next ones), so the inspector never pushes columns out of sight. The self-test reads what the inspector shows through a small probe, since SwiftUI builds the pane's accessibility only for outside readers. No toolbar button: the toolbar is full at narrow widths.
 
 ### S-026 Open Properties
 As the user, I press ⌘I (or ⌥↩) for a Properties window: name, where, size with item count, dates, permissions, Open With, locked, hidden.

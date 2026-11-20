@@ -19,7 +19,7 @@ enum Snapshot {
         case deleteConfirm = "delete-confirm"
         case icons, columns
         case columnsMenu = "columns-menu"
-        case grouped, hidden
+        case grouped, hidden, inspector
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -62,6 +62,11 @@ enum Snapshot {
                    case .header(let header) = last {
                     browser.toggleGroup(header.id)
                 }
+            case .inspector:
+                Prefs.defaults.set(true, forKey: Prefs.showInspector)
+                try? await Task.sleep(for: .seconds(1))
+                browser.go(to: seed, select: [seed.appending(path: "Owl.jpg")])
+                try? await Task.sleep(for: .seconds(1.5))
             case .hidden:
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
@@ -94,12 +99,18 @@ enum Snapshot {
             case .transferProgress: TransferCenter.shared.hideSample()
             case .conflictSheet: browser.conflicts = []
             case .deleteConfirm: browser.pendingDelete = nil
-            case .icons, .columns: browser.mode = .details
+            case .icons: browser.mode = .details
+            case .columns:
+                // Views are kept per folder: put the sample folder back in details, not Projects.
+                browser.go(to: Store.seedFolder)
+                await browser.waitUntilLoaded()
+                browser.mode = .details
             case .columnsMenu:
                 browser.toggleColumn(.created)
                 browser.toggleColumn(.ext)
             case .grouped: browser.groupBy = .none
             case .hidden: HiddenFiles.set(false)
+            case .inspector: Prefs.defaults.set(false, forKey: Prefs.showInspector)
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))

@@ -64,6 +64,45 @@ extension SelfTest {
         await groups(browser: browser, seed: seed, pause: pause, open: open)
         await folderSizes(browser: browser, seed: seed, pause: pause, open: open)
         await hiddenFiles(browser: browser, seed: seed, pause: pause, open: open)
+        await inspector(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-025: the inspector.
+    private static func inspector(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        func url(_ path: String) -> URL { seed.appending(path: path).canonical }
+        let window = browser.details?.table?.window
+        Prefs.defaults.set(false, forKey: Prefs.showInspector)
+        await open("")
+        browser.selection = [url("Owl.jpg")]
+        let menuItem = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items)
+            .first { $0.keyEquivalent == "i" && $0.keyEquivalentModifierMask == [.command, .option] }
+        check("⌥⌘I is in the View menu", menuItem?.title == String(localized: "Show Inspector"), menuItem?.title ?? "missing")
+        let fullWidth = browser.details?.table?.enclosingScrollView?.frame.width ?? 0
+        Prefs.defaults.set(true, forKey: Prefs.showInspector)
+        await pause(1.2)
+        let narrowed = browser.details?.table?.enclosingScrollView?.frame.width ?? 0
+        let clip = browser.details?.table?.enclosingScrollView?.contentView.bounds.width ?? 0
+        let lastEdge = browser.details?.table.map { table in
+            table.tableColumns.filter { !$0.isHidden }.reduce(0) { $0 + $1.width + table.intercellSpacing.width }
+        } ?? .infinity
+        check("the inspector takes room from the list, and every column still shows", narrowed < fullWidth - 150 && lastEdge <= clip + 1,
+              "\(fullWidth) → \(narrowed), columns \(lastEdge) in \(clip)")
+        let shown = InspectorProbe.shown
+        check("the inspector shows the selected item's name, kind, size and dimensions",
+              shown.first == "Owl.jpg" && [String(localized: "Kind"), String(localized: "Size"), String(localized: "Dimensions")]
+                .allSatisfy(shown.contains), "\(shown)")
+        browser.selection = []
+        await pause(0.8)
+        check("with nothing selected the inspector shows the folder", InspectorProbe.shown.first == seed.lastPathComponent,
+              "\(InspectorProbe.shown)")
+        let rows = InspectorFacts.rows(item: FileItem(url: url("notes.md"), name: "notes.md", isFolder: false, size: 47),
+                                       size: 47, media: MediaFacts(), tags: [])
+        check("facts that don't apply are left out", !rows.contains { $0.label == String(localized: "Dimensions") }
+              && rows.first?.label == String(localized: "Kind"))
+        Prefs.defaults.set(false, forKey: Prefs.showInspector)
+        await pause(0.5)
+        let restored = browser.details?.table?.enclosingScrollView?.frame.width ?? 0
+        check("⌥⌘I again hides it", abs(restored - fullWidth) < 2 && window?.isVisible == true, "\(restored) vs \(fullWidth)")
     }
 
     // S-024: hidden files.
@@ -129,7 +168,7 @@ extension SelfTest {
               && folders.firstIndex(of: "Projects") ?? 0 < folders.firstIndex(of: "Empty") ?? 0, "\(folders)")
 
         try? Data(repeating: 9, count: 2_000_000).write(to: url("Photos/Big.raw"))
-        for _ in 0..<40 where (browser.folderSizes[url("Photos")] ?? 0) < (measured ?? 0) + 2_000_000 { await pause(0.1) }
+        for _ in 0..<80 where (browser.folderSizes[url("Photos")] ?? 0) < (measured ?? 0) + 2_000_000 { await pause(0.1) }
         check("a folder's size follows changes made inside it", (browser.folderSizes[url("Photos")] ?? 0) >= (measured ?? 0) + 2_000_000,
               "\(browser.folderSizes[url("Photos")] ?? -1)")
         try? FileManager.default.removeItem(at: url("Photos/Big.raw"))

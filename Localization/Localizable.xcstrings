@@ -201,6 +201,16 @@
         }
       }
     },
+    "Added": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajout"
+          }
+        }
+      }
+    },
     "Already there": {
       "localizations": {
         "fr": {
@@ -541,6 +551,16 @@
         }
       }
     },
+    "Created": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Création"
+          }
+        }
+      }
+    },
     "Cut": {
       "localizations": {
         "fr": {
@@ -681,6 +701,16 @@
         }
       }
     },
+    "Dimensions": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensions"
+          }
+        }
+      }
+    },
     "Do you want to replace it with the one you’re copying?": {
       "localizations": {
         "fr": {
@@ -727,6 +757,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Terminé"
+          }
+        }
+      }
+    },
+    "Duration": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durée"
           }
         }
       }
@@ -911,6 +951,16 @@
         }
       }
     },
+    "Hide Inspector": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer l’inspecteur"
+          }
+        }
+      }
+    },
     "Hide Status Bar": {
       "localizations": {
         "fr": {
@@ -947,6 +997,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Après ce changement, le fichier pourrait s’ouvrir dans une autre app."
+          }
+        }
+      }
+    },
+    "Information": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informations"
           }
         }
       }
@@ -1097,6 +1157,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Markdown"
+          }
+        }
+      }
+    },
+    "Modified": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modification"
           }
         }
       }
@@ -1371,6 +1441,16 @@
         }
       }
     },
+    "Pages": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pages"
+          }
+        }
+      }
+    },
     "Paste": {
       "localizations": {
         "fr": {
@@ -1587,6 +1667,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher les fichiers masqués"
+          }
+        }
+      }
+    },
+    "Show Inspector": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l’inspecteur"
           }
         }
       }
@@ -1907,6 +1997,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Web"
+          }
+        }
+      }
+    },
+    "Where": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emplacement"
           }
         }
       }
