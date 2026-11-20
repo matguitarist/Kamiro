@@ -286,7 +286,7 @@ enum SelfTest {
         key(36)
         await pause()
         let row = browser.details?.rowOf[url("notes renamed.md")] ?? 0
-        let next = browser.details?.items.indices.contains(row + 1) == true ? browser.details?.items[row + 1].url : nil
+        let next = browser.details?.url(at: row + 1)
         editor?.doCommand(by: #selector(NSResponder.insertTab(_:)))
         await pause(0.5)
         check("Tab moves on to the next item", next != nil && browser.details?.renaming == next)

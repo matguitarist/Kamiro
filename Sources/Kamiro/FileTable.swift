@@ -139,7 +139,7 @@ extension DetailsCoordinator {
         let nameColumn = table.column(withIdentifier: ListColumn.name.identifier)
         guard nameColumn >= 0, let cell = table.view(atColumn: nameColumn, row: row, makeIfNecessary: true) as? NSTableCellView,
               let field = cell.textField else { return }
-        let session = InlineRename(url: url, field: field, model: model, isFolder: items[row].isFolder,
+        let session = InlineRename(url: url, field: field, model: model, isFolder: item(at: row)?.isFolder ?? false,
                                    neighbor: { [weak self] step in self?.neighbor(of: url, step: step) },
                                    finished: { [weak self] in self?.renameEnded() })
         session.onError = { [weak self] in self?.renameError = $0 }
@@ -160,9 +160,11 @@ extension DetailsCoordinator {
         update()
     }
 
+    /// The next item up or down, past group headers.
     private func neighbor(of url: URL, step: Int) -> URL? {
-        guard let row = rowOf[url] else { return nil }
-        return items.indices.contains(row + step) ? items[row + step].url : nil
+        guard var row = rowOf[url] else { return nil }
+        repeat { row += step } while rows.indices.contains(row) && item(at: row) == nil
+        return self.url(at: row)
     }
 
     func contextMenu(onItems: Bool) -> NSMenu { model.contextMenu(onItems: onItems) }
@@ -178,8 +180,8 @@ extension DetailsCoordinator {
         let urls = droppedURLs(info)
         guard !urls.isEmpty else { return [] }
         let destination: URL
-        if operation == .on, items.indices.contains(row), items[row].isFolder, !urls.contains(items[row].url) {
-            destination = items[row].url
+        if operation == .on, let item = item(at: row), item.isFolder, !urls.contains(item.url) {
+            destination = item.url
             spring(row)
         } else {
             tableView.setDropRow(-1, dropOperation: .on)
@@ -195,7 +197,7 @@ extension DetailsCoordinator {
                    dropOperation: NSTableView.DropOperation) -> Bool {
         cancelSpring()
         let urls = droppedURLs(info)
-        let destination = row >= 0 && items.indices.contains(row) && items[row].isFolder ? items[row].url : model.folder
+        let destination = item(at: row).flatMap { $0.isFolder ? $0.url : nil } ?? model.folder
         let kind = dropKind(urls, into: destination, info: info)
         guard !urls.isEmpty, !DropRule.isNoOp(sources: urls, destination: destination, kind: kind) else { return false }
         model.transfer(kind, urls, into: destination)
@@ -212,10 +214,9 @@ extension DetailsCoordinator {
 
     /// A folder held under a drag for 0.7 s opens, so the drop can go deeper.
     func spring(_ row: Int) {
-        guard row != springRow, items.indices.contains(row) else { return }
+        guard row != springRow, let folder = url(at: row) else { return }
         cancelSpring()
         springRow = row
-        let folder = items[row].url
         springTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled, let self else { return }

@@ -278,7 +278,8 @@ Screens: grouped
 Depends: S-021
 Acceptance:
 - [unit] Date groups: Today, Yesterday, Previous 7 Days, Previous 30 Days, then months.
-Status: todo
+Status: done
+Built: View › Group By (None, Kind, Date Modified, Size, Name), in the details view. Each group gets a header with a chevron, its name and count; a click folds it. Date groups follow the Finder: Today, Yesterday, Previous 7 Days, Previous 30 Days, then this year's months, then years. Size groups go biggest first and use folder sizes once known (S-023). The grouping is saved with the folder's view; folded groups are not.
 
 ### S-023 See folder sizes
 As the user, the Size column shows folders' sizes too, computed in the background and kept up to date.

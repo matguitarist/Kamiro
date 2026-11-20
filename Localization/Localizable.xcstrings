@@ -151,6 +151,26 @@
         }
       }
     },
+    "1 MB to 100 MB": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Mo à 100 Mo"
+          }
+        }
+      }
+    },
+    "100 MB to 1 GB": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100 Mo à 1 Go"
+          }
+        }
+      }
+    },
     "2 items": {
       "localizations": {
         "fr": {
@@ -851,12 +871,32 @@
         }
       }
     },
+    "Group By": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grouper par"
+          }
+        }
+      }
+    },
     "Hidden Files": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Fichiers cachés"
+          }
+        }
+      }
+    },
+    "Hide Group": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer le groupe"
           }
         }
       }
@@ -1231,6 +1271,16 @@
         }
       }
     },
+    "No Date": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sans date"
+          }
+        }
+      }
+    },
     "No folder at this path.": {
       "localizations": {
         "fr": {
@@ -1247,6 +1297,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucun dossier"
+          }
+        }
+      }
+    },
+    "None": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun"
           }
         }
       }
@@ -1287,6 +1347,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir les réglages de confidentialité"
+          }
+        }
+      }
+    },
+    "Over 1 GB": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus de 1 Go"
           }
         }
       }
@@ -1347,6 +1417,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aperçu de la couleur d’accentuation"
+          }
+        }
+      }
+    },
+    "Previous 30 Days": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 jours précédents"
+          }
+        }
+      }
+    },
+    "Previous 7 Days": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 jours précédents"
           }
         }
       }
@@ -1471,6 +1561,16 @@
         }
       }
     },
+    "Show Group": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le groupe"
+          }
+        }
+      }
+    },
     "Show items as icons, details or columns (⌘1, ⌘2, ⌘3)": {
       "localizations": {
         "fr": {
@@ -1527,6 +1627,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Taille"
+          }
+        }
+      }
+    },
+    "Size Unknown": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille inconnue"
           }
         }
       }
@@ -1651,6 +1761,16 @@
         }
       }
     },
+    "Today": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aujourd’hui"
+          }
+        }
+      }
+    },
     "Transfers": {
       "localizations": {
         "fr": {
@@ -1667,6 +1787,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Saisir un chemin"
+          }
+        }
+      }
+    },
+    "Under 1 MB": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moins de 1 Mo"
           }
         }
       }
@@ -1771,12 +1901,32 @@
         }
       }
     },
+    "Yesterday": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier"
+          }
+        }
+      }
+    },
     "You can’t undo this action.": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Vous ne pourrez pas annuler cette action."
+          }
+        }
+      }
+    },
+    "Zero Bytes": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zéro octet"
           }
         }
       }

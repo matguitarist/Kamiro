@@ -43,6 +43,18 @@ final class BrowserModel {
         didSet { if columns != oldValue { remember() } }
     }
     private(set) var widths: [ListColumn: Double] = [:]
+    /// View › Group By (S-022); the details view shows a header before each group.
+    var groupBy: GroupBy = .none {
+        didSet {
+            guard groupBy != oldValue else { return }
+            groupVersion += 1
+            remember()
+            publish()
+        }
+    }
+    private(set) var collapsedGroups: Set<String> = []
+    /// Goes up when the groups change without the items changing.
+    private(set) var groupVersion = 0
     /// Goes up when the columns change from outside the table (a folder's own view, the menu).
     private(set) var viewVersion = 0
     @ObservationIgnored private var restoring = false
@@ -104,7 +116,13 @@ final class BrowserModel {
 
     // MARK: Each folder's view (S-021)
 
-    var folderView: FolderView { FolderView(mode: mode, order: order, columns: columns, widths: widths) }
+    var folderView: FolderView { FolderView(mode: mode, order: order, columns: columns, widths: widths, groupBy: groupBy) }
+
+    /// Folds or unfolds one group.
+    func toggleGroup(_ id: String) {
+        if collapsedGroups.remove(id) == nil { collapsedGroups.insert(id) }
+        groupVersion += 1
+    }
 
     /// Shows the folder as it was last shown, or as new folders are. Column view stays on
     /// while browsing in it.
@@ -116,6 +134,8 @@ final class BrowserModel {
         if mode != .columns { mode = view.mode }
         columns = view.columns
         widths = view.widths
+        groupBy = view.groupBy
+        collapsedGroups = []
         viewVersion += 1
     }
 

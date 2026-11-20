@@ -13,6 +13,7 @@ struct DetailsTable: NSViewRepresentable {
     let focus: Int
     let cutVersion: Int
     let renameToken: Int
+    let groupVersion: Int
 
     func makeCoordinator() -> DetailsCoordinator { DetailsCoordinator(model: model) }
 
@@ -27,6 +28,7 @@ struct DetailsTable: NSViewRepresentable {
         table.columnAutoresizingStyle = .firstColumnOnlyAutoresizingStyle
         table.focusRingType = .none
         table.allowsTypeSelect = true
+        table.floatsGroupRows = true
         // Every column exists; the folder's view says which show, in what order (S-021).
         for column in ListColumn.allCases {
             let tableColumn = NSTableColumn(identifier: column.identifier)
@@ -108,9 +110,11 @@ extension ListColumn {
 final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
     let model: BrowserModel
     weak var table: FileTable?
-    private(set) var items: [FileItem] = []
+    /// Items, with a header row before each group when grouped (S-022).
+    private(set) var rows: [ListRow] = []
     private(set) var rowOf: [URL: Int] = [:]
     private var version = -1
+    private var groupVersion = -1
     private var reveal = -1
     private var focus = -1
     private var cutVersion = -1
@@ -129,7 +133,12 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
 
     init(model: BrowserModel) { self.model = model }
 
-    func url(at row: Int) -> URL? { items.indices.contains(row) ? items[row].url : nil }
+    func item(at row: Int) -> FileItem? {
+        guard rows.indices.contains(row), case .item(let item) = rows[row] else { return nil }
+        return item
+    }
+
+    func url(at row: Int) -> URL? { item(at: row)?.url }
 
     func update() {
         guard let table else { return }
@@ -147,17 +156,20 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             viewVersion = model.viewVersion
             applyColumns()
         }
-        if version != model.itemsVersion {
+        if version != model.itemsVersion || groupVersion != model.groupVersion {
+            if version != model.itemsVersion { FileExtras.shared.forget() }
             version = model.itemsVersion
-            FileExtras.shared.forget()
-            items = model.items
-            rowOf = Dictionary(items.enumerated().map { ($1.url, $0) }, uniquingKeysWith: { first, _ in first })
+            groupVersion = model.groupVersion
+            rows = ListRow.make(model.items, by: model.groupBy, collapsed: model.collapsedGroups)
+            rowOf = Dictionary(rows.enumerated().compactMap { index, row in
+                if case .item(let item) = row { (item.url, index) } else { nil }
+            }, uniquingKeysWith: { first, _ in first })
             table.reloadData()
             cutVersion = FileClipboard.shared.version
         }
         if cutVersion != FileClipboard.shared.version {
             cutVersion = FileClipboard.shared.version
-            table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<items.count),
+            table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<rows.count),
                              columnIndexes: IndexSet(integersIn: 0..<table.numberOfColumns))
         }
         let wanted = IndexSet(model.selection.compactMap { rowOf[$0] })
@@ -224,12 +236,22 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         }
     }
 
-    func numberOfRows(in tableView: NSTableView) -> Int { items.count }
+    func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
+
+    func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
+        if rows.indices.contains(row), case .header = rows[row] { true } else { false }
+    }
+
+    func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { item(at: row) != nil }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        if rows.indices.contains(row), case .header(let header) = rows[row] {
+            let view = tableView.makeView(withIdentifier: GroupHeaderView.identifier, owner: nil) as? GroupHeaderView ?? GroupHeaderView()
+            view.show(header) { [weak self] in self?.model.toggleGroup(header.id) }
+            return view
+        }
         guard let tableColumn, let column = ListColumn(rawValue: tableColumn.identifier.rawValue),
-              items.indices.contains(row) else { return nil }
-        let item = items[row]
+              let item = item(at: row) else { return nil }
         let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: nil) as? NSTableCellView
             ?? Self.makeCell(column)
         cell.textField?.stringValue = Self.text(column, item)
@@ -256,7 +278,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     }
 
     func tableView(_ tableView: NSTableView, typeSelectStringFor tableColumn: NSTableColumn?, row: Int) -> String? {
-        tableColumn?.identifier == ListColumn.name.identifier && items.indices.contains(row) ? items[row].name : nil
+        tableColumn?.identifier == ListColumn.name.identifier ? item(at: row)?.name : nil
     }
 
     @objc func doubleClicked(_ sender: NSTableView) {
@@ -324,6 +346,130 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         formatter.doesRelativeDateFormatting = true
         return formatter
     }()
+}
+
+/// One row of the details view: an item, or a group's header (S-022).
+enum ListRow {
+    case header(GroupHeader)
+    case item(FileItem)
+
+    static func make(_ items: [FileItem], by: GroupBy, collapsed: Set<String>) -> [ListRow] {
+        guard by != .none else { return items.map(ListRow.item) }
+        return Grouping.groups(items, by: by).flatMap { group -> [ListRow] in
+            let shut = collapsed.contains(group.key.id)
+            let header = ListRow.header(GroupHeader(id: group.key.id, title: group.key.title, count: group.items.count, collapsed: shut))
+            return shut ? [header] : [header] + group.items.map(ListRow.item)
+        }
+    }
+}
+
+struct GroupHeader {
+    let id: String
+    let title: String
+    let count: Int
+    let collapsed: Bool
+}
+
+/// A group's header row: a chevron that folds the group, its name and how many items.
+final class GroupHeaderView: NSView {
+    static let identifier = NSUserInterfaceItemIdentifier("group")
+    private let chevron = NSButton()
+    private let title = NSTextField(labelWithString: "")
+    private let count = NSTextField(labelWithString: "")
+    private var toggle: () -> Void = {}
+
+    init() {
+        super.init(frame: .zero)
+        identifier = Self.identifier
+        chevron.bezelStyle = .flexiblePush
+        chevron.isBordered = false
+        chevron.imagePosition = .imageOnly
+        chevron.target = self
+        chevron.action = #selector(clicked)
+        chevron.contentTintColor = .secondaryLabelColor
+        title.font = .systemFont(ofSize: NSFont.systemFontSize, weight: .semibold)
+        count.textColor = .secondaryLabelColor
+        let stack = NSStackView(views: [chevron, title, count])
+        stack.spacing = Space.xs
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Space.xs),
+            stack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            chevron.widthAnchor.constraint(equalToConstant: 16),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    func show(_ header: GroupHeader, toggle: @escaping () -> Void) {
+        self.toggle = toggle
+        title.stringValue = header.title
+        count.stringValue = String(localized: "\(header.count) items")
+        let symbol = header.collapsed ? "chevron.right" : "chevron.down"
+        chevron.image = NSImage(systemSymbolName: symbol, accessibilityDescription: header.collapsed
+                                ? String(localized: "Show Group") : String(localized: "Hide Group"))
+        chevron.toolTip = header.collapsed ? String(localized: "Show Group") : String(localized: "Hide Group")
+        setAccessibilityLabel(header.title)
+    }
+
+    @objc private func clicked() { toggle() }
+
+    /// A click anywhere on the header folds or unfolds the group, like the Finder.
+    override func mouseDown(with event: NSEvent) { toggle() }
+}
+
+extension GroupKey {
+    var title: String {
+        switch self {
+        case .today: String(localized: "Today")
+        case .yesterday: String(localized: "Yesterday")
+        case .previous7: String(localized: "Previous 7 Days")
+        case .previous30: String(localized: "Previous 30 Days")
+        case .month(let year, let month):
+            Calendar.current.date(from: DateComponents(year: year, month: month, day: 1)).map {
+                let text = Self.months.string(from: $0)
+                return text.prefix(1).uppercased() + text.dropFirst()
+            } ?? "\(month)"
+        case .year(let year): String(year)
+        case .noDate: String(localized: "No Date")
+        case .kind(let kind): kind
+        case .size(let band): band.title
+        case .letter(let letter): letter == "0-9" ? "0–9" : letter
+        }
+    }
+
+    private static let months: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("LLLL")
+        return formatter
+    }()
+}
+
+extension SizeBand {
+    var title: String {
+        switch self {
+        case .huge: String(localized: "Over 1 GB")
+        case .large: String(localized: "100 MB to 1 GB")
+        case .medium: String(localized: "1 MB to 100 MB")
+        case .small: String(localized: "Under 1 MB")
+        case .empty: String(localized: "Zero Bytes")
+        case .unknown: String(localized: "Size Unknown")
+        }
+    }
+}
+
+extension GroupBy {
+    var title: String {
+        switch self {
+        case .none: String(localized: "None")
+        case .kind: String(localized: "Kind")
+        case .modified: String(localized: "Date Modified")
+        case .size: String(localized: "Size")
+        case .name: String(localized: "Name")
+        }
+    }
 }
 
 /// Tags and Finder comments, read only for the rows on screen (they're slow to read for a

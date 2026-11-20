@@ -19,6 +19,7 @@ enum Snapshot {
         case deleteConfirm = "delete-confirm"
         case icons, columns
         case columnsMenu = "columns-menu"
+        case grouped
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -52,6 +53,15 @@ enum Snapshot {
                 await browser.waitUntilLoaded()
                 browser.toggleColumn(.created)
                 browser.toggleColumn(.ext)
+            case .grouped:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                browser.groupBy = .kind
+                // One group folded, to show both states.
+                if let last = browser.details?.rows.reversed().first(where: { if case .header = $0 { true } else { false } }),
+                   case .header(let header) = last {
+                    browser.toggleGroup(header.id)
+                }
             }
             await browser.waitUntilLoaded()
             if self != .addressEdit { browser.focusList() }
@@ -81,6 +91,7 @@ enum Snapshot {
             case .columnsMenu:
                 browser.toggleColumn(.created)
                 browser.toggleColumn(.ext)
+            case .grouped: browser.groupBy = .none
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))

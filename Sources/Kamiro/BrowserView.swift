@@ -69,7 +69,8 @@ extension BrowserView {
         case .details:
             DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
                          reveal: model.revealToken, focus: model.focusToken,
-                         cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)
+                         cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
+                         groupVersion: model.groupVersion)
         }
     }
 }

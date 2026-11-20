@@ -61,6 +61,40 @@ extension SelfTest {
 
         await columns(browser: browser, seed: seed, pause: pause, open: open)
         await chosenColumns(browser: browser, seed: seed, pause: pause, open: open)
+        await groups(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-022: groups with headers that fold.
+    private static func groups(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        await open("")
+        browser.groupBy = .modified
+        await pause(0.3)
+        var headers: [GroupHeader] {
+            browser.details?.rows.compactMap { if case .header(let header) = $0 { header } else { nil } } ?? []
+        }
+        let rows = browser.details?.rows ?? []
+        let first = headers.first
+        check("Group By Date Modified puts a header before each group, newest first",
+              headers.count >= 2 && rows.count == browser.items.count + headers.count
+              && headers.reduce(0) { $0 + $1.count } == browser.items.count
+              && { if case .header = rows.first { true } else { false } }(), headers.map(\.title).joined(separator: ", "))
+        check("headers can't be selected", browser.details?.table.map { !(browser.details?.tableView($0, shouldSelectRow: 0) ?? true) } ?? false)
+        if let first {
+            browser.toggleGroup(first.id)
+            await pause(0.3)
+            check("a header folds its group", browser.details?.rows.count == rows.count - first.count && headers.first?.collapsed == true)
+            browser.toggleGroup(first.id)
+            await pause(0.3)
+            check("…and unfolds it", browser.details?.rows.count == rows.count)
+        }
+        await open("Photos")
+        check("another folder isn't grouped", browser.groupBy == GroupBy.none && headers.isEmpty)
+        browser.goBack()
+        await browser.waitUntilLoaded()
+        await pause(0.3)
+        check("the folder keeps its grouping", browser.groupBy == .modified && !headers.isEmpty)
+        browser.groupBy = .none
+        await pause(0.3)
     }
 
     // S-021: choose, move and sort columns, per folder.

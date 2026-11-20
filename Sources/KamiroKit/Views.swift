@@ -46,13 +46,15 @@ public struct FolderView: Codable, Equatable, Sendable {
     public var columns: [ListColumn]
     /// Column widths people dragged, in points.
     public var widths: [ListColumn: Double]
+    public var groupBy: GroupBy
 
     public init(mode: ViewMode = .details, order: ItemOrder = ItemOrder(), columns: [ListColumn] = ListColumn.standard,
-                widths: [ListColumn: Double] = [:]) {
+                widths: [ListColumn: Double] = [:], groupBy: GroupBy = .none) {
         self.mode = mode
         self.order = order
         self.columns = Self.clean(columns)
         self.widths = widths
+        self.groupBy = groupBy
     }
 
     /// A file written by an older Kamiro opens: missing settings take their defaults.
@@ -65,6 +67,7 @@ public struct FolderView: Codable, Equatable, Sendable {
         columns = Self.clean(names.map { $0.compactMap(ListColumn.init(rawValue:)) } ?? standard.columns)
         let sizes = (try? values.decodeIfPresent([String: Double].self, forKey: .widths)) ?? nil
         widths = Dictionary(uniqueKeysWithValues: (sizes ?? [:]).compactMap { key, value in ListColumn(rawValue: key).map { ($0, value) } })
+        groupBy = (try? values.decodeIfPresent(GroupBy.self, forKey: .groupBy)) ?? standard.groupBy
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -73,9 +76,10 @@ public struct FolderView: Codable, Equatable, Sendable {
         try values.encode(order, forKey: .order)
         try values.encode(columns.map(\.rawValue), forKey: .columns)
         try values.encode(Dictionary(uniqueKeysWithValues: widths.map { ($0.key.rawValue, $0.value) }), forKey: .widths)
+        try values.encode(groupBy, forKey: .groupBy)
     }
 
-    private enum CodingKeys: String, CodingKey { case mode, order, columns, widths }
+    private enum CodingKeys: String, CodingKey { case mode, order, columns, widths, groupBy }
 
     /// Name first, each column once.
     static func clean(_ columns: [ListColumn]) -> [ListColumn] {

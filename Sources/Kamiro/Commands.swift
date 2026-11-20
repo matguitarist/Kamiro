@@ -12,6 +12,7 @@ final class MenuState: ObservableObject {
     @Published private(set) var hasSelection = false
     @Published private(set) var isReady = false
     @Published private(set) var mode: ViewMode = .details
+    @Published private(set) var groupBy: GroupBy = .none
     /// The key window's list has the keyboard: Delete shortcuts go to it, not to a text field.
     @Published var listFocused = false
     private(set) weak var browser: BrowserModel?
@@ -29,6 +30,7 @@ final class MenuState: ObservableObject {
         hasSelection = !browser.selection.isEmpty
         isReady = browser.state == .ready
         mode = browser.mode
+        groupBy = browser.groupBy
     }
 }
 
@@ -78,6 +80,13 @@ struct KamiroCommands: Commands {
                     .keyboardShortcut(mode.key)
             }
             Divider()
+            // Groups show in the details view.
+            Menu("Group By") {
+                ForEach(GroupBy.allCases, id: \.self) { group in
+                    Toggle(group.title, isOn: Binding(get: { menu.groupBy == group }, set: { if $0 { menu.browser?.groupBy = group } }))
+                }
+            }
+            .disabled(menu.mode != .details)
             Button("Use as Defaults") { menu.browser?.useAsDefaults() }
                 .help("Show folders you haven't changed like this one")
             Divider()
