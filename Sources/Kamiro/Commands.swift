@@ -51,9 +51,14 @@ struct KamiroCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Window") { openWindow(id: KamiroApp.browserID) }
                 .keyboardShortcut("n")
+            Button("New Tab") { Tabs.open(nil, besides: Tabs.front, with: openWindow) }
+                .keyboardShortcut("t")
             Divider()
             Button("Open") { menu.browser?.open() }
                 .keyboardShortcut("o")
+                .disabled(!menu.hasSelection)
+            Button("Open in New Tab") { menu.browser?.open(newTab: true) }
+                .keyboardShortcut("o", modifiers: [.command, .control])
                 .disabled(!menu.hasSelection)
             Button("Quick Look") { menu.browser?.quickLook?() }
                 .keyboardShortcut("y")

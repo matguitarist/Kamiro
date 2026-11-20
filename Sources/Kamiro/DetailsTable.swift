@@ -300,8 +300,9 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     @objc func doubleClicked(_ sender: NSTableView) {
         let row = sender.clickedRow
         guard let url = url(at: row) else { return }
-        let option = NSApp.currentEvent?.modifierFlags.contains(.option) ?? false
-        model.open([url], newWindow: option)
+        // ⌥ opens a folder in a new window, ⌘ in a new tab (S-030).
+        let flags = NSApp.currentEvent?.modifierFlags ?? []
+        model.open([url], newWindow: flags.contains(.option), newTab: flags.contains(.command))
     }
 
     // MARK: Cells

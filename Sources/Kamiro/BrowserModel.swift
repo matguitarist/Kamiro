@@ -112,8 +112,8 @@ final class BrowserModel {
     @ObservationIgnored private var remembered: [URL: Set<URL>] = [:]
     @ObservationIgnored private var started = false
     @ObservationIgnored nonisolated(unsafe) private var hiddenWatch: (any NSObjectProtocol)?
-    /// Opens a folder in a new window (set by the window's view).
-    @ObservationIgnored var openWindow: ((URL) -> Void)?
+    /// Opens a folder in a new window, or a new tab of this one when true (set by the window's view).
+    @ObservationIgnored var openWindow: ((URL, Bool) -> Void)?
     /// Shows or hides Quick Look (set by the table).
     @ObservationIgnored var quickLook: (() -> Void)?
     @ObservationIgnored let log: LogStore
@@ -255,14 +255,14 @@ final class BrowserModel {
     }
 
     /// Opens the selection (or `urls`): one folder opens here, files open in their apps.
-    func open(_ urls: [URL]? = nil, newWindow: Bool = false) {
+    func open(_ urls: [URL]? = nil, newWindow: Bool = false, newTab: Bool = false) {
         let targets = urls.map { list in list.compactMap { url in items.first { $0.url == url.canonical } } } ?? selectedItems
         let folders = targets.filter(\.isFolder)
         let files = targets.filter { !$0.isFolder }
-        if !newWindow, folders.count == 1, files.isEmpty {
+        if !newWindow, !newTab, folders.count == 1, files.isEmpty {
             go(to: folders[0].url)
         } else {
-            folders.forEach { openWindow?($0.url) }
+            folders.forEach { openWindow?($0.url, newTab) }
         }
         for file in files { NSWorkspace.shared.open(file.url) }
     }

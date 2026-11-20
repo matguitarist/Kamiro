@@ -22,8 +22,8 @@ struct KamiroApp: App {
     @State private var model = AppModel(log: Store.log)
 
     var body: some Scene {
-        WindowGroup(id: Self.browserID, for: URL.self) { $folder in
-            ContentView(start: folder ?? Store.startFolder)
+        WindowGroup(id: Self.browserID, for: WindowStart.self) { $start in
+            ContentView(start: start?.url ?? Store.startFolder)
                 .environment(model)
                 .themed()
                 .overlay { if GridOverlay.enabled { GridOverlay() } }

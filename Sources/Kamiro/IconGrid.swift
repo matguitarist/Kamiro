@@ -245,7 +245,7 @@ final class FileGrid: NSCollectionView, NSUserInterfaceValidations {
         super.mouseDown(with: event)
         guard event.clickCount == 2, let path = indexPathForItem(at: convert(event.locationInWindow, from: nil)),
               let url = coordinator?.url(at: path.item) else { return }
-        model?.open([url], newWindow: event.modifierFlags.contains(.option))
+        model?.open([url], newWindow: event.modifierFlags.contains(.option), newTab: event.modifierFlags.contains(.command))
     }
 
     override func viewDidMoveToWindow() {

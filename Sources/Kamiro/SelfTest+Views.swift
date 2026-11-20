@@ -69,6 +69,7 @@ extension SelfTest {
         await tags(browser: browser, seed: seed, pause: pause, open: open)
         await filter(browser: browser, seed: seed, pause: pause, open: open)
         await searching(browser: browser, seed: seed, pause: pause, open: open)
+        await tabs(browser: browser, seed: seed)
     }
 
     // S-029: search this folder and its subfolders.

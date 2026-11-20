@@ -23,6 +23,7 @@ enum Snapshot {
         case properties, propertiesFolder = "properties-folder"
         case tags, filter
         case searchResults = "search-results"
+        case tabs
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
@@ -90,6 +91,11 @@ enum Snapshot {
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
                 browser.filterText = "invoice"
+            case .tabs:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                browser.open([seed.appending(path: "Projects")], newTab: true)
+                try? await Task.sleep(for: .seconds(1.5))
             case .tags:
                 let red = ColorTag.red.name
                 try? Tags.set(red, present: true, on: ["Owl.jpg", "Lotus.png", "notes.md"].map { seed.appending(path: $0) })
@@ -148,6 +154,10 @@ enum Snapshot {
             case .hidden: HiddenFiles.set(false)
             case .inspector: Prefs.defaults.set(false, forKey: Prefs.showInspector)
             case .filter: browser.filterText = ""
+            case .tabs:
+                let main = browser.details?.table?.window
+                main?.tabbedWindows?.filter { $0 !== main }.forEach { $0.close() }
+                main?.makeKeyAndOrderFront(nil)
             case .searchResults:
                 browser.go(to: Store.seedFolder)
                 await browser.waitUntilLoaded()
@@ -201,6 +211,9 @@ enum Snapshot {
                     let path = "\(dir)/\(page.rawValue)-\(mode).png"
                     if page == .columnsMenu {
                         captureHeaderMenu(of: browser, to: path, window: main)
+                    } else if page == .tabs {
+                        // The new tab is in front; its window draws the tab bar.
+                        capture(to: path, window: NSApp.keyWindow)
                     } else if let id = page.windowID {
                         let own = NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue.contains(id) == true }
                         own?.makeKeyAndOrderFront(nil)

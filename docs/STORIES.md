@@ -388,7 +388,12 @@ Built: Return in the search field searches this folder and its subfolders with S
 As the user, I open folders in tabs (⌘T, ⌘-double-click) and drag a tab out to a new window.
 Screens: tabs
 Depends: S-001
-Status: todo
+Acceptance:
+- [self] ⌘T is File › New Tab and opens a tab in front, in the same window; ⌘-double-click on a folder opens it in a new tab, twice gives two tabs, and the first tab stays where it was; a tab moves out to a window of its own.
+- [snap] The tab bar is the system's, under the toolbar, with its + button.
+- [manual] Dragging a tab out of the bar makes a window; Window › Merge All Windows puts it back.
+Status: done
+Built: Tabs are the system's window tabs. File › New Tab (⌘T) and the tab bar's + open the start folder in a tab; ⌘-double-click a folder, or File › Open in New Tab (⌃⌘O), opens it in a tab of this window, and ⌥-double-click still opens a window. Each tab has its own history and view, and a second tab on a folder opens even when another tab already shows it. Show Tab Bar, Move Tab to New Window and Merge All Windows come from the system.
 
 ### S-031 Start from Home
 As the user, the Home page shows my pinned folders, recent files and volumes with free space.

@@ -38,6 +38,7 @@ struct ContentView: View {
         .toolbar(removing: .title)
         .toolbar { BrowserToolbar(model: browser) }
         .background(WindowObserver { MenuState.shared.activate(browser) })
+        .background(TabJoiner())
         .sheet(item: conflictBinding) { question in
             ConflictSheet(question: question)
         }
@@ -54,7 +55,7 @@ struct ContentView: View {
             Text("If you make this change, the file may open in a different app.")
         }
         .onAppear {
-            browser.openWindow = { url in openWindow(id: KamiroApp.browserID, value: url) }
+            browser.openWindow = { url, asTab in Tabs.open(url, besides: asTab ? Tabs.front : nil, with: openWindow) }
             browser.openProperties = { url in openWindow(id: KamiroApp.propertiesID, value: url) }
             browser.startIfNeeded()
             MenuState.shared.activate(browser)
