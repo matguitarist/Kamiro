@@ -3861,6 +3861,46 @@
           }
         }
       }
+    },
+    "Folders you already changed keep their view. View › Use as Defaults also sets this.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les dossiers déjà modifiés gardent leur présentation. Présentation › Utiliser comme valeurs par défaut règle aussi ce choix."
+          }
+        }
+      }
+    },
+    "New folders open as": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les nouveaux dossiers s’ouvrent en"
+          }
+        }
+      }
+    },
+    "Recent Files on Home": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers récents dans Accueil"
+          }
+        }
+      }
+    },
+    "Sidebar": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Barre latérale"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -73,3 +73,13 @@ private func scratchFile() -> URL {
     #expect(ItemOrder(key: .added).sorted(items).map(\.name) == ["a.txt", "b.md"])
     #expect(ItemOrder(key: .ext).sorted(items).map(\.name) == ["b.md", "a.txt"])
 }
+
+@Test func newFoldersOpenInDetailsUntilAnotherViewIsChosen() {
+    var memory = ViewMemory()
+    #expect(memory.standard.mode == .details)
+    let shown = URL(filePath: "/tmp/shown")
+    memory.remember(FolderView(mode: .details), for: shown)
+    memory.setStandardMode(.icons)
+    #expect(memory.view(for: URL(filePath: "/tmp/new")).mode == .icons)
+    #expect(memory.view(for: shown).mode == .details)
+}

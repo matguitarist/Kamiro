@@ -58,10 +58,13 @@ struct ToolsSettings: View {
             ForEach(CommandTool.all) { tool in
                 LabeledContent {
                     if let found = store.installed[tool.id] {
-                        Label(found.version, systemImage: "checkmark.circle.fill")
-                            .labelStyle(.titleAndIcon)
-                            .foregroundStyle(.secondary)
-                            .help(found.url.path)
+                        Label {
+                            Text(verbatim: found.version).foregroundStyle(.secondary)
+                        } icon: {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .help(found.url.path)
                     } else {
                         Button("Copy") { store.copy(tool.brewLine) }
                             .help(String(localized: "Copy the line to paste in Terminal"))

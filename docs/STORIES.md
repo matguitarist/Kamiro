@@ -598,6 +598,7 @@ Status: todo
 As the user, Settings has General (new window opens at, Return opens items, default browser, terminal app, code editor), Views (default view, columns, folders first), Sidebar and Menu.
 Screens: settings-general, settings-views, settings-sidebar
 Status: todo
+Progress (2026-11-20): Sidebar has its own tab (parts to show, Connected Shares, connect all shares). General has Folders (new folders open as Details, Icons or Columns; Recent Files on Home), Keyboard, Open With (Terminal, Code Editor) and Language. Still to do: new window opens at, default browser, a Views tab once columns and folders first join the default view, Menu.
 
 ### S-041 French
 As the user, every screen reads in French when the Mac is in French, with a language choice in Settings.

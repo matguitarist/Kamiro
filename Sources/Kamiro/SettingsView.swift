@@ -25,6 +25,7 @@ struct SettingsView: View {
         Form {
             switch tab {
             case .general: GeneralSettings()
+            case .sidebar: SidebarSettings()
             case .appearance: AppearanceSettings()
             case .tools: ToolsSettings()
             case .updates: UpdateSettings()
@@ -38,13 +39,14 @@ struct SettingsView: View {
 
 /// The Settings tabs. Snapshot mode walks through every case.
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, appearance, tools, updates
+    case general, sidebar, appearance, tools, updates
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .general: String(localized: "General")
+        case .sidebar: String(localized: "Sidebar")
         case .appearance: String(localized: "Appearance")
         case .tools: String(localized: "Tools")
         case .updates: String(localized: "Updates")
@@ -54,6 +56,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .general: "gearshape"
+        case .sidebar: "sidebar.left"
         case .appearance: "paintpalette"
         case .tools: "wrench.and.screwdriver"
         case .updates: "arrow.triangle.2.circlepath"
@@ -69,20 +72,31 @@ struct GeneralSettings: View {
     @AppStorage(Prefs.editor, store: Prefs.defaults) private var editor = ""
     private let editors = ItemActions.installedEditors
     @AppStorage(Prefs.showRecentFiles, store: Prefs.defaults) private var showRecentFiles = true
-    @AppStorage(Prefs.showConnectedShares, store: Prefs.defaults) private var showConnectedShares = false
-    @AppStorage(Prefs.connectAllShares, store: Prefs.defaults) private var connectAllShares = true
+    @State private var newFolderMode = Store.views.memory.standard.mode
 
     var body: some View {
         @Bindable var model = model
+        Section("Folders") {
+            Picker(selection: $newFolderMode) {
+                ForEach(ViewMode.allCases, id: \.self) { mode in
+                    Label(mode.label, systemImage: mode.symbol).tag(mode)
+                }
+            } label: {
+                Text("New folders open as")
+                Text("Folders you already changed keep their view. View › Use as Defaults also sets this.")
+            }
+            .onChange(of: newFolderMode) { _, mode in Store.views.setStandardMode(mode) }
+            Toggle("Recent Files on Home", isOn: $showRecentFiles)
+        }
         Section("Keyboard") {
             Toggle(isOn: $returnOpensItems) {
                 Text("Return opens items")
                 Text("Off, Return renames, like the Finder. On, Return opens, like Windows, and F2 renames.")
             }
         }
-        Section("Terminal") {
+        Section("Open With") {
             // A terminal removed since it was chosen shows as Terminal, the one now used.
-            Picker("Open folders in", selection: Binding(
+            Picker("Terminal", selection: Binding(
                 get: { TerminalApp.chosen(terminal, installed: terminals).bundleID },
                 set: { terminal = $0 })) {
                 ForEach(terminals) { app in
@@ -90,36 +104,15 @@ struct GeneralSettings: View {
                         .tag(app.bundleID)
                 }
             }
-        }
-        // Shown once an editor Kamiro knows is installed (VS Code, Cursor, Zed, Xcode…).
-        if let current = EditorApp.chosen(editor, installed: editors) {
-            Section("Code Editor") {
-                Picker("Open code in", selection: Binding(get: { current.bundleID }, set: { editor = $0 })) {
+            // Shown once an editor Kamiro knows is installed (VS Code, Cursor, Zed, Xcode…).
+            if let current = EditorApp.chosen(editor, installed: editors) {
+                Picker("Code Editor", selection: Binding(get: { current.bundleID }, set: { editor = $0 })) {
                     ForEach(editors) { app in
                         Label { Text(verbatim: app.name) } icon: { TerminalIcon(bundleID: app.bundleID) }
                             .tag(app.bundleID)
                     }
                 }
             }
-        }
-        Section("Show in Sidebar") {
-            ForEach(SidebarSection.allCases, id: \.self) { section in
-                Toggle(section.title, isOn: PinStore.shared.showBinding(section))
-            }
-            Toggle(isOn: $showConnectedShares) {
-                Text("Connected Shares")
-                Text("Under each server in Network. Off, a server's shares open from its page.")
-            }
-            .disabled(!PinStore.shared.shows(.network))
-        }
-        Section("Servers") {
-            Toggle(isOn: $connectAllShares) {
-                Text("Connect all shares when opening a server")
-                Text("Only the first may ask for a password; the others use the one in the keychain.")
-            }
-        }
-        Section("Show on Home") {
-            Toggle("Recent Files", isOn: $showRecentFiles)
         }
         Section("Language") {
             Picker("Language", selection: $model.language) {
@@ -137,6 +130,31 @@ struct GeneralSettings: View {
                     Spacer()
                     Button("Restart Now") { AppLanguage.relaunch() }
                 }
+            }
+        }
+    }
+}
+
+/// Settings › Sidebar: which parts show, and how servers show in Network.
+struct SidebarSettings: View {
+    @AppStorage(Prefs.showConnectedShares, store: Prefs.defaults) private var showConnectedShares = false
+    @AppStorage(Prefs.connectAllShares, store: Prefs.defaults) private var connectAllShares = true
+
+    var body: some View {
+        Section("Show in Sidebar") {
+            ForEach(SidebarSection.allCases, id: \.self) { section in
+                Toggle(section.title, isOn: PinStore.shared.showBinding(section))
+            }
+        }
+        Section("Network") {
+            Toggle(isOn: $showConnectedShares) {
+                Text("Connected Shares")
+                Text("Under each server in Network. Off, a server's shares open from its page.")
+            }
+            .disabled(!PinStore.shared.shows(.network))
+            Toggle(isOn: $connectAllShares) {
+                Text("Connect all shares when opening a server")
+                Text("Only the first may ask for a password; the others use the one in the keychain.")
             }
         }
     }

@@ -126,6 +126,11 @@ public struct ViewMemory: Codable, Equatable, Sendable {
     public mutating func useAsDefaults(_ view: FolderView) {
         standard = view
     }
+
+    /// The view new folders open in (Settings › General). Folders already shown keep theirs.
+    public mutating func setStandardMode(_ mode: ViewMode) {
+        standard.mode = mode
+    }
 }
 
 /// Reads and writes ViewMemory. A missing or damaged file starts over with the defaults.
@@ -147,6 +152,11 @@ public final class ViewStore {
 
     public func useAsDefaults(_ view: FolderView) {
         memory.useAsDefaults(view)
+        save()
+    }
+
+    public func setStandardMode(_ mode: ViewMode) {
+        memory.setStandardMode(mode)
         save()
     }
 
