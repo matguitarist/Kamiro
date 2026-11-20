@@ -94,6 +94,22 @@ private func file(_ name: String, size: Int64? = 0, folder: Bool = false) -> Fil
     #expect(try FolderReader.list(dir, showHidden: true).count == 4)
 }
 
+@Test func listedURLsAreCanonicalHoweverTheFolderIsSpelled() throws {
+    let dir = try scratch()
+    try FileManager.default.createDirectory(at: dir.appending(path: "Folder"), withIntermediateDirectories: false)
+    try Data().write(to: dir.appending(path: "Photo 1.jpg"))
+    let spellings = [dir, URL(filePath: "/private" + dir.path), URL(filePath: dir.path + "/", directoryHint: .isDirectory),
+                     dir.appending(path: "Folder/..")]
+    let expected: Set<URL> = [dir.appending(path: "Folder").canonical, dir.appending(path: "Photo 1.jpg").canonical]
+    for folder in spellings {
+        let items = try FolderReader.list(folder)
+        #expect(Set(items.map(\.url)) == expected, "\(folder.path)")
+        #expect(items.allSatisfy { $0.url == $0.url.canonical })
+    }
+    let root = try FolderReader.list(URL(filePath: "/"))
+    #expect(!root.isEmpty && root.allSatisfy { $0.url == $0.url.canonical && !$0.url.path.hasPrefix("//") })
+}
+
 @Test func aClosedFolderIsDenied() throws {
     let dir = try scratch().appending(path: "Locked")
     try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: false)

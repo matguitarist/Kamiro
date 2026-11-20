@@ -73,3 +73,18 @@ the right edge after every layout (tile). Found by the owner.
 Rule: an AppKit control's built-in affordance isn't enough if people can't find it; check
 the whole hit area, and size special columns (previews, footers) on their own, not by the
 rule for ordinary ones.
+
+## 2026-11-20 Scrolling 10,000 icons and reading a big folder were over budget
+The self-test's scroll check took 17.7 to 18.2 ms a step (limit 16) and the 10,000-file read
+300 to 304 ms (limit 300). Shipped that way in 1.0.0.
+Profiled with `sample` during the self-test:
+- Asking QLThumbnailGenerator for a thumbnail waits on its queue (dispatch_sync): 13% of the
+  scroll time on the main thread. Thumbnails.load now asks from a queue of its own.
+- IconCell.layout measured the name (cellSizeForBounds) and set every frame on each pass,
+  even for an unchanged reused cell: 24%. It now skips when size, icon size, name and
+  rename state are the same as last time.
+- FileItem.init made each URL canonical, and standardizing checks the disk (a stat per file):
+  half of FolderReader.list. The listing now makes the folder canonical once and builds its
+  children's URLs from it.
+Rule: profile before guessing; on main, never call an API that waits on another queue, and
+in per-item code (cells, listings) never touch the disk for what the parent already knows.

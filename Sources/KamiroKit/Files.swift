@@ -32,7 +32,15 @@ public struct FileItem: Identifiable, Hashable, Sendable {
 
     public init(url: URL, name: String, isFolder: Bool, isPackage: Bool = false, isHidden: Bool = false,
                 size: Int64? = nil, modified: Date? = nil, created: Date? = nil, added: Date? = nil, fileID: UInt64? = nil) {
-        self.url = url.canonical
+        self.init(canonicalURL: url.canonical, name: name, isFolder: isFolder, isPackage: isPackage, isHidden: isHidden,
+                  size: size, modified: modified, created: created, added: added, fileID: fileID)
+    }
+
+    /// For a URL already in its canonical spelling: standardizing checks the disk, which is
+    /// most of the time spent reading a big folder.
+    init(canonicalURL url: URL, name: String, isFolder: Bool, isPackage: Bool, isHidden: Bool,
+         size: Int64?, modified: Date?, created: Date?, added: Date?, fileID: UInt64?) {
+        self.url = url
         self.name = name
         self.isFolder = isFolder
         self.isPackage = isPackage
@@ -89,10 +97,18 @@ public enum FolderReader {
         } catch {
             throw FolderError(error)
         }
-        return urls.compactMap(item(at:))
+        // The folder is made canonical once; its children's URLs are built from it.
+        let base = folder.canonical.path
+        let prefix = base.hasSuffix("/") ? base : base + "/"
+        return urls.compactMap {
+            item(at: $0, canonical: URL(filePath: prefix + $0.lastPathComponent, directoryHint: .notDirectory))
+        }
     }
 
-    public static func item(at url: URL) -> FileItem? {
+    public static func item(at url: URL) -> FileItem? { item(at: url, canonical: nil) }
+
+    /// `canonical` is `url.canonical` when the caller already knows it.
+    static func item(at url: URL, canonical: URL?) -> FileItem? {
         guard let values = try? url.resourceValues(forKeys: keys) else { return nil }
         var isDirectory = values.isDirectory ?? false
         var isPackage = values.isPackage ?? false
@@ -101,7 +117,7 @@ public enum FolderReader {
             isDirectory = target.isDirectory ?? false
             isPackage = target.isPackage ?? false
         }
-        return FileItem(url: url, name: values.name ?? url.lastPathComponent,
+        return FileItem(canonicalURL: canonical ?? url.canonical, name: values.name ?? url.lastPathComponent,
                         isFolder: isDirectory && !isPackage, isPackage: isPackage,
                         isHidden: values.isHidden ?? false,
                         size: isDirectory ? nil : values.fileSize.map(Int64.init),

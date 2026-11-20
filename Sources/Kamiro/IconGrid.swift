@@ -383,6 +383,12 @@ final class IconCell: NSView {
     var iconSize: Double = IconSize.standard { didSet { if iconSize != oldValue { needsLayout = true } } }
     var isSelected = false { didSet { updateLook() } }
     var isRenaming = false
+    /// What the last layout was for: when none of it changed, the frames are still right.
+    private var laidOut: LayoutKey?
+
+    private struct LayoutKey: Equatable {
+        let size: NSSize, iconSize: Double, name: String, renaming: Bool
+    }
 
     static let labelLines = 2
 
@@ -417,6 +423,10 @@ final class IconCell: NSView {
 
     override func layout() {
         super.layout()
+        // Scrolling lays out every reused cell; measuring its name again is most of the cost.
+        let key = LayoutKey(size: bounds.size, iconSize: iconSize, name: label.stringValue, renaming: isRenaming)
+        guard key != laidOut else { return }
+        laidOut = key
         let size = CGFloat(iconSize)
         let tileSide = size + Space.sm * 2
         tile.frame = NSRect(x: (bounds.width - tileSide) / 2, y: 0, width: tileSide, height: tileSide)
@@ -478,15 +488,21 @@ final class Thumbnails {
         waiting[key] = [done]
         requested += 1
         let side = IconSize.thumbnailStep(size)
-        let request = QLThumbnailGenerator.Request(fileAt: file.url, size: CGSize(width: side, height: side),
-                                                   scale: scale, representationTypes: .all)
-        let bare = UTType(filenameExtension: file.url.pathExtension).map { $0.conforms(to: .image) || $0.conforms(to: .audiovisualContent) } ?? false
-        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, _ in
-            // An icon (no thumbnail for this kind) is left to IconCache.
-            let image = thumbnail?.type == .thumbnail ? thumbnail?.cgImage : nil
-            Task { @MainActor in self.finish(key, image, page: !bare) }
+        let url = file.url
+        let bare = UTType(filenameExtension: url.pathExtension).map { $0.conforms(to: .image) || $0.conforms(to: .audiovisualContent) } ?? false
+        // Asking Quick Look waits on its own queue: off the main thread, so scrolling doesn't.
+        Self.queue.async {
+            let request = QLThumbnailGenerator.Request(fileAt: url, size: CGSize(width: side, height: side),
+                                                       scale: scale, representationTypes: .all)
+            QLThumbnailGenerator.shared.generateBestRepresentation(for: request) { thumbnail, _ in
+                // An icon (no thumbnail for this kind) is left to IconCache.
+                let image = thumbnail?.type == .thumbnail ? thumbnail?.cgImage : nil
+                Task { @MainActor in self.finish(key, image, page: !bare) }
+            }
         }
     }
+
+    private static let queue = DispatchQueue(label: "Kamiro.thumbnails", qos: .userInitiated)
 
     private func finish(_ key: String, _ cgImage: CGImage?, page: Bool) {
         var image: NSImage?
