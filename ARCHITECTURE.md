@@ -24,3 +24,13 @@
 ## Checks
 
 `SelfTest` (+Views) drives a real window on a /tmp tree; `Snapshot` shoots every page.
+
+## Places that aren't folders (M4)
+
+A window shows either a folder (a file URL) or a VirtualPlace (KamiroKit/Places.swift): a tag's items
+or search results, written as `kamiro:tag?name=Red` or `kamiro:search?text=…&in=…&kind=…&date=…`.
+Because they are URLs, Back and Forward, per-place view memory and the restored window need no
+special case. BrowserModel.read asks the place for its items (Spotlight; test runs walk the /tmp
+tree instead). Actions that need a real folder check `isVirtual`. A search's scope or filters
+change with History.replace, so Back leaves the search in one step. The toolbar filter
+(NameFilter) narrows `items` from `allItems` without reading the folder again.
