@@ -55,9 +55,21 @@ public struct EditorApp: Hashable, Sendable, Identifiable {
         installed.first { $0.bundleID == bundleID } ?? installed.first
     }
 
-    /// Folders and text (source code, JSON, Markdown…) open in an editor; pictures and PDFs don't.
+    /// Project files keep opening in the app that owns them (Xcode, Godot, Unity, Rider, Unreal…),
+    /// even when they are text underneath.
+    public static let projectExtensions: Set<String> = [
+        "xcodeproj", "xcworkspace", "playground", "swiftpm",
+        "godot", "tscn", "tres",
+        "unity", "unitypackage", "prefab", "asset",
+        "sln", "csproj", "fsproj", "vbproj",
+        "uproject", "uplugin",
+    ]
+
+    /// Folders and text (source code, JSON, Markdown…) open in an editor; pictures, PDFs and
+    /// project files don't.
     public static func opens(_ url: URL, isFolder: Bool) -> Bool {
         if isFolder { return true }
+        if projectExtensions.contains(url.pathExtension.lowercased()) { return false }
         guard !url.pathExtension.isEmpty, let type = UTType(filenameExtension: url.pathExtension) else {
             // No extension: Makefile, LICENSE, dotfiles are text far more often than not.
             return url.pathExtension.isEmpty

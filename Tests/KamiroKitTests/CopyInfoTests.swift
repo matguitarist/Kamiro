@@ -37,7 +37,9 @@ import Testing
     for name in ["main.swift", "notes.md", "data.json", "readme.txt", "Info.plist", "Makefile", "page.html"] {
         #expect(EditorApp.opens(URL(filePath: "/p/\(name)"), isFolder: false), "\(name)")
     }
-    for name in ["photo.jpg", "Guide.pdf", "song.m4a", "archive.zip"] {
+    for name in ["photo.jpg", "Guide.pdf", "song.m4a", "archive.zip",
+                 "App.xcodeproj", "App.xcworkspace", "project.godot", "Main.tscn", "Level.unity", "Game.sln",
+                 "Game.csproj", "Game.uproject"] {
         #expect(!EditorApp.opens(URL(filePath: "/p/\(name)"), isFolder: false), "\(name)")
     }
 }
