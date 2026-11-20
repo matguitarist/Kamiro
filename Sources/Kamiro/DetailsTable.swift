@@ -27,18 +27,22 @@ struct DetailsTable: NSViewRepresentable {
         table.columnAutoresizingStyle = .firstColumnOnlyAutoresizingStyle
         table.focusRingType = .none
         table.allowsTypeSelect = true
-        for column in DetailsColumn.allCases {
+        // Every column exists; the folder's view says which show, in what order (S-021).
+        for column in ListColumn.allCases {
             let tableColumn = NSTableColumn(identifier: column.identifier)
             tableColumn.title = column.title
             tableColumn.width = column.width
             tableColumn.minWidth = column.minWidth
-            tableColumn.sortDescriptorPrototype = NSSortDescriptor(key: column.rawValue, ascending: column.ascendingFirst)
+            if let key = column.sortKey {
+                tableColumn.sortDescriptorPrototype = NSSortDescriptor(key: key.rawValue, ascending: column.ascendingFirst)
+            }
             tableColumn.headerCell.alignment = column == .size ? .right : .left
+            tableColumn.headerToolTip = column.title
             table.addTableColumn(tableColumn)
         }
-        table.autosaveName = "Kamiro.Details"
-        table.autosaveTableColumns = true
-        table.sortDescriptors = [NSSortDescriptor(key: model.order.key.rawValue, ascending: model.order.ascending)]
+        let headerMenu = NSMenu()
+        headerMenu.delegate = context.coordinator
+        table.headerView?.menu = headerMenu
         table.dataSource = context.coordinator
         table.delegate = context.coordinator
         table.target = context.coordinator
@@ -55,7 +59,8 @@ struct DetailsTable: NSViewRepresentable {
         let scroll = NSScrollView()
         scroll.documentView = table
         scroll.hasVerticalScroller = true
-        scroll.hasHorizontalScroller = false
+        // Extra columns (S-021) can be wider than the window.
+        scroll.hasHorizontalScroller = true
         scroll.autohidesScrollers = true
         return scroll
     }
@@ -65,36 +70,42 @@ struct DetailsTable: NSViewRepresentable {
     }
 }
 
-enum DetailsColumn: String, CaseIterable {
-    case name, modified, size, kind
-
+extension ListColumn {
     var identifier: NSUserInterfaceItemIdentifier { NSUserInterfaceItemIdentifier(rawValue) }
 
     var title: String {
         switch self {
         case .name: String(localized: "Name")
         case .modified: String(localized: "Date Modified")
+        case .created: String(localized: "Date Created")
+        case .added: String(localized: "Date Added")
         case .size: String(localized: "Size")
         case .kind: String(localized: "Kind")
+        case .ext: String(localized: "Extension")
+        case .tags: String(localized: "Tags")
+        case .comments: String(localized: "Comments")
         }
     }
 
     var width: CGFloat {
         switch self {
         case .name: 320
-        case .modified: 180
+        case .modified, .created, .added: 180
         case .size: 84
         case .kind: 150
+        case .ext: 84
+        case .tags: 120
+        case .comments: 200
         }
     }
 
     var minWidth: CGFloat { self == .name ? 160 : 60 }
 
     /// Dates and sizes sort newest and biggest first on the first click, like the Finder.
-    var ascendingFirst: Bool { self == .name || self == .kind }
+    var ascendingFirst: Bool { ![.modified, .created, .added, .size].contains(self) }
 }
 
-final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
     let model: BrowserModel
     weak var table: FileTable?
     private(set) var items: [FileItem] = []
@@ -104,6 +115,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     private var focus = -1
     private var cutVersion = -1
     private var renameToken = 0
+    private var viewVersion = -1
     private var applying = false
     /// The name being edited; the list doesn't reload meanwhile.
     var rename: InlineRename?
@@ -131,8 +143,13 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         }
         applying = true
         defer { applying = false }
+        if viewVersion != model.viewVersion {
+            viewVersion = model.viewVersion
+            applyColumns()
+        }
         if version != model.itemsVersion {
             version = model.itemsVersion
+            FileExtras.shared.forget()
             items = model.items
             rowOf = Dictionary(items.enumerated().map { ($1.url, $0) }, uniquingKeysWith: { first, _ in first })
             table.reloadData()
@@ -167,10 +184,50 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         }
     }
 
+    /// Shows the folder's columns in its order and widths, and its sort.
+    private func applyColumns() {
+        guard let table else { return }
+        let shown = model.columns
+        for (index, column) in shown.enumerated() {
+            let current = table.column(withIdentifier: column.identifier)
+            if current >= 0, current != index { table.moveColumn(current, toColumn: index) }
+        }
+        for tableColumn in table.tableColumns {
+            guard let column = ListColumn(rawValue: tableColumn.identifier.rawValue) else { continue }
+            tableColumn.isHidden = !shown.contains(column)
+            tableColumn.width = model.widths[column].map { CGFloat($0) } ?? column.width
+        }
+        let sort = NSSortDescriptor(key: model.order.key.rawValue, ascending: model.order.ascending)
+        if table.sortDescriptors.first != sort { table.sortDescriptors = [sort] }
+    }
+
+    func tableViewColumnDidMove(_ notification: Notification) {
+        guard !applying, let table else { return }
+        model.columns = table.tableColumns.filter { !$0.isHidden }.compactMap { ListColumn(rawValue: $0.identifier.rawValue) }
+    }
+
+    func tableViewColumnDidResize(_ notification: Notification) {
+        guard !applying, table?.inLiveResize == false,
+              let tableColumn = notification.userInfo?["NSTableColumn"] as? NSTableColumn,
+              let column = ListColumn(rawValue: tableColumn.identifier.rawValue), !tableColumn.isHidden else { return }
+        model.setWidth(Double(tableColumn.width), of: column)
+    }
+
+    // MARK: The header's right-click menu (S-021)
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        for column in ListColumn.allCases where column != .name {
+            let item = MenuAction.item(column.title) { [weak self] in self?.model.toggleColumn(column) }
+            item.state = model.columns.contains(column) ? .on : .off
+            menu.addItem(item)
+        }
+    }
+
     func numberOfRows(in tableView: NSTableView) -> Int { items.count }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard let tableColumn, let column = DetailsColumn(rawValue: tableColumn.identifier.rawValue),
+        guard let tableColumn, let column = ListColumn(rawValue: tableColumn.identifier.rawValue),
               items.indices.contains(row) else { return nil }
         let item = items[row]
         let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: nil) as? NSTableCellView
@@ -199,7 +256,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     }
 
     func tableView(_ tableView: NSTableView, typeSelectStringFor tableColumn: NSTableColumn?, row: Int) -> String? {
-        tableColumn?.identifier == DetailsColumn.name.identifier && items.indices.contains(row) ? items[row].name : nil
+        tableColumn?.identifier == ListColumn.name.identifier && items.indices.contains(row) ? items[row].name : nil
     }
 
     @objc func doubleClicked(_ sender: NSTableView) {
@@ -211,7 +268,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
 
     // MARK: Cells
 
-    static func makeCell(_ column: DetailsColumn) -> NSTableCellView {
+    static func makeCell(_ column: ListColumn) -> NSTableCellView {
         let cell = NSTableCellView()
         cell.identifier = column.identifier
         let text = NSTextField(labelWithString: "")
@@ -245,12 +302,17 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         return cell
     }
 
-    private static func text(_ column: DetailsColumn, _ item: FileItem) -> String {
+    private static func text(_ column: ListColumn, _ item: FileItem) -> String {
         switch column {
         case .name: item.name
         case .modified: item.modified.map(dates.string(from:)) ?? "--"
+        case .created: item.created.map(dates.string(from:)) ?? "--"
+        case .added: item.added.map(dates.string(from:)) ?? "--"
         case .size: item.size.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? "--"
         case .kind: KindCache.shared.kind(of: item)
+        case .ext: item.isFolder ? "" : item.url.pathExtension
+        case .tags: FileExtras.shared.tags(of: item.url).joined(separator: ", ")
+        case .comments: FileExtras.shared.comment(of: item.url)
         }
     }
 
@@ -262,6 +324,34 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         formatter.doesRelativeDateFormatting = true
         return formatter
     }()
+}
+
+/// Tags and Finder comments, read only for the rows on screen (they're slow to read for a
+/// whole folder: docs/research, Benchmark), and forgotten when the folder is read again.
+final class FileExtras {
+    static let shared = FileExtras()
+    private var tags: [URL: [String]] = [:]
+    private var comments: [URL: String] = [:]
+
+    func forget() {
+        tags.removeAll()
+        comments.removeAll()
+    }
+
+    func tags(of url: URL) -> [String] {
+        if let hit = tags[url] { return hit }
+        let names = (try? url.resourceValues(forKeys: [.tagNamesKey]))?.tagNames ?? []
+        tags[url] = names
+        return names
+    }
+
+    func comment(of url: URL) -> String {
+        if let hit = comments[url] { return hit }
+        let item = MDItemCreateWithURL(nil, url as CFURL)
+        let text = item.flatMap { MDItemCopyAttribute($0, kMDItemFinderComment) as? String } ?? ""
+        comments[url] = text
+        return text
+    }
 }
 
 /// File icons: one per extension for plain files, one per path for folders and apps

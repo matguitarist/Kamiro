@@ -15,3 +15,137 @@ public enum IconSize {
         [64, 128, 256].first { $0 >= points } ?? 256
     }
 }
+
+/// A column of the details view. Name is always shown.
+public enum ListColumn: String, Codable, Sendable, CaseIterable {
+    case name, modified, created, added, size, kind, ext, tags, comments
+
+    /// What a new folder shows: the Finder's four.
+    public static let standard: [ListColumn] = [.name, .modified, .size, .kind]
+
+    /// The sort a click on its header gives; Tags and Comments don't sort.
+    public var sortKey: SortKey? {
+        switch self {
+        case .name: .name
+        case .modified: .modified
+        case .created: .created
+        case .added: .added
+        case .size: .size
+        case .kind: .kind
+        case .ext: .ext
+        case .tags, .comments: nil
+        }
+    }
+}
+
+/// How one folder is shown: the view, the sort, and the details view's columns.
+public struct FolderView: Codable, Equatable, Sendable {
+    public var mode: ViewMode
+    public var order: ItemOrder
+    /// Shown columns, left to right; always starts with Name.
+    public var columns: [ListColumn]
+    /// Column widths people dragged, in points.
+    public var widths: [ListColumn: Double]
+
+    public init(mode: ViewMode = .details, order: ItemOrder = ItemOrder(), columns: [ListColumn] = ListColumn.standard,
+                widths: [ListColumn: Double] = [:]) {
+        self.mode = mode
+        self.order = order
+        self.columns = Self.clean(columns)
+        self.widths = widths
+    }
+
+    /// A file written by an older Kamiro opens: missing settings take their defaults.
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let standard = FolderView()
+        mode = (try? values.decodeIfPresent(ViewMode.self, forKey: .mode)) ?? standard.mode
+        order = (try? values.decodeIfPresent(ItemOrder.self, forKey: .order)) ?? standard.order
+        let names = (try? values.decodeIfPresent([String].self, forKey: .columns)) ?? nil
+        columns = Self.clean(names.map { $0.compactMap(ListColumn.init(rawValue:)) } ?? standard.columns)
+        let sizes = (try? values.decodeIfPresent([String: Double].self, forKey: .widths)) ?? nil
+        widths = Dictionary(uniqueKeysWithValues: (sizes ?? [:]).compactMap { key, value in ListColumn(rawValue: key).map { ($0, value) } })
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(mode, forKey: .mode)
+        try values.encode(order, forKey: .order)
+        try values.encode(columns.map(\.rawValue), forKey: .columns)
+        try values.encode(Dictionary(uniqueKeysWithValues: widths.map { ($0.key.rawValue, $0.value) }), forKey: .widths)
+    }
+
+    private enum CodingKeys: String, CodingKey { case mode, order, columns, widths }
+
+    /// Name first, each column once.
+    static func clean(_ columns: [ListColumn]) -> [ListColumn] {
+        var seen: Set<ListColumn> = [.name]
+        return [.name] + columns.filter { seen.insert($0).inserted }
+    }
+
+    /// Shows or hides a column; a shown one goes at the end. Name can't be hidden.
+    public mutating func toggle(_ column: ListColumn) {
+        guard column != .name else { return }
+        if let index = columns.firstIndex(of: column) {
+            columns.remove(at: index)
+            if order.key == column.sortKey { order = ItemOrder(foldersFirst: order.foldersFirst) }
+        } else {
+            columns.append(column)
+        }
+    }
+}
+
+/// Every folder's view, and the one new folders get. Kept in a small JSON file.
+public struct ViewMemory: Codable, Equatable, Sendable {
+    public var standard: FolderView
+    public var folders: [String: FolderView]
+
+    public init(standard: FolderView = FolderView(), folders: [String: FolderView] = [:]) {
+        self.standard = standard
+        self.folders = folders
+    }
+
+    public func view(for folder: URL) -> FolderView {
+        folders[folder.canonical.path] ?? standard
+    }
+
+    public mutating func remember(_ view: FolderView, for folder: URL) {
+        folders[folder.canonical.path] = view
+    }
+
+    /// "Use as Defaults": new folders, and folders never changed, show this.
+    public mutating func useAsDefaults(_ view: FolderView) {
+        standard = view
+    }
+}
+
+/// Reads and writes ViewMemory. A missing or damaged file starts over with the defaults.
+public final class ViewStore {
+    public let url: URL
+    public private(set) var memory: ViewMemory
+
+    public init(url: URL) {
+        self.url = url
+        memory = (try? Data(contentsOf: url)).flatMap { try? JSONDecoder().decode(ViewMemory.self, from: $0) } ?? ViewMemory()
+    }
+
+    public func view(for folder: URL) -> FolderView { memory.view(for: folder) }
+
+    public func remember(_ view: FolderView, for folder: URL) {
+        memory.remember(view, for: folder)
+        save()
+    }
+
+    public func useAsDefaults(_ view: FolderView) {
+        memory.useAsDefaults(view)
+        save()
+    }
+
+    private func save() {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        guard let data = try? encoder.encode(memory) else { return }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: url, options: .atomic)
+    }
+}

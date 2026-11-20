@@ -269,7 +269,8 @@ Screens: columns-menu
 Depends: S-002
 Acceptance:
 - [unit] Columns and sort persist per folder, with a default for new folders.
-Status: todo
+Status: done
+Built: Right-click the details header to show Date Created, Date Added, Extension, Tags or Comments; drag headers to reorder and edges to resize. Each folder keeps its view (mode, sort, columns, widths) in views.json beside the settings; folders never changed get the default, which View › Use as Defaults sets. Tags and Comments are read only for rows on screen and don't sort. Column view stays on while browsing in it.
 
 ### S-022 Group items
 As the user, I group the list by Kind, Date Modified, Size or Name (View › Group By), with collapsible group headers.

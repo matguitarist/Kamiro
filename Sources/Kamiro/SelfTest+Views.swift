@@ -30,8 +30,10 @@ extension SelfTest {
         browser.grid?.rename?.end()
         await pause()
 
-        let asked = Thumbnails.shared.requested
+        // Each folder has its own view (S-021): the big folder is shown as icons too.
         await open("10k")
+        let asked = Thumbnails.shared.requested
+        browser.mode = .icons
         await pause(0.5)
         let visible = browser.grid?.grid?.indexPathsForVisibleItems().count ?? 0
         let loaded = Thumbnails.shared.requested - asked
@@ -54,8 +56,53 @@ extension SelfTest {
         browser.mode = .details
         await pause()
         check("⌘2 goes back to details", browser.details?.table?.window != nil)
+        await open()
+        browser.mode = .details
 
         await columns(browser: browser, seed: seed, pause: pause, open: open)
+        await chosenColumns(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-021: choose, move and sort columns, per folder.
+    private static func chosenColumns(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        await open("")
+        guard let table = browser.details?.table, let menu = table.headerView?.menu else {
+            check("the header has a right-click menu of columns", false)
+            return
+        }
+        menu.delegate?.menuNeedsUpdate?(menu)
+        let titles = menu.items.map(\.title)
+        check("the header's right-click menu lists every column but Name",
+              titles == ListColumn.allCases.filter { $0 != .name }.map(\.title), "\(titles)")
+        if let created = menu.items.first(where: { $0.title == ListColumn.created.title }), let action = created.action {
+            NSApp.sendAction(action, to: created.target, from: created)
+        }
+        await pause(0.3)
+        let visible = { table.tableColumns.filter { !$0.isHidden }.map(\.identifier.rawValue) }
+        check("choosing Date Created shows it", visible() == ["name", "modified", "size", "kind", "created"], "\(visible())")
+        table.moveColumn(3, toColumn: 1)
+        await pause(0.3)
+        check("a column dragged left stays there", browser.columns == [.name, .kind, .modified, .size, .created], "\(browser.columns)")
+        browser.order = ItemOrder(key: .created, ascending: false)
+        await pause(0.3)
+
+        await open("Photos")
+        check("a folder never changed shows the default columns and sort",
+              visible() == ["name", "modified", "size", "kind"] && browser.order == ItemOrder(), "\(visible())")
+        browser.goBack()
+        await browser.waitUntilLoaded()
+        await pause(0.3)
+        check("going back shows the folder's own columns and sort",
+              visible() == ["name", "kind", "modified", "size", "created"]
+              && table.sortDescriptors.first?.key == SortKey.created.rawValue && browser.order.ascending == false, "\(visible())")
+        let saved = (try? String(contentsOf: Store.views.url, encoding: .utf8)) ?? ""
+        check("the folder's view is saved for the next launch", saved.contains(seed.path) && saved.contains("created"))
+
+        // Back to the default, for the checks after these.
+        browser.toggleColumn(.created)
+        browser.columns = ListColumn.standard
+        browser.order = ItemOrder()
+        await pause(0.3)
     }
 
     // S-020: columns.
@@ -64,7 +111,7 @@ extension SelfTest {
         await open("")
         browser.mode = .columns
         await pause(0.5)
-        let columns = browser.columns
+        let columns = browser.columnView
         let view = columns?.browser
         check("⌘3 shows columns that start at the window's folder", view?.window != nil && columns?.root?.url == seed)
         browser.go(to: url("Projects/Kamiro"), select: [url("Projects/Kamiro/README.md")])
@@ -118,6 +165,8 @@ extension SelfTest {
         FileUndo.manager.undo()
         await pause(0.5)
         await browser.waitUntilLoaded()
+        browser.mode = .details
+        await open("")
         browser.mode = .details
         await pause(0.3)
     }

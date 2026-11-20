@@ -22,7 +22,11 @@ final class BrowserModel {
     /// Shown only when a folder takes more than half a second.
     private(set) var showsLoading = false
     var order = ItemOrder() {
-        didSet { if order != oldValue { resort() } }
+        didSet {
+            guard order != oldValue else { return }
+            resort()
+            remember()
+        }
     }
     /// Icons, details or columns (View menu, ⌘1 to ⌘3).
     var mode: ViewMode = .details {
@@ -30,9 +34,19 @@ final class BrowserModel {
             guard mode != oldValue else { return }
             focusToken += 1
             revealToken += 1
+            remember()
             publish()
         }
     }
+    /// The details view's columns, left to right, and the widths people dragged (S-021).
+    var columns = ListColumn.standard {
+        didSet { if columns != oldValue { remember() } }
+    }
+    private(set) var widths: [ListColumn: Double] = [:]
+    /// Goes up when the columns change from outside the table (a folder's own view, the menu).
+    private(set) var viewVersion = 0
+    @ObservationIgnored private var restoring = false
+    @ObservationIgnored private var widthSave: Task<Void, Never>?
     private(set) var available: Int64?
     /// The table scrolls to the selection when this changes.
     private(set) var revealToken = 0
@@ -57,7 +71,7 @@ final class BrowserModel {
     /// The list, for the self-test (spring-loaded folders, rename).
     @ObservationIgnored weak var details: DetailsCoordinator?
     @ObservationIgnored weak var grid: GridCoordinator?
-    @ObservationIgnored weak var columns: ColumnCoordinator?
+    @ObservationIgnored weak var columnView: ColumnCoordinator?
 
     @ObservationIgnored private var watcher: FolderWatcher?
     @ObservationIgnored private var loadTask: Task<Void, Never>?
@@ -84,7 +98,58 @@ final class BrowserModel {
     func startIfNeeded() {
         guard !started else { return }
         started = true
+        restoreView()
         load(select: [])
+    }
+
+    // MARK: Each folder's view (S-021)
+
+    var folderView: FolderView { FolderView(mode: mode, order: order, columns: columns, widths: widths) }
+
+    /// Shows the folder as it was last shown, or as new folders are. Column view stays on
+    /// while browsing in it.
+    private func restoreView() {
+        restoring = true
+        defer { restoring = false }
+        let view = Store.views.view(for: folder)
+        order = view.order
+        if mode != .columns { mode = view.mode }
+        columns = view.columns
+        widths = view.widths
+        viewVersion += 1
+    }
+
+    private func remember() {
+        guard !restoring else { return }
+        Store.views.remember(folderView, for: folder)
+    }
+
+    func toggleColumn(_ column: ListColumn) {
+        var view = folderView
+        view.toggle(column)
+        restoring = true
+        columns = view.columns
+        order = view.order
+        restoring = false
+        remember()
+        viewVersion += 1
+    }
+
+    /// A column dragged wider or narrower; saved once the drag settles.
+    func setWidth(_ width: Double, of column: ListColumn) {
+        guard widths[column] != width else { return }
+        widths[column] = width
+        widthSave?.cancel()
+        widthSave = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            self?.remember()
+        }
+    }
+
+    /// View › Use as Defaults: folders never changed show this view.
+    func useAsDefaults() {
+        Store.views.useAsDefaults(folderView)
     }
 
     // MARK: Going places
@@ -98,6 +163,7 @@ final class BrowserModel {
         }
         remembered[folder] = selection
         history.go(to: target)
+        restoreView()
         load(select: wanted)
     }
 
@@ -105,6 +171,7 @@ final class BrowserModel {
         let from = folder
         guard history.back(steps) != nil else { return }
         remembered[from] = selection
+        restoreView()
         load(select: remembered[folder] ?? [])
     }
 
@@ -112,6 +179,7 @@ final class BrowserModel {
         let from = folder
         guard history.forward(steps) != nil else { return }
         remembered[from] = selection
+        restoreView()
         load(select: remembered[folder] ?? [])
     }
 

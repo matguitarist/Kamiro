@@ -18,6 +18,7 @@ enum Snapshot {
         case cutDimmed = "cut-dimmed", rename, transferProgress = "transfer-progress", conflictSheet = "conflict-sheet"
         case deleteConfirm = "delete-confirm"
         case icons, columns
+        case columnsMenu = "columns-menu"
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -46,6 +47,11 @@ enum Snapshot {
                 browser.mode = .columns
                 try? await Task.sleep(for: .seconds(0.3))
                 browser.go(to: seed.appending(path: "Projects"), select: [seed.appending(path: "Projects/notes.md")])
+            case .columnsMenu:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                browser.toggleColumn(.created)
+                browser.toggleColumn(.ext)
             }
             await browser.waitUntilLoaded()
             if self != .addressEdit { browser.focusList() }
@@ -72,6 +78,9 @@ enum Snapshot {
             case .conflictSheet: browser.conflicts = []
             case .deleteConfirm: browser.pendingDelete = nil
             case .icons, .columns: browser.mode = .details
+            case .columnsMenu:
+                browser.toggleColumn(.created)
+                browser.toggleColumn(.ext)
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))
@@ -109,7 +118,12 @@ enum Snapshot {
                 for page in Page.allCases where only?.contains(page.rawValue) ?? true {
                     await page.show(in: browser)
                     try? await Task.sleep(for: .seconds(0.8))
-                    capture(to: "\(dir)/\(page.rawValue)-\(mode).png", window: main)
+                    let path = "\(dir)/\(page.rawValue)-\(mode).png"
+                    if page == .columnsMenu {
+                        captureHeaderMenu(of: browser, to: path, window: main)
+                    } else {
+                        capture(to: path, window: main)
+                    }
                     await page.cleanUp(in: browser)
                 }
                 if browser.isEditingPath { browser.cancelEditingPath() }
@@ -146,12 +160,31 @@ enum Snapshot {
         }
     }
 
+    /// Opens the list header's right-click menu and shoots the window's screen area while
+    /// it's open: the menu blocks this task, so a timer in the menu's run loop mode shoots.
+    private static func captureHeaderMenu(of browser: BrowserModel, to path: String, window: NSWindow?) {
+        guard let table = browser.details?.table, let header = table.headerView, let menu = header.menu else {
+            capture(to: path, window: window)
+            return
+        }
+        let timer = Timer(timeInterval: 0.8, repeats: false) { _ in
+            MainActor.assumeIsolated {
+                capture(to: path, window: window, wholeArea: true)
+                browser.details?.table?.headerView?.menu?.cancelTracking()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        let column = table.column(withIdentifier: ListColumn.kind.identifier)
+        let x = column >= 0 ? table.rect(ofColumn: column).minX + Space.lg : header.bounds.midX
+        menu.popUp(positioning: nil, at: NSPoint(x: x, y: header.bounds.maxY), in: header)
+    }
+
     /// Captures the real window with screencapture, so glass, sidebars, and
     /// materials look exactly as on screen. That needs Screen Recording
     /// permission for the app that started this one (your terminal, or Claude).
     /// Without it, falls back to drawing the view hierarchy, which leaves
     /// sidebars and glass blank.
-    private static func capture(to path: String, window: NSWindow? = nil) {
+    private static func capture(to path: String, window: NSWindow? = nil, wholeArea: Bool = false) {
         // Another app can hide this one while snapshots run (computer use hides
         // apps it does not control). Hidden windows cannot be captured.
         if NSApp.isHidden { NSApp.unhideWithoutActivation() }
@@ -168,7 +201,7 @@ enum Snapshot {
         // The first capture of a run sometimes misses the window. Try three times.
         // A sheet or a popover is a window of its own: shoot the screen area of the window instead.
         var arguments = ["-x", "-o", "-l", String(window.windowNumber), path]
-        if window.attachedSheet != nil || TransferCenter.shared.popoverShown, let top = NSScreen.screens.first?.frame.maxY {
+        if wholeArea || window.attachedSheet != nil || TransferCenter.shared.popoverShown, let top = NSScreen.screens.first?.frame.maxY {
             // Popovers can reach past the window's edge: take them in too.
             let popovers = NSApp.windows.filter { $0.isVisible && String(describing: type(of: $0)).contains("Popover") }
             let frame = popovers.reduce(window.frame) { $0.union($1.frame) }

@@ -23,11 +23,13 @@ public struct FileItem: Identifiable, Hashable, Sendable {
     public let size: Int64?
     public let modified: Date?
     public let created: Date?
+    /// When it was put in its folder (Date Added).
+    public let added: Date?
     /// Stays the same across a rename, so a renamed selected file stays selected.
     public let fileID: UInt64?
 
     public init(url: URL, name: String, isFolder: Bool, isPackage: Bool = false, isHidden: Bool = false,
-                size: Int64? = nil, modified: Date? = nil, created: Date? = nil, fileID: UInt64? = nil) {
+                size: Int64? = nil, modified: Date? = nil, created: Date? = nil, added: Date? = nil, fileID: UInt64? = nil) {
         self.url = url.canonical
         self.name = name
         self.isFolder = isFolder
@@ -36,6 +38,7 @@ public struct FileItem: Identifiable, Hashable, Sendable {
         self.size = size
         self.modified = modified
         self.created = created
+        self.added = added
         self.fileID = fileID
     }
 }
@@ -73,7 +76,7 @@ public enum FolderError: Error, Equatable, Sendable {
 public enum FolderReader {
     public static let keys: Set<URLResourceKey> = [
         .nameKey, .isDirectoryKey, .isPackageKey, .isHiddenKey, .isSymbolicLinkKey,
-        .fileSizeKey, .contentModificationDateKey, .creationDateKey, .fileIdentifierKey,
+        .fileSizeKey, .contentModificationDateKey, .creationDateKey, .addedToDirectoryDateKey, .fileIdentifierKey,
     ]
 
     public static func list(_ folder: URL, showHidden: Bool = false) throws(FolderError) -> [FileItem] {
@@ -101,7 +104,7 @@ public enum FolderReader {
                         isHidden: values.isHidden ?? false,
                         size: isDirectory ? nil : values.fileSize.map(Int64.init),
                         modified: values.contentModificationDate, created: values.creationDate,
-                        fileID: values.fileIdentifier)
+                        added: values.addedToDirectoryDate, fileID: values.fileIdentifier)
     }
 }
 
@@ -133,7 +136,7 @@ public final class KindCache: Sendable {
 }
 
 public enum SortKey: String, Sendable, CaseIterable, Codable {
-    case name, modified, size, kind
+    case name, modified, created, added, size, kind, ext
 }
 
 /// How a listing is sorted: Finder's name order ("2" before "10"), folders first.
@@ -155,8 +158,11 @@ public struct ItemOrder: Equatable, Sendable, Codable {
             let result: ComparisonResult = switch key {
             case .name: a.item.name.localizedStandardCompare(b.item.name)
             case .modified: Self.compare(a.item.modified ?? .distantPast, b.item.modified ?? .distantPast)
+            case .created: Self.compare(a.item.created ?? .distantPast, b.item.created ?? .distantPast)
+            case .added: Self.compare(a.item.added ?? .distantPast, b.item.added ?? .distantPast)
             case .size: Self.compare(a.item.size ?? -1, b.item.size ?? -1)
             case .kind: a.kind.localizedStandardCompare(b.kind)
+            case .ext: a.item.url.pathExtension.localizedStandardCompare(b.item.url.pathExtension)
             }
             if result == .orderedSame {
                 return a.item.name.localizedStandardCompare(b.item.name) == .orderedAscending

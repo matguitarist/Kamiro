@@ -401,6 +401,16 @@
         }
       }
     },
+    "Comments": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commentaires"
+          }
+        }
+      }
+    },
     "copy": {
       "localizations": {
         "fr": {
@@ -527,6 +537,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Données"
+          }
+        }
+      }
+    },
+    "Date Added": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date d’ajout"
+          }
+        }
+      }
+    },
+    "Date Created": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date de création"
           }
         }
       }
@@ -707,6 +737,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dossier parent"
+          }
+        }
+      }
+    },
+    "Extension": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension"
           }
         }
       }
@@ -1411,6 +1451,16 @@
         }
       }
     },
+    "Show folders you haven't changed like this one": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher comme celui-ci les dossiers que vous n’avez pas modifiés"
+          }
+        }
+      }
+    },
     "Show Full Path": {
       "localizations": {
         "fr": {
@@ -1527,6 +1577,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Système (%@)"
+          }
+        }
+      }
+    },
+    "Tags": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags"
           }
         }
       }
@@ -1657,6 +1717,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Utiliser .%@"
+          }
+        }
+      }
+    },
+    "Use as Defaults": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utiliser comme valeurs par défaut"
           }
         }
       }

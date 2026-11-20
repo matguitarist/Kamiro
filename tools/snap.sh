@@ -10,6 +10,6 @@ shots=/tmp/Kamiro-shots
 rm -rf ~/Library/Saved\ Application\ State/com.mathieuares.kamiro.savedState
 "${0:A:h}/seed-tree.sh" >/dev/null
 # Seed data only fills an empty store, so start from nothing.
-rm -f $store ${store:r}.log
+rm -f $store ${store:r}.log ${store:r}.views.json
 rm -rf $shots
 APP_STORE=$store APP_SEED=1 APP_SNAPSHOT=$shots $app

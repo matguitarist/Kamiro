@@ -136,7 +136,7 @@ extension DetailsCoordinator {
         guard let table, let row = rowOf[url], rename == nil else { return }
         table.selectRowIndexes([row], byExtendingSelection: false)
         table.scrollRowToVisible(row)
-        let nameColumn = table.column(withIdentifier: DetailsColumn.name.identifier)
+        let nameColumn = table.column(withIdentifier: ListColumn.name.identifier)
         guard nameColumn >= 0, let cell = table.view(atColumn: nameColumn, row: row, makeIfNecessary: true) as? NSTableCellView,
               let field = cell.textField else { return }
         let session = InlineRename(url: url, field: field, model: model, isFolder: items[row].isFolder,

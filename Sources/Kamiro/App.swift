@@ -105,6 +105,11 @@ enum Store {
 
     static let log = LogStore(fileURL: logURL)
 
+    /// Each folder's view (S-021): next to APP_STORE in a test run.
+    static let views = ViewStore(url: isOverridden
+        ? url.deletingPathExtension().appendingPathExtension("views.json")
+        : folder.appending(path: "views.json"))
+
     /// The sample tree snapshots and the self-test browse (tools/seed-tree.sh).
     static let seedFolder = URL(filePath: "/tmp/Kamiro-seed")
 

@@ -78,6 +78,9 @@ struct KamiroCommands: Commands {
                     .keyboardShortcut(mode.key)
             }
             Divider()
+            Button("Use as Defaults") { menu.browser?.useAsDefaults() }
+                .help("Show folders you haven't changed like this one")
+            Divider()
         }
         CommandGroup(after: .toolbar) {
             Button(showStatusBar ? "Hide Status Bar" : "Show Status Bar") { showStatusBar.toggle() }

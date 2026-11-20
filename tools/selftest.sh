@@ -14,7 +14,7 @@ for lang in $langs; do
   rm -rf ~/Library/Saved\ Application\ State/com.mathieuares.kamiro.savedState
   "$here/seed-tree.sh" >/dev/null
   defaults delete com.mathieuares.kamiro.test >/dev/null 2>&1 || true
-  rm -f $store ${store:r}.log
+  rm -f $store ${store:r}.log ${store:r}.views.json
   print "== $lang"
   # A run that hangs counts as a failure after two minutes.
   APP_STORE=$store $app -ApplePersistenceIgnoreState YES -AppleLanguages "($lang)" --selftest &

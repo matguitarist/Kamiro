@@ -39,7 +39,7 @@ struct ColumnBrowser: NSViewRepresentable {
         browser.setDraggingSourceOperationMask([.copy, .move, .generic], forLocal: false)
         context.coordinator.browser = browser
         context.coordinator.start()
-        model.columns = context.coordinator
+        model.columnView = context.coordinator
         model.quickLook = { [weak browser] in browser?.toggleQuickLook() }
         return browser
     }
