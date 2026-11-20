@@ -38,6 +38,13 @@ public enum FolderSize {
         if Task.isCancelled { throw CancellationError() }
         return total
     }
+
+    /// How long to wait before measuring a folder again after a change inside it: ten times what
+    /// the last measure took, at least 2 s. A folder that changes all the time and takes minutes to
+    /// walk (~/Library) is measured now and then instead of without end.
+    public static func recheckDelay(after took: Duration) -> Duration {
+        max(.seconds(2), took * 10)
+    }
 }
 
 /// Calls `changed` with the paths that changed anywhere under a folder, from FSEvents,

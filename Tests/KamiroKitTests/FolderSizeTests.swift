@@ -74,3 +74,9 @@ private func allocated(_ url: URL) -> Int64 {
     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: dir.appending(path: "inner").path)
     #expect(throws: FolderError.denied) { try FolderSize.measure(dir.appending(path: "inner")) }
 }
+
+@Test func busyFoldersAreMeasuredAgainOnlyNowAndThen() {
+    #expect(FolderSize.recheckDelay(after: .milliseconds(5)) == .seconds(2))
+    #expect(FolderSize.recheckDelay(after: .seconds(3)) == .seconds(30))
+    #expect(FolderSize.recheckDelay(after: .seconds(180)) == .seconds(1800))
+}

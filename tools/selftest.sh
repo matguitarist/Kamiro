@@ -6,6 +6,14 @@
 set -u
 here=${0:A:h}
 app=~/Applications/Kamiro.app/Contents/MacOS/Kamiro
+# Test runs (the smallest-size shots especially) must not change the real window's saved size.
+frameKey="NSWindow Frame browser-AppWindow-1"
+savedFrame=$(defaults read com.mathieuares.kamiro "$frameKey" 2>/dev/null)
+restoreFrame() {
+  if [[ -n $savedFrame ]]; then defaults write com.mathieuares.kamiro "$frameKey" "$savedFrame"
+  else defaults delete com.mathieuares.kamiro "$frameKey" 2>/dev/null; fi
+}
+trap restoreFrame EXIT
 store=/tmp/Kamiro-self.json
 result=0
 langs=($@)

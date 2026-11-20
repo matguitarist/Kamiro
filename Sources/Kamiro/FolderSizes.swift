@@ -20,12 +20,19 @@ final class FolderSizes {
     @ObservationIgnored private var run = 0
     @ObservationIgnored private var waiting: [URL] = []
     @ObservationIgnored private var watcher: TreeWatcher?
+    /// When each folder was last measured and how long that took, to space out measuring it again.
+    @ObservationIgnored private var lastRun: [URL: (end: ContinuousClock.Instant, took: Duration)] = [:]
+    @ObservationIgnored private var measuring: URL?
+    @ObservationIgnored private var rechecks: [URL: Task<Void, Never>] = [:]
 
     /// Forgets the old folder's sizes and watches `folder`; `items` gives what's on screen.
     func start(in folder: URL, items: @escaping () -> [FileItem]) {
         task?.cancel()
         task = nil
         waiting = []
+        rechecks.values.forEach { $0.cancel() }
+        rechecks = [:]
+        lastRun = [:]
         sizes = [:]
         version += 1
         self.folder = folder
@@ -41,12 +48,16 @@ final class FolderSizes {
         guard task == nil, !waiting.isEmpty, let folder else { return }
         run += 1
         let current = run
-        task = Task { [weak self] in
-            defer { if self?.run == current { self?.task = nil } }
+        task = Task(priority: .utility) { [weak self] in
+            defer { if self?.run == current { self?.task = nil; self?.measuring = nil } }
             while let self, !Task.isCancelled, !waiting.isEmpty {
                 let next = waiting.removeFirst()
+                measuring = next
+                let started = ContinuousClock.now
                 let measured = await Self.size(of: next)
                 guard !Task.isCancelled, self.folder == folder else { break }
+                lastRun[next] = (ContinuousClock.now, ContinuousClock.now - started)
+                measuring = nil
                 // A folder that can't be read keeps its "—".
                 guard case .success(let size) = measured else { continue }
                 sizes[next] = size
@@ -66,6 +77,23 @@ final class FolderSizes {
         guard let watcher else { return }
         let names = Set(paths.compactMap(watcher.child(holding:)))
         let changed = items().filter { ($0.isFolder || $0.isPackage) && names.contains($0.name) }.map(\.url)
-        measure(changed)
+        for url in changed where !waiting.contains(url) && rechecks[url] == nil {
+            // Being measured, or measured a moment ago: measure it again after a pause.
+            let wait: Duration
+            if url == measuring {
+                wait = .seconds(2)
+            } else if let last = lastRun[url] {
+                wait = FolderSize.recheckDelay(after: last.took) - (ContinuousClock.now - last.end)
+            } else {
+                wait = .zero
+            }
+            guard wait > .zero else { measure([url]); continue }
+            rechecks[url] = Task { [weak self] in
+                try? await Task.sleep(for: wait)
+                guard !Task.isCancelled, let self else { return }
+                rechecks[url] = nil
+                measure([url])
+            }
+        }
     }
 }

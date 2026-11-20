@@ -25,3 +25,17 @@ selecting rows in it. The FSEvents watchers now retain their callback box too.
 Rule: an AppKit view that builds SwiftUI views of its own (NSBrowser's preview column, hosted
 cells) is driven after updateNSView returns, not from inside it; and NSBrowser selects only in
 columns it has loaded.
+
+## 2026-11-20 Folder sizes kept the CPU busy for hours
+In a folder holding ~/Library, Kamiro measured sizes without end: Library changes all the time,
+each change put it back in the queue, and each walk took minutes (34 min of CPU in 1 h 40).
+Found while running the self-test beside the installed app.
+Fix: FolderSizes waits FolderSize.recheckDelay (ten times the last measure, at least 2 s) before
+measuring a folder again, and measures at utility priority.
+Rule: work started by file-system events is spaced by what it costs, never repeated on every event.
+
+## 2026-11-20 Test runs changed the real window size
+APP_SNAPSHOT_MIN=1 shrank the window, and macOS saved that frame in the real defaults, so the
+next self-test ran in a narrow window and failed.
+Fix: tools/snap.sh and tools/selftest.sh put "NSWindow Frame browser-AppWindow-1" back on exit.
+Rule: a test run restores every real setting it can touch, including ones macOS writes for it.
