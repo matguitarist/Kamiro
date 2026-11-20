@@ -12,7 +12,7 @@ struct AddressBar: View {
         Group {
             if model.isEditingPath { field } else { crumbs }
         }
-        .frame(minWidth: 320, idealWidth: 560, maxWidth: 720)
+        .frame(minWidth: 200, idealWidth: 480, maxWidth: 520)
     }
 
     // MARK: Crumbs

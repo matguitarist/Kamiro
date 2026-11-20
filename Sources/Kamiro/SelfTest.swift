@@ -153,6 +153,7 @@ enum SelfTest {
                             "NSRemovableVolumesUsageDescription", "NSNetworkVolumesUsageDescription"]
             check("Info.plist explains every protected folder", purposes.allSatisfy { Bundle.main.object(forInfoDictionaryKey: $0) != nil })
 
+            await views(browser: browser, seed: seed)
             await fileActions(browser: browser, seed: seed)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
@@ -384,7 +385,7 @@ enum SelfTest {
         check("a folder held under a drag opens after 0.7 s", browser.folder == url("Photos"))
     }
 
-    private static func check(_ name: String, _ ok: Bool, _ detail: String = "") {
+    static func check(_ name: String, _ ok: Bool, _ detail: String = "") {
         count += 1
         if !ok { failures += 1 }
         print(ok ? "PASS \(name)" : "FAIL \(name)\(detail.isEmpty ? "" : ": \(detail)")")

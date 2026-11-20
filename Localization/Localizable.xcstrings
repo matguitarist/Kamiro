@@ -281,6 +281,36 @@
         }
       }
     },
+    "as Columns": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "par colonnes"
+          }
+        }
+      }
+    },
+    "as Details": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "par détails"
+          }
+        }
+      }
+    },
+    "as Icons": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "par icônes"
+          }
+        }
+      }
+    },
     "Automatic Updates": {
       "localizations": {
         "fr": {
@@ -357,6 +387,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Code"
+          }
+        }
+      }
+    },
+    "Columns": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colonnes"
           }
         }
       }
@@ -581,6 +621,16 @@
         }
       }
     },
+    "Details": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détails"
+          }
+        }
+      }
+    },
     "Do you want to replace it with the one you’re copying?": {
       "localizations": {
         "fr": {
@@ -777,6 +827,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Masquer la barre d’état"
+          }
+        }
+      }
+    },
+    "Icon size": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille des icônes"
+          }
+        }
+      }
+    },
+    "Icons": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icônes"
           }
         }
       }
@@ -1341,6 +1411,16 @@
         }
       }
     },
+    "Show items as icons, details or columns (⌘1, ⌘2, ⌘3)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les éléments par icônes, par détails ou par colonnes (⌘1, ⌘2, ⌘3)"
+          }
+        }
+      }
+    },
     "Show Status Bar": {
       "localizations": {
         "fr": {
@@ -1577,6 +1657,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Version %@"
+          }
+        }
+      }
+    },
+    "View": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Présentation"
           }
         }
       }

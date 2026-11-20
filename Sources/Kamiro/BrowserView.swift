@@ -6,6 +6,7 @@ import SwiftUI
 struct BrowserView: View {
     let model: BrowserModel
     let showStatusBar: Bool
+    @AppStorage(Prefs.iconSize, store: Prefs.defaults) private var iconSize = IconSize.standard
 
     var body: some View {
         content
@@ -41,9 +42,7 @@ struct BrowserView: View {
                 Text(verbatim: message)
             }
         default:
-            DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
-                         reveal: model.revealToken, focus: model.focusToken,
-                         cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)
+            list
                 .overlay {
                     if model.state == .ready, model.items.isEmpty {
                         ContentUnavailableView("Folder Is Empty", systemImage: "folder")
@@ -51,6 +50,58 @@ struct BrowserView: View {
                         ProgressView("Loading…")
                     }
                 }
+        }
+    }
+}
+
+extension BrowserView {
+    @ViewBuilder
+    private var list: some View {
+        switch model.mode {
+        case .icons:
+            IconGrid(model: model, version: model.itemsVersion, selection: model.selection,
+                     reveal: model.revealToken, focus: model.focusToken,
+                     cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
+                     iconSize: min(max(iconSize, IconSize.range.lowerBound), IconSize.range.upperBound))
+        case .details, .columns:
+            DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
+                         reveal: model.revealToken, focus: model.focusToken,
+                         cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)
+        }
+    }
+}
+
+extension ViewMode {
+    var title: String {
+        switch self {
+        case .icons: String(localized: "as Icons")
+        case .details: String(localized: "as Details")
+        case .columns: String(localized: "as Columns")
+        }
+    }
+
+    /// The toolbar's name for it, said by VoiceOver and shown in hover help.
+    var label: String {
+        switch self {
+        case .icons: String(localized: "Icons")
+        case .details: String(localized: "Details")
+        case .columns: String(localized: "Columns")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .icons: "square.grid.2x2"
+        case .details: "list.bullet"
+        case .columns: "rectangle.split.3x1"
+        }
+    }
+
+    var key: KeyEquivalent {
+        switch self {
+        case .icons: "1"
+        case .details: "2"
+        case .columns: "3"
         }
     }
 }
@@ -63,20 +114,39 @@ enum PrivacySettings {
     }
 }
 
-/// "12 items, 3 selected (4.2 MB), 120 GB available", under the list.
+/// "12 items, 3 selected (4.2 MB), 120 GB available", under the list; in icon view, the
+/// icon size slider at its right end, like the Finder's.
 struct StatusBar: View {
     let model: BrowserModel
+    @AppStorage(Prefs.iconSize, store: Prefs.defaults) private var iconSize = IconSize.standard
 
     var body: some View {
         Text(StatusText.make(model.counts))
             .font(.callout)
             .foregroundStyle(.secondary)
             .lineLimit(1)
+            .accessibilityElement(children: .combine)
+            .padding(.horizontal, model.mode == .icons ? 140 : 0)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Space.xs)
+            .overlay(alignment: .trailing) {
+                if model.mode == .icons {
+                    Slider(value: $iconSize, in: IconSize.range) {
+                        Text("Icon size")
+                    } minimumValueLabel: {
+                        Image(systemName: "square.grid.3x3").imageScale(.small)
+                    } maximumValueLabel: {
+                        Image(systemName: "square.grid.2x2").imageScale(.medium)
+                    }
+                    .labelsHidden()
+                    .controlSize(.mini)
+                    .frame(width: 120)
+                    .padding(.trailing, Space.md)
+                    .help("Icon size")
+                }
+            }
             .background(.bar)
             .overlay(alignment: .top) { Divider() }
-            .accessibilityElement(children: .combine)
     }
 }
 
@@ -203,6 +273,21 @@ struct BrowserToolbar: ToolbarContent {
         }
         ToolbarItem(placement: .principal) {
             AddressBar(model: model)
+        }
+        ToolbarItem(placement: .primaryAction) {
+            // One button with a menu, like the Finder's in a narrow window: three segments
+            // pushed the address bar out of the toolbar at the smallest window size.
+            Menu {
+                Picker("View", selection: $model.mode) {
+                    ForEach(ViewMode.allCases, id: \.self) { mode in
+                        Label(mode.label, systemImage: mode.symbol).tag(mode)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Label("View", systemImage: model.mode.symbol)
+            }
+            .help("Show items as icons, details or columns (⌘1, ⌘2, ⌘3)")
         }
         if !TransferCenter.shared.tasks.isEmpty {
             ToolbarItem(placement: .primaryAction) {

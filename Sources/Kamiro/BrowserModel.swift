@@ -24,6 +24,15 @@ final class BrowserModel {
     var order = ItemOrder() {
         didSet { if order != oldValue { resort() } }
     }
+    /// Icons, details or columns (View menu, ⌘1 to ⌘3).
+    var mode: ViewMode = .details {
+        didSet {
+            guard mode != oldValue else { return }
+            focusToken += 1
+            revealToken += 1
+            publish()
+        }
+    }
     private(set) var available: Int64?
     /// The table scrolls to the selection when this changes.
     private(set) var revealToken = 0
@@ -47,6 +56,7 @@ final class BrowserModel {
     var pendingExtension: ExtensionQuestion?
     /// The list, for the self-test (spring-loaded folders, rename).
     @ObservationIgnored weak var details: DetailsCoordinator?
+    @ObservationIgnored weak var grid: GridCoordinator?
 
     @ObservationIgnored private var watcher: FolderWatcher?
     @ObservationIgnored private var loadTask: Task<Void, Never>?
@@ -266,6 +276,7 @@ final class BrowserModel {
 enum Prefs {
     static let returnOpensItems = "returnOpensItems"
     static let showStatusBar = "showStatusBar"
+    static let iconSize = "iconSize"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

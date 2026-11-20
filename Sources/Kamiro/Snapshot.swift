@@ -17,6 +17,7 @@ enum Snapshot {
         case browse, selected, details10k = "details-10k", addressEdit = "address-edit", accessDenied = "access-denied", empty
         case cutDimmed = "cut-dimmed", rename, transferProgress = "transfer-progress", conflictSheet = "conflict-sheet"
         case deleteConfirm = "delete-confirm"
+        case icons
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -36,6 +37,9 @@ enum Snapshot {
                 browser.go(to: seed, select: [seed.appending(path: "Invoice 1.pdf"), seed.appending(path: "Invoice 2.pdf")])
             case .rename: browser.go(to: seed, select: [seed.appending(path: "notes.md")])
             case .transferProgress, .conflictSheet: browser.go(to: seed)
+            case .icons:
+                browser.go(to: seed, select: [seed.appending(path: "Owl.jpg")])
+                browser.mode = .icons
             }
             await browser.waitUntilLoaded()
             if self != .addressEdit { browser.focusList() }
@@ -61,6 +65,7 @@ enum Snapshot {
             case .transferProgress: TransferCenter.shared.hideSample()
             case .conflictSheet: browser.conflicts = []
             case .deleteConfirm: browser.pendingDelete = nil
+            case .icons: browser.mode = .details
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))

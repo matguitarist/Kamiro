@@ -23,11 +23,32 @@ print "<plist version=\"1.0\"><dict/></plist>" > Sample.app/Contents/Info.plist
 print "readme" > Projects/Kamiro/README.md
 print "# Notes\n\nAn older copy." > Projects/notes.md
 print "print(1)" > Projects/Kamiro/Sources/main.swift
-mkfile -n 300k Photos/Beach.jpg Photos/Mountain.jpg
+# Real pictures and a PDF, so the icon view has thumbnails to show (S-019).
+pics="/Library/User Pictures"
+picture() { if [[ -f "$pics/$1" ]]; then sips -s format $3 -Z 512 "$pics/$1" --out "$2" >/dev/null; else mkfile -n 300k "$2"; fi }
+picture Animals/Parrot.heic Photos/Beach.jpg jpeg
+picture Animals/Zebra.heic Photos/Mountain.jpg jpeg
+picture Animals/Owl.heic Owl.jpg jpeg
+picture Flowers/Lotus.heic Lotus.png png
+python3 -I -c "
+text = b'BT /F1 28 Tf 72 700 Td (Kamiro Guide) Tj ET'
+objs = [b'<< /Type /Catalog /Pages 2 0 R >>', b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+        b'<< /Length %d >>stream\n' % len(text) + text + b'\nendstream',
+        b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>']
+out, offsets = b'%PDF-1.4\n', []
+for i, o in enumerate(objs, 1):
+    offsets.append(len(out)); out += b'%d 0 obj\n' % i + o + b'\nendobj\n'
+xref = len(out)
+out += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objs) + 1) + b''.join(b'%010d 00000 n \n' % o for o in offsets)
+out += b'trailer << /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objs) + 1, xref)
+open('Guide.pdf', 'wb').write(out)
+"
 stamp 202611190930 Track*.m4a notes.md data.json
 stamp 202611181415 Invoice*.pdf budget.csv
 stamp 202611021000 report.pdf Song.m4a "Holiday Video.mov" A\ file*
 stamp 202609010900 Projects/notes.md
+stamp 202611171200 Owl.jpg Lotus.png Guide.pdf Photos/*.jpg
 stamp 202610150800 Projects Photos Music Empty Sample.app
 python3 -I -c "
 import os

@@ -105,9 +105,9 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     private var cutVersion = -1
     private var renameToken = 0
     private var applying = false
-    /// The item whose name is being edited; the list doesn't reload meanwhile.
-    var renaming: URL?
-    var renameField: NSTextField?
+    /// The name being edited; the list doesn't reload meanwhile.
+    var rename: InlineRename?
+    var renaming: URL? { rename?.url }
     /// The last rename error shown, for the self-test.
     var renameError: String?
     var springTask: Task<Void, Never>?

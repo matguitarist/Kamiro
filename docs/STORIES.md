@@ -251,7 +251,8 @@ Depends: S-002
 Acceptance:
 - [self] Thumbnails load only for visible items, from QLThumbnailGenerator, cached.
 - [self] A 10,000-file folder scrolls smoothly (benchmark NSCollectionView vs LazyVGrid first).
-Status: todo
+Status: done
+Built: View › as Icons (⌘1) or the toolbar's View menu. NSCollectionView, chosen without a LazyVGrid benchmark: SwiftUI's Table already hung on large folders (docs/research), and the self-test measures 60 scroll steps through 10,000 icons. Thumbnails come from QLThumbnailGenerator for items as they appear, in three size steps, cached; documents get a page edge. The icon size slider sits at the right of the status bar.
 
 ### S-020 Browse in columns
 As the user, I switch to column view (⌘3) and browse a tree left to right, with a preview of the selected file in the last column.

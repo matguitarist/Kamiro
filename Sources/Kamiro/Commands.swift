@@ -11,6 +11,7 @@ final class MenuState: ObservableObject {
     @Published private(set) var canGoUp = false
     @Published private(set) var hasSelection = false
     @Published private(set) var isReady = false
+    @Published private(set) var mode: ViewMode = .details
     /// The key window's list has the keyboard: Delete shortcuts go to it, not to a text field.
     @Published var listFocused = false
     private(set) weak var browser: BrowserModel?
@@ -27,6 +28,7 @@ final class MenuState: ObservableObject {
         canGoUp = browser.canGoUp
         hasSelection = !browser.selection.isEmpty
         isReady = browser.state == .ready
+        mode = browser.mode
     }
 }
 
@@ -69,6 +71,13 @@ struct KamiroCommands: Commands {
             Button("Move Items Here") { menu.browser?.paste(move: true) }
                 .keyboardShortcut("v", modifiers: [.command, .option])
                 .disabled(!(menu.listFocused && menu.isReady))
+        }
+        CommandGroup(before: .toolbar) {
+            ForEach(ViewMode.allCases, id: \.self) { mode in
+                Toggle(mode.title, isOn: Binding(get: { menu.mode == mode }, set: { if $0 { menu.browser?.mode = mode } }))
+                    .keyboardShortcut(mode.key)
+            }
+            Divider()
         }
         CommandGroup(after: .toolbar) {
             Button(showStatusBar ? "Hide Status Bar" : "Show Status Bar") { showStatusBar.toggle() }

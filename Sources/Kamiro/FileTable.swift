@@ -12,44 +12,7 @@ final class FileTable: NSTableView, QLPreviewPanelDataSource, QLPreviewPanelDele
     private var model: BrowserModel? { coordinator?.model }
 
     override func keyDown(with event: NSEvent) {
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        let command = flags.contains(.command)
-        switch event.keyCode {
-        case 36, 76:
-            if model?.handleReturn() == true { return }
-        case 120: // F2 renames, like Windows.
-            model?.beginRename()
-            return
-        case 51, 117: // Delete, Forward Delete.
-            if flags.contains([.command, .option]) {
-                model?.askDeleteImmediately()
-                return
-            } else if command {
-                model?.trashSelection()
-                return
-            } else if flags.isDisjoint(with: [.shift, .control, .option]),
-                      Prefs.defaults.bool(forKey: Prefs.returnOpensItems) {
-                // Delete alone trashes in the Windows habit (S-016).
-                model?.trashSelection()
-                return
-            }
-        case 53: // Escape forgets the cut items.
-            if FileClipboard.shared.isCutActive {
-                FileClipboard.shared.clearCut()
-                return
-            }
-        case 49 where !command:
-            toggleQuickLook()
-            return
-        case 125 where command:
-            model?.open()
-            return
-        case 126 where command:
-            model?.goUp()
-            return
-        default:
-            break
-        }
+        if FileKeys.handle(event, model: model) { return }
         super.keyDown(with: event)
     }
 
@@ -168,150 +131,41 @@ final class FileTable: NSTableView, QLPreviewPanelDataSource, QLPreviewPanelDele
 
 // MARK: - Rename in place (S-014)
 
-extension DetailsCoordinator: NSTextFieldDelegate {
+extension DetailsCoordinator {
     func beginRename(_ url: URL) {
-        guard let table, let row = rowOf[url], renaming == nil else { return }
+        guard let table, let row = rowOf[url], rename == nil else { return }
         table.selectRowIndexes([row], byExtendingSelection: false)
         table.scrollRowToVisible(row)
         let nameColumn = table.column(withIdentifier: DetailsColumn.name.identifier)
         guard nameColumn >= 0, let cell = table.view(atColumn: nameColumn, row: row, makeIfNecessary: true) as? NSTableCellView,
               let field = cell.textField else { return }
-        renaming = url
-        renameField = field
+        let session = InlineRename(url: url, field: field, model: model, isFolder: items[row].isFolder,
+                                   neighbor: { [weak self] step in self?.neighbor(of: url, step: step) },
+                                   finished: { [weak self] in self?.renameEnded() })
+        session.onError = { [weak self] in self?.renameError = $0 }
+        rename = session
         renameError = nil
-        field.isEditable = true
-        field.isSelectable = true
-        field.drawsBackground = true
-        field.backgroundColor = .textBackgroundColor
-        field.textColor = .labelColor
-        field.focusRingType = .exterior
-        field.delegate = self
-        table.window?.makeFirstResponder(field)
-        // The name is selected without its extension, like the Finder.
-        let item = items[row]
-        let stem = Naming.split(item.name, isFolder: item.isFolder).stem
-        field.currentEditor()?.selectedRange = NSRange(location: 0, length: (stem as NSString).length)
+        session.begin()
     }
 
     /// Ends editing; `keep` false puts the old name back.
     func endRename(keep: Bool = false) {
         pendingRename = nil
-        guard let field = renameField, let url = renaming else { return }
-        renaming = nil
-        renameField = nil
-        if !keep { field.stringValue = url.lastPathComponent }
-        field.isEditable = false
-        field.isSelectable = false
-        field.drawsBackground = false
-        field.focusRingType = .none
-        field.delegate = nil
+        rename?.end(keep: keep)
+    }
+
+    private func renameEnded() {
+        rename = nil
         table?.window?.makeFirstResponder(table)
         update()
     }
 
-    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-        guard control === renameField else { return false }
-        switch selector {
-        case #selector(NSResponder.cancelOperation(_:)):
-            endRename()
-        case #selector(NSResponder.insertNewline(_:)):
-            commitRename(step: 0)
-        case #selector(NSResponder.insertTab(_:)):
-            commitRename(step: 1)
-        case #selector(NSResponder.insertBacktab(_:)):
-            commitRename(step: -1)
-        default:
-            return false
-        }
-        return true
+    private func neighbor(of url: URL, step: Int) -> URL? {
+        guard let row = rowOf[url] else { return nil }
+        return items.indices.contains(row + step) ? items[row + step].url : nil
     }
 
-    /// Clicking elsewhere saves the name, like the Finder; a name that can't be used is dropped.
-    func controlTextDidEndEditing(_ notification: Notification) {
-        guard let field = notification.object as? NSTextField, field === renameField, let url = renaming else { return }
-        let name = field.stringValue
-        if NameCheck.problem(renaming: url, to: name) != nil
-            || NameCheck.extensionChange(from: url.lastPathComponent, to: name, isFolder: isFolder(url)) != nil {
-            endRename()
-        } else {
-            endRename(keep: true)
-            model.rename(url, to: name)
-        }
-    }
-
-    /// Return saves; Tab saves and renames the next item (`step` 1) or the one before (-1).
-    func commitRename(step: Int) {
-        guard let field = renameField, let url = renaming, let row = rowOf[url] else { return }
-        let name = field.stringValue
-        let neighbor = step == 0 ? nil : items.indices.contains(row + step) ? items[row + step].url : nil
-        if let problem = NameCheck.problem(renaming: url, to: name) {
-            renameError = problem.message(name)
-            showError(renameError ?? "", on: field)
-            NSSound.beep()
-            return
-        }
-        if let change = NameCheck.extensionChange(from: url.lastPathComponent, to: name, isFolder: isFolder(url)) {
-            endRename(keep: true)
-            model.askExtension(url, newName: name, change: change, next: neighbor)
-            return
-        }
-        endRename(keep: true)
-        if let message = model.rename(url, to: name, next: neighbor) {
-            renameError = message
-        }
-    }
-
-    private func isFolder(_ url: URL) -> Bool {
-        rowOf[url].map { items[$0].isFolder } ?? false
-    }
-
-    private func showError(_ message: String, on field: NSTextField) {
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.contentViewController = NSHostingController(rootView:
-            Label(message, systemImage: "exclamationmark.triangle")
-                .padding(Space.md)
-                .fixedSize())
-        popover.show(relativeTo: field.bounds, of: field, preferredEdge: .maxY)
-    }
-
-    // MARK: Right-click menu
-
-    func contextMenu(onItems: Bool) -> NSMenu {
-        let menu = NSMenu()
-        let model = model
-        func add(_ title: String, _ action: @escaping () -> Void) {
-            menu.addItem(MenuAction.item(title, handler: action))
-        }
-        if onItems {
-            add(String(localized: "Open")) { model.open() }
-            add(String(localized: "Quick Look")) { model.quickLook?() }
-            menu.addItem(.separator())
-            add(String(localized: "Rename")) { model.beginRename() }
-            add(String(localized: "Move to Trash")) { model.trashSelection() }
-            menu.addItem(.separator())
-            add(String(localized: "Cut")) { model.cutSelection() }
-            add(String(localized: "Copy")) { model.copySelection() }
-        }
-        if model.canPaste { add(String(localized: "Paste")) { model.paste() } }
-        if menu.items.last.map({ !$0.isSeparatorItem }) ?? false { menu.addItem(.separator()) }
-        add(String(localized: "New Folder")) { model.newFolder() }
-        let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
-        newFile.submenu = Self.templateMenu { model.newFile($0) }
-        menu.addItem(newFile)
-        return menu
-    }
-
-    static func templateMenu(_ make: @escaping (FileTemplate) -> Void) -> NSMenu {
-        let menu = NSMenu()
-        for group in FileTemplate.Group.allCases {
-            menu.addItem(.sectionHeader(title: group.title))
-            for template in FileTemplate.all where template.group == group {
-                menu.addItem(MenuAction.item(template.title) { make(template) })
-            }
-        }
-        return menu
-    }
+    func contextMenu(onItems: Bool) -> NSMenu { model.contextMenu(onItems: onItems) }
 
     // MARK: Drag and drop (S-018)
 
@@ -352,10 +206,8 @@ extension DetailsCoordinator: NSTextFieldDelegate {
         FilePasteboard.read(from: info.draggingPasteboard)
     }
 
-    /// ⌥ narrows the operations to copy, ⌘ to generic (a move).
     private func dropKind(_ urls: [URL], into destination: URL, info: any NSDraggingInfo) -> TransferKind {
-        let mask = info.draggingSourceOperationMask
-        return DropRule.kind(sources: urls, destination: destination, option: mask == .copy, command: mask == .generic)
+        model.dropKind(urls, into: destination, info: info)
     }
 
     /// A folder held under a drag for 0.7 s opens, so the drop can go deeper.
