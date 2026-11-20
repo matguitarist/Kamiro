@@ -19,8 +19,18 @@ public final class FolderWatcher {
     public init(folder: URL, latency: TimeInterval = 0.15, changed: @escaping @Sendable () -> Void) {
         // FSEvents reports real paths: /private/tmp, not /tmp.
         box = Box(path: folder.resolvingSymlinksInPath().canonical.path, changed: changed)
+        // The stream keeps the box alive until it's released, so a callback already under way
+        // never reaches a freed box after this watcher is gone.
         var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(box).toOpaque(),
-                                           retain: nil, release: nil, copyDescription: nil)
+                                           retain: { info in
+                                               guard let info else { return nil }
+                                               _ = Unmanaged<Box>.fromOpaque(info).retain()
+                                               return info
+                                           },
+                                           release: { info in
+                                               guard let info else { return }
+                                               Unmanaged<Box>.fromOpaque(info).release()
+                                           }, copyDescription: nil)
         let callback: FSEventStreamCallback = { _, info, count, paths, flags, _ in
             guard let info else { return }
             let box = Unmanaged<Box>.fromOpaque(info).takeUnretainedValue()

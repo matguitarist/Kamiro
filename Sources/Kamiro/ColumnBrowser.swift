@@ -45,7 +45,10 @@ struct ColumnBrowser: NSViewRepresentable {
     }
 
     func updateNSView(_ browser: FileBrowser, context: Context) {
-        context.coordinator.update()
+        // NSBrowser builds columns, and the SwiftUI preview column, as it goes; doing that inside
+        // SwiftUI's own update re-enters observation tracking and crashed (icons → columns).
+        let coordinator = context.coordinator
+        DispatchQueue.main.async { coordinator.update() }
     }
 }
 
@@ -187,6 +190,13 @@ final class ColumnCoordinator: NSObject, NSBrowserDelegate {
             browser.selectionIndexPath = path.isEmpty ? nil : path
             if path.isEmpty { browser.loadColumnZero() }
         } else {
+            // Open the folder's column first: NSBrowser throws when asked to select in a column
+            // it hasn't loaded yet.
+            browser.selectionIndexPath = path.isEmpty ? nil : path
+            if path.isEmpty { browser.loadColumnZero() }
+            let column = path.count
+            if column <= browser.lastColumn { browser.reloadColumn(column) }
+            guard column <= browser.lastColumn, rows.allSatisfy({ browser.item(atRow: $0, inColumn: column) != nil }) else { return }
             browser.selectionIndexPaths = rows.map { path.appending($0) }
         }
         browser.scrollColumnToVisible(browser.lastColumn)

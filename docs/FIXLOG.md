@@ -14,3 +14,14 @@ Clearing the list redrew the window before the read started, adding about 50 ms 
 files (the 300 ms check failed at 303 to 310 ms).
 Fix: BrowserModel starts the read in a detached task before it touches the observed state.
 Rule: start slow background work first, then change what SwiftUI watches.
+
+## 2026-11-19 Switching from icons to columns crashed
+Going from the icon view to the column view with a folder to open crashed, either inside
+Observation (SwiftUI tracking) or with NSBrowser's "not a valid set of index paths". Found by
+the full M3 snapshot run; present since S-020.
+Fix: ColumnBrowser.updateNSView hands the sync to the next main-queue turn instead of building
+columns inside SwiftUI's update, and ColumnCoordinator.show opens the folder's column before
+selecting rows in it. The FSEvents watchers now retain their callback box too.
+Rule: an AppKit view that builds SwiftUI views of its own (NSBrowser's preview column, hosted
+cells) is driven after updateNSView returns, not from inside it; and NSBrowser selects only in
+columns it has loaded.

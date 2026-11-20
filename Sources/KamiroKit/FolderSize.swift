@@ -56,8 +56,17 @@ public final class TreeWatcher {
     public init(folder: URL, latency: TimeInterval = 0.5, changed: @escaping @Sendable ([String]) -> Void) {
         root = folder.resolvingSymlinksInPath().canonical.path
         box = Box(changed: changed)
+        // The stream keeps the box alive until it's released (see FolderWatcher).
         var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(box).toOpaque(),
-                                           retain: nil, release: nil, copyDescription: nil)
+                                           retain: { info in
+                                               guard let info else { return nil }
+                                               _ = Unmanaged<Box>.fromOpaque(info).retain()
+                                               return info
+                                           },
+                                           release: { info in
+                                               guard let info else { return }
+                                               Unmanaged<Box>.fromOpaque(info).release()
+                                           }, copyDescription: nil)
         let callback: FSEventStreamCallback = { _, info, _, paths, _, _ in
             guard let info else { return }
             let box = Unmanaged<Box>.fromOpaque(info).takeUnretainedValue()
