@@ -12,10 +12,30 @@ struct PropertiesView: View {
     @State private var locked = false
     @State private var hidden = false
     @State private var problem: String?
+    /// Set for a disk's top folder, which shows its format and space instead of a size.
+    @State private var disk: VolumeFacts?
 
     var body: some View {
         Form {
-            if let item {
+            if let item, let disk {
+                header(item, kind: String(localized: "Disk"))
+                Section("General") {
+                    ForEach(PropertiesFacts.rows(disk), id: \.label) { row in
+                        LabeledContent(row.label, value: row.value)
+                    }
+                    if let used = disk.used, let capacity = disk.capacity, capacity > 0 {
+                        ProgressView(value: Double(used), total: Double(capacity))
+                            .accessibilityLabel("Used")
+                    }
+                }
+                if let permissions = Permissions.of(url) {
+                    Section("Sharing & Permissions") {
+                        LabeledContent(permissions.owner, value: permissions.ownerAccess.title)
+                        LabeledContent(permissions.group, value: permissions.groupAccess.title)
+                        LabeledContent("Everyone", value: permissions.everyoneAccess.title)
+                    }
+                }
+            } else if let item {
                 header(item)
                 Section("General") {
                     LabeledContent("Size") { sizeText(item) }
@@ -65,11 +85,11 @@ struct PropertiesView: View {
         .formStyle(.grouped)
         .frame(width: 400)
         .fixedSize(horizontal: false, vertical: true)
-        .navigationTitle(String(localized: "\(url.lastPathComponent) Properties"))
+        .navigationTitle(String(localized: "\(disk?.name ?? url.lastPathComponent) Properties"))
         .task(id: url) { await load() }
     }
 
-    private func header(_ item: FileItem) -> some View {
+    private func header(_ item: FileItem, kind: String? = nil) -> some View {
         HStack(spacing: Space.md) {
             Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
                 .resizable()
@@ -80,7 +100,7 @@ struct PropertiesView: View {
                     .font(.headline)
                     .lineLimit(3)
                     .textSelection(.enabled)
-                Text(KindCache.shared.kind(of: item))
+                Text(kind ?? KindCache.shared.kind(of: item))
                     .foregroundStyle(.secondary)
             }
         }
@@ -113,9 +133,15 @@ struct PropertiesView: View {
 
     private func load() async {
         item = FolderReader.item(at: url)
+        disk = Volumes.facts(at: url)
         locked = ItemFlags.isLocked(url)
         hidden = ItemFlags.isHidden(url)
         PropertiesProbe.shown[url] = item.map { PropertiesFacts.size(item: $0, summary: nil) ?? "" }
+        if let disk {
+            // A whole disk isn't walked: it tells its own space.
+            PropertiesProbe.shown[url] = PropertiesFacts.rows(disk).map(\.value).joined(separator: ", ")
+            return
+        }
         guard let item, item.size == nil else { return }
         measuring = true
         summary = await Self.summary(of: url)
@@ -139,6 +165,17 @@ enum PropertiesFacts {
         guard let summary else { return nil }
         if summary.items == 1 { return String(localized: "\(summary.bytes.bytesText) on disk, 1 item") }
         return String(localized: "\(summary.bytes.bytesText) on disk, \(summary.items) items")
+    }
+
+    /// A disk's lines: format, capacity, available and used space.
+    static func rows(_ disk: VolumeFacts) -> [(label: String, value: String)] {
+        var rows: [(label: String, value: String)] = []
+        if let format = disk.format { rows.append((String(localized: "Format"), format)) }
+        if let capacity = disk.capacity { rows.append((String(localized: "Capacity"), capacity.bytesText)) }
+        if let available = disk.available { rows.append((String(localized: "Available"), available.bytesText)) }
+        if let used = disk.used { rows.append((String(localized: "Used"), used.bytesText)) }
+        if disk.isReadOnly { rows.append((String(localized: "Access"), String(localized: "Read only"))) }
+        return rows
     }
 
     /// The app that opens this file; none for folders and apps.

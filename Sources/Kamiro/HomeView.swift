@@ -8,6 +8,7 @@ struct HomeView: View {
     let model: BrowserModel
     @State private var recents: [URL] = []
     @State private var volumes: [VolumeSpace] = []
+    @State private var renaming: Volume?
     private var pins: PinStore { .shared }
 
     var body: some View {
@@ -18,11 +19,7 @@ struct HomeView: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: Space.md)], spacing: Space.md) {
                             ForEach(pins.list.urls, id: \.self) { url in
                                 HomeTile(url: url, title: GoPlace.name(of: url)) { model.go(to: url) }
-                                    .contextMenu {
-                                        Button("Open in New Tab", systemImage: "plus.square.on.square") { model.openWindow?(url, true) }
-                                        Divider()
-                                        Button("Unpin", systemImage: "pin.slash") { pins.unpin(url) }
-                                    }
+                                    .contextMenu { PinMenu(url: url, model: model) }
                             }
                         }
                     }
@@ -50,6 +47,7 @@ struct HomeView: View {
                         ForEach(volumes) { space in
                             HomeTile(url: space.volume.url, title: space.volume.name, detail: space.detail,
                                      fraction: space.usedFraction) { model.go(to: space.volume.url) }
+                                .contextMenu { VolumeMenu(volume: space.volume, model: model, renaming: $renaming) }
                         }
                     }
                 }
@@ -58,11 +56,15 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .gridArea("home")
         }
+        .volumeRenameAlert($renaming)
         .task(id: model.itemsVersion) { await load() }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             Task { await load() }
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
+            Task { await load() }
+        }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didRenameVolumeNotification)) { _ in
             Task { await load() }
         }
     }
@@ -183,9 +185,32 @@ private struct RecentRow: View {
         .onHover { hovered = $0 }
         .contextMenu {
             Button("Open", systemImage: "arrow.up.forward.app") { NSWorkspace.shared.open(url) }
+            OpenWithMenu(urls: [url])
             Button("Show in Enclosing Folder", systemImage: "folder") {
                 model.go(to: url.deletingLastPathComponent(), select: [url])
             }
+            Divider()
+            Button("Copy", systemImage: "doc.on.doc") { FileClipboard.shared.put([url], cut: false) }
+            Button("Copy Path", systemImage: "link") { ItemActions.copyPaths([url]) }
+            Divider()
+            Button("Properties", systemImage: "info.circle") { model.openProperties?(url) }
         }
+    }
+}
+
+/// A pinned folder's right-click menu, on the Home page and in the sidebar.
+struct PinMenu: View {
+    let url: URL
+    let model: BrowserModel
+
+    var body: some View {
+        Button("Open", systemImage: "arrow.up.forward.app") { model.go(to: url) }
+        Button("Open in New Tab", systemImage: "plus.square.on.square") { model.openWindow?(url, true) }
+        Button("Open in Terminal", systemImage: "terminal") { ItemActions.openInTerminal(url) }
+        Divider()
+        Button("Copy Path", systemImage: "link") { ItemActions.copyPaths([url]) }
+        Button("Properties", systemImage: "info.circle") { model.openProperties?(url) }
+        Divider()
+        Button("Unpin", systemImage: "pin.slash") { PinStore.shared.unpin(url) }
     }
 }

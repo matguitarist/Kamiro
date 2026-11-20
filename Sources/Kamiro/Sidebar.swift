@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 struct Sidebar: View {
     let browser: BrowserModel
     @State private var volumes = Volumes.mounted()
+    @State private var renaming: Volume?
     private var pins: PinStore { .shared }
 
     var body: some View {
@@ -22,7 +23,7 @@ struct Sidebar: View {
                         Label(GoPlace.name(of: url), systemImage: GoPlace.symbol(for: url))
                             .tag(url)
                             .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: url) }
-                            .contextMenu { pinMenu(url) }
+                            .contextMenu { PinMenu(url: url, model: browser) }
                     }
                     .onMove { pins.move(fromOffsets: $0, toOffset: $1) }
                     // A folder dropped between pins is pinned there; dropped on a pin, it moves into it.
@@ -38,6 +39,7 @@ struct Sidebar: View {
                         Label(volume.name, systemImage: volume.symbol)
                             .tag(volume.url)
                             .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
+                            .contextMenu { VolumeMenu(volume: volume, model: browser, renaming: $renaming) }
                     }
                 }
             }
@@ -51,13 +53,10 @@ struct Sidebar: View {
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
             volumes = Volumes.mounted()
         }
-    }
-
-    @ViewBuilder
-    private func pinMenu(_ url: URL) -> some View {
-        Button("Open in New Tab", systemImage: "plus.square.on.square") { browser.openWindow?(url, true) }
-        Divider()
-        Button("Unpin", systemImage: "pin.slash") { pins.unpin(url) }
+        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didRenameVolumeNotification)) { _ in
+            volumes = Volumes.mounted()
+        }
+        .volumeRenameAlert($renaming)
     }
 
     /// The sidebar shows where the window is when it's a sidebar place, and nothing otherwise.

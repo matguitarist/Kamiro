@@ -1,0 +1,313 @@
+import AppKit
+import KamiroKit
+import SwiftUI
+import UniformTypeIdentifiers
+
+// MARK: - The right-click menu (S-033)
+
+extension BrowserModel {
+    /// The list's right-click menu. It follows what's under the pointer: items get Open, Copy and
+    /// the like; empty space gets Paste and New. What doesn't apply is left out, not dimmed.
+    func contextMenu(onItems: Bool) -> NSMenu {
+        let menu = NSMenu()
+        func add(_ title: String, _ symbol: String, _ action: @escaping () -> Void) {
+            let item = MenuAction.item(title, handler: action)
+            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+            menu.addItem(item)
+        }
+        func group() {
+            if let last = menu.items.last, !last.isSeparatorItem { menu.addItem(.separator()) }
+        }
+        let chosen = onItems ? selectedItems : []
+        let urls = chosen.map(\.url)
+        let files = chosen.filter { !$0.isFolder }
+        let folders = chosen.filter(\.isFolder)
+        if onItems, !chosen.isEmpty {
+            add(String(localized: "Open"), "arrow.up.forward.app") { [weak self] in self?.open() }
+            if !files.isEmpty, folders.isEmpty { menu.addItem(ItemActions.openWithItem(for: files.map(\.url))) }
+            if !folders.isEmpty, files.isEmpty {
+                add(String(localized: "Open in New Tab"), "plus.square.on.square") { [weak self] in self?.open(newTab: true) }
+            }
+            if isVirtual, chosen.count == 1 {
+                add(String(localized: "Show in Enclosing Folder"), "folder") { [weak self] in self?.showInEnclosingFolder() }
+            }
+            add(String(localized: "Quick Look"), "eye") { [weak self] in self?.quickLook?() }
+            group()
+            add(String(localized: "Cut"), "scissors") { [weak self] in self?.cutSelection() }
+            add(String(localized: "Copy"), "doc.on.doc") { [weak self] in self?.copySelection() }
+            add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths(urls) }
+            if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
+            add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
+            group()
+            if chosen.count == 1 { add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() } }
+            add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }
+            group()
+            let tags = tagsMenu()
+            tags.image = NSImage(systemSymbolName: "tag", accessibilityDescription: nil)
+            menu.addItem(tags)
+            // Folders only: a file can't be pinned (S-032).
+            if !folders.isEmpty, files.isEmpty, !pinTargets.isEmpty {
+                add(String(localized: "Pin to Sidebar"), "pin") { [weak self] in self?.pinToSidebar() }
+            }
+            group()
+            if folders.count == 1, files.isEmpty {
+                let folder = folders[0].url
+                add(String(localized: "Open in Terminal"), "terminal") { ItemActions.openInTerminal(folder) }
+            }
+            // A disk listed in /Volumes ejects from here too.
+            if chosen.count == 1, let volume = Volumes.volume(at: chosen[0].url), volume.actions.contains(.eject) {
+                add(String(localized: "Eject"), "eject") { [weak self] in ItemActions.eject(volume, from: self) }
+            }
+        } else if !isVirtual, state == .ready {
+            if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
+            group()
+            add(String(localized: "New Folder"), "folder.badge.plus") { [weak self] in self?.newFolder() }
+            let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
+            newFile.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
+            newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
+            menu.addItem(newFile)
+            group()
+            let here = folder
+            add(String(localized: "Open in Terminal"), "terminal") { ItemActions.openInTerminal(here) }
+            add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths([here]) }
+        }
+        if (onItems && !chosen.isEmpty) || (!isVirtual && state == .ready) {
+            group()
+            add(String(localized: "Properties"), "info.circle") { [weak self] in self?.showProperties() }
+        }
+        if let last = menu.items.last, last.isSeparatorItem { menu.removeItem(last) }
+        return menu
+    }
+
+    /// Duplicate (⌘D): a copy of each selected item next to it, named "name copy".
+    func duplicateSelection() {
+        let urls = orderedSelection
+        guard !urls.isEmpty else { return }
+        // Copying into an item's own folder makes "name copy" (TransferEngine).
+        let byFolder = Dictionary(grouping: urls) { $0.deletingLastPathComponent().canonical }
+        for (parent, group) in byFolder.sorted(by: { $0.key.path < $1.key.path }) {
+            transfer(.copy, group, into: parent)
+        }
+    }
+}
+
+// MARK: - Actions shared by the list, the Home page and the sidebar
+
+@MainActor
+enum ItemActions {
+    /// Paths, one per line, on the pasteboard (the test pasteboard in test runs).
+    static func copyPaths(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        let pasteboard = FileClipboard.shared.pasteboard
+        pasteboard.clearContents()
+        pasteboard.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
+    }
+
+    static var terminal: URL? { NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") }
+
+    /// Opens a Terminal window in `folder`.
+    static func openInTerminal(_ folder: URL) {
+        guard let terminal else { NSSound.beep(); return }
+        NSWorkspace.shared.open([folder], withApplicationAt: terminal, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    // MARK: Open With
+
+    /// The apps that open every one of `urls`, the default first; the rest by name.
+    static func apps(for urls: [URL]) -> (default: URL?, others: [URL]) {
+        guard let first = urls.first else { return (nil, []) }
+        var common = NSWorkspace.shared.urlsForApplications(toOpen: first).map(\.canonical)
+        for url in urls.dropFirst() {
+            let these = Set(NSWorkspace.shared.urlsForApplications(toOpen: url).map(\.canonical))
+            common.removeAll { !these.contains($0) }
+        }
+        var seen = Set<URL>()
+        common = common.filter { seen.insert($0).inserted }
+        let preferred = NSWorkspace.shared.urlForApplication(toOpen: first)?.canonical
+        let chosen = preferred.flatMap { common.contains($0) ? $0 : nil }
+        let others = common.filter { $0 != chosen }
+            .sorted { appName($0).localizedStandardCompare(appName($1)) == .orderedAscending }
+        return (chosen, others)
+    }
+
+    static func appName(_ app: URL) -> String {
+        FileManager.default.displayName(atPath: app.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    static func open(_ urls: [URL], with app: URL) {
+        NSWorkspace.shared.open(urls, withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    /// Open With › Other…: pick any app in /Applications.
+    static func openWithOther(_ urls: [URL]) {
+        let panel = NSOpenPanel()
+        panel.directoryURL = URL(filePath: "/Applications")
+        panel.allowedContentTypes = [.application]
+        panel.prompt = String(localized: "Open")
+        panel.message = String(localized: "Choose an app to open the selected items.")
+        guard panel.runModal() == .OK, let app = panel.url else { return }
+        open(urls, with: app)
+    }
+
+    /// Open With and its submenu: the default app, the others, then Other….
+    static func openWithItem(for urls: [URL]) -> NSMenuItem {
+        let item = NSMenuItem(title: String(localized: "Open With"), action: nil, keyEquivalent: "")
+        item.image = NSImage(systemSymbolName: "arrow.up.forward.square", accessibilityDescription: nil)
+        let menu = NSMenu()
+        let (main, others) = apps(for: urls)
+        func add(_ app: URL, title: String) {
+            let entry = MenuAction.item(title) { open(urls, with: app) }
+            let icon = NSWorkspace.shared.icon(forFile: app.path)
+            icon.size = NSSize(width: 16, height: 16)
+            entry.image = icon
+            menu.addItem(entry)
+        }
+        if let main {
+            add(main, title: String(localized: "\(appName(main)) (default)"))
+            if !others.isEmpty { menu.addItem(.separator()) }
+        }
+        others.forEach { add($0, title: appName($0)) }
+        if !menu.items.isEmpty { menu.addItem(.separator()) }
+        menu.addItem(MenuAction.item(String(localized: "Other…")) { openWithOther(urls) })
+        item.submenu = menu
+        return item
+    }
+
+    // MARK: Disks
+
+    /// Ejects a disk; a window showing it goes Home. Says so when the disk is in use.
+    static func eject(_ volume: Volume, from browser: BrowserModel?) {
+        Task {
+            do {
+                try await unmount(volume)
+                Store.log.post(.info, "Ejected \(volume.url.path)", source: "Disks")
+                if let browser, browser.folder.path == volume.url.path || browser.folder.path.hasPrefix(volume.url.path + "/") {
+                    browser.go(to: VirtualPlace.home.url)
+                }
+            } catch {
+                Store.log.post(.error, "Couldn't eject \(volume.url.path): \(error.localizedDescription)", source: "Disks")
+                let alert = NSAlert()
+                alert.messageText = String(localized: "“\(volume.name)” couldn’t be ejected.")
+                alert.informativeText = String(localized: "Quit apps that use it, then try again.") + "\n\n" + error.localizedDescription
+                alert.runModal()
+            }
+        }
+    }
+
+    static func unmount(_ volume: Volume) async throws {
+        try await FileManager.default.unmountVolume(at: volume.url, options: volume.isNetwork ? [] : [.allPartitionsAndEjectDisk])
+    }
+
+    static func renameVolume(_ volume: Volume, to name: String) {
+        do {
+            try Volumes.rename(volume.url, to: name)
+            Store.log.post(.info, "Renamed disk \(volume.url.path) to \(name)", source: "Disks")
+        } catch {
+            let problem = (error as? NameProblem)?.message(name) ?? error.localizedDescription
+            Store.log.post(.error, "Couldn't rename disk \(volume.url.path): \(problem)", source: "Disks")
+            let alert = NSAlert()
+            alert.messageText = String(localized: "“\(volume.name)” couldn’t be renamed.")
+            alert.informativeText = problem
+            alert.runModal()
+        }
+    }
+}
+
+// MARK: - SwiftUI menus for the Home page and the sidebar
+
+extension VolumeAction {
+    var title: LocalizedStringKey {
+        switch self {
+        case .open: "Open"
+        case .openInNewTab: "Open in New Tab"
+        case .openInTerminal: "Open in Terminal"
+        case .rename: "Rename…"
+        case .copyPath: "Copy Path"
+        case .properties: "Properties"
+        case .eject: "Eject"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .open: "arrow.up.forward.app"
+        case .openInNewTab: "plus.square.on.square"
+        case .openInTerminal: "terminal"
+        case .rename: "pencil"
+        case .copyPath: "link"
+        case .properties: "info.circle"
+        case .eject: "eject"
+        }
+    }
+}
+
+/// A disk's right-click menu: open it, get its Properties, rename or eject it.
+struct VolumeMenu: View {
+    let volume: Volume
+    let model: BrowserModel
+    @Binding var renaming: Volume?
+
+    var body: some View {
+        ForEach(Array(volume.actions.enumerated()), id: \.offset) { _, action in
+            if let action {
+                Button(action.title, systemImage: action.symbol) { perform(action) }
+            } else {
+                Divider()
+            }
+        }
+    }
+
+    private func perform(_ action: VolumeAction) {
+        switch action {
+        case .open: model.go(to: volume.url)
+        case .openInNewTab: model.openWindow?(volume.url, true)
+        case .openInTerminal: ItemActions.openInTerminal(volume.url)
+        case .rename: renaming = volume
+        case .copyPath: ItemActions.copyPaths([volume.url])
+        case .properties: model.openProperties?(volume.url)
+        case .eject: ItemActions.eject(volume, from: model)
+        }
+    }
+}
+
+/// Asks for a disk's new name.
+struct VolumeRenameAlert: ViewModifier {
+    @Binding var volume: Volume?
+    @State private var name = ""
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Rename Disk", isPresented: Binding { volume != nil } set: { if !$0 { volume = nil } }, presenting: volume) { volume in
+                TextField("Name", text: $name)
+                Button("Rename") { ItemActions.renameVolume(volume, to: name) }
+                Button("Cancel", role: .cancel) {}
+            } message: { volume in
+                Text("Enter a new name for “\(volume.name)”.")
+            }
+            .onChange(of: volume) { _, volume in name = volume?.name ?? "" }
+    }
+}
+
+extension View {
+    func volumeRenameAlert(_ volume: Binding<Volume?>) -> some View { modifier(VolumeRenameAlert(volume: volume)) }
+}
+
+/// Open With for a file on the Home page: the default app, the others, then Other….
+struct OpenWithMenu: View {
+    let urls: [URL]
+
+    var body: some View {
+        let apps = ItemActions.apps(for: urls)
+        Menu("Open With", systemImage: "arrow.up.forward.square") {
+            if let main = apps.default {
+                Button("\(ItemActions.appName(main)) (default)") { ItemActions.open(urls, with: main) }
+                if !apps.others.isEmpty { Divider() }
+            }
+            ForEach(apps.others, id: \.self) { app in
+                Button(ItemActions.appName(app)) { ItemActions.open(urls, with: app) }
+            }
+            Divider()
+            Button("Other…") { ItemActions.openWithOther(urls) }
+        }
+    }
+}

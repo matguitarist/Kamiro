@@ -218,53 +218,9 @@ final class InlineRename: NSObject, NSTextFieldDelegate {
     }
 }
 
-// MARK: - Right-click menu (the full one comes with S-033)
+// MARK: - New File templates and drops
 
 extension BrowserModel {
-    func contextMenu(onItems: Bool) -> NSMenu {
-        let menu = NSMenu()
-        func add(_ title: String, _ symbol: String, _ action: @escaping () -> Void) {
-            let item = MenuAction.item(title, handler: action)
-            item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-            menu.addItem(item)
-        }
-        if onItems {
-            add(String(localized: "Open"), "arrow.up.forward.app") { [weak self] in self?.open() }
-            if isVirtual, selection.count == 1 {
-                add(String(localized: "Show in Enclosing Folder"), "folder") { [weak self] in self?.showInEnclosingFolder() }
-            }
-            add(String(localized: "Quick Look"), "eye") { [weak self] in self?.quickLook?() }
-            menu.addItem(.separator())
-            add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() }
-            add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }
-            menu.addItem(.separator())
-            add(String(localized: "Cut"), "scissors") { [weak self] in self?.cutSelection() }
-            add(String(localized: "Copy"), "doc.on.doc") { [weak self] in self?.copySelection() }
-            menu.addItem(.separator())
-            let tags = tagsMenu()
-            tags.image = NSImage(systemSymbolName: "tag", accessibilityDescription: nil)
-            menu.addItem(tags)
-            // Folders only: a file can't be pinned (S-032).
-            if !selectedItems.isEmpty, selectedItems.allSatisfy(\.isFolder), !pinTargets.isEmpty {
-                add(String(localized: "Pin to Sidebar"), "pin") { [weak self] in self?.pinToSidebar() }
-            }
-        }
-        if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
-        if !isVirtual {
-            if menu.items.last.map({ !$0.isSeparatorItem }) ?? false { menu.addItem(.separator()) }
-            add(String(localized: "New Folder"), "folder.badge.plus") { [weak self] in self?.newFolder() }
-            let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
-            newFile.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
-            newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
-            menu.addItem(newFile)
-        }
-        if onItems || !isVirtual {
-            menu.addItem(.separator())
-            add(String(localized: "Properties"), "info.circle") { [weak self] in self?.showProperties() }
-        }
-        return menu
-    }
-
     static func templateMenu(_ make: @escaping (FileTemplate) -> Void) -> NSMenu {
         let menu = NSMenu()
         for group in FileTemplate.Group.allCases {

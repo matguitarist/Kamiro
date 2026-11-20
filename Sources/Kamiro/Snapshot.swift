@@ -20,7 +20,7 @@ enum Snapshot {
         case icons, columns
         case columnsMenu = "columns-menu"
         case grouped, hidden, inspector
-        case properties, propertiesFolder = "properties-folder"
+        case properties, propertiesFolder = "properties-folder", propertiesDisk = "properties-disk"
         case tags, filter
         case searchResults = "search-results"
         case tabs
@@ -29,7 +29,7 @@ enum Snapshot {
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
             switch self {
-            case .properties, .propertiesFolder: KamiroApp.propertiesID
+            case .properties, .propertiesFolder, .propertiesDisk: KamiroApp.propertiesID
             default: nil
             }
         }
@@ -80,6 +80,9 @@ enum Snapshot {
                 browser.go(to: seed, select: [seed.appending(path: name)])
                 await browser.waitUntilLoaded()
                 browser.showProperties()
+                try? await Task.sleep(for: .seconds(1.5))
+            case .propertiesDisk:
+                browser.openProperties?(URL(filePath: "/"))
                 try? await Task.sleep(for: .seconds(1.5))
             case .searchResults:
                 browser.go(to: seed)
@@ -179,7 +182,7 @@ enum Snapshot {
                 try? Tags.set(ColorTag.blue.name, present: false, on: [seed.appending(path: "notes.md")])
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
-            case .properties, .propertiesFolder:
+            case .properties, .propertiesFolder, .propertiesDisk:
                 NSApp.windows.filter { $0.identifier?.rawValue.contains(KamiroApp.propertiesID) == true }.forEach { $0.close() }
             default: return
             }

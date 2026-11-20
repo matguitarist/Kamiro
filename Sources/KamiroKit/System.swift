@@ -70,20 +70,104 @@ public struct Volume: Hashable, Sendable, Identifiable {
     public let isRoot: Bool
     public let isNetwork: Bool
     public let isEjectable: Bool
+    /// The disk lets its name change (APFS, HFS+, most USB formats; not a DMG's read-only image).
+    public let canRename: Bool
+
+    public init(url: URL, name: String, isRoot: Bool = false, isNetwork: Bool = false,
+                isEjectable: Bool = false, canRename: Bool = false) {
+        self.url = url
+        self.name = name
+        self.isRoot = isRoot
+        self.isNetwork = isNetwork
+        self.isEjectable = isEjectable
+        self.canRename = canRename
+    }
+
+    /// What its right-click menu offers (S-033), in order; nil is a separator.
+    /// The startup disk can't be ejected; a disk that can't take a new name has no Rename.
+    public var actions: [VolumeAction?] {
+        var list: [VolumeAction?] = [.open, .openInNewTab, .openInTerminal, nil]
+        if canRename { list.append(.rename) }
+        list += [.copyPath, .properties]
+        if (isEjectable || isNetwork), !isRoot { list += [nil, .eject] }
+        return list
+    }
+}
+
+/// One line of a disk's right-click menu on the Home page and in the sidebar.
+public enum VolumeAction: String, Sendable, CaseIterable {
+    case open, openInNewTab, openInTerminal, rename, copyPath, properties, eject
+}
+
+/// A disk's facts for Properties (S-033): its format and space.
+public struct VolumeFacts: Sendable, Equatable {
+    public let name: String
+    public let format: String?
+    public let capacity: Int64?
+    public let available: Int64?
+    public let isReadOnly: Bool
+
+    public var used: Int64? {
+        guard let capacity, let available else { return nil }
+        return max(0, capacity - available)
+    }
 }
 
 public enum Volumes {
     public static func mounted() -> [Volume] {
         let keys: [URLResourceKey] = [.volumeLocalizedNameKey, .volumeIsRootFileSystemKey, .volumeIsLocalKey,
-                                      .volumeIsEjectableKey, .volumeIsRemovableKey, .volumeIsBrowsableKey]
+                                      .volumeIsEjectableKey, .volumeIsRemovableKey, .volumeIsBrowsableKey,
+                                      .volumeSupportsRenamingKey, .volumeIsReadOnlyKey]
         let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
         return urls.compactMap { url in
             guard let values = try? url.resourceValues(forKeys: Set(keys)), values.volumeIsBrowsable != false else { return nil }
             return Volume(url: url.canonical, name: values.volumeLocalizedName ?? url.lastPathComponent,
                           isRoot: values.volumeIsRootFileSystem ?? false, isNetwork: values.volumeIsLocal == false,
-                          isEjectable: values.volumeIsEjectable == true || values.volumeIsRemovable == true)
+                          isEjectable: values.volumeIsEjectable == true || values.volumeIsRemovable == true,
+                          canRename: values.volumeSupportsRenaming == true && values.volumeIsReadOnly != true)
         }
         .sorted { $0.isRoot != $1.isRoot ? $0.isRoot : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// The mounted disk whose top folder is `url`, or nil for any other folder.
+    public static func volume(at url: URL) -> Volume? {
+        let url = url.canonical
+        return mounted().first { $0.url == url }
+    }
+
+    /// Whether `url` is the top folder of a disk ("/", "/Volumes/Backup").
+    public static func isVolumeRoot(_ url: URL) -> Bool {
+        guard url.isFileURL, let root = (try? url.resourceValues(forKeys: [.volumeURLKey]))?.volume else { return false }
+        return root.canonical == url.canonical
+    }
+
+    public static func facts(at url: URL) -> VolumeFacts? {
+        let keys: Set<URLResourceKey> = [.volumeLocalizedNameKey, .volumeLocalizedFormatDescriptionKey,
+                                         .volumeTotalCapacityKey, .volumeIsReadOnlyKey]
+        guard isVolumeRoot(url), let values = try? url.resourceValues(forKeys: keys) else { return nil }
+        return VolumeFacts(name: values.volumeLocalizedName ?? url.lastPathComponent,
+                           format: values.volumeLocalizedFormatDescription,
+                           capacity: values.volumeTotalCapacity.map(Int64.init),
+                           available: availableSpace(at: url),
+                           isReadOnly: values.volumeIsReadOnly ?? false)
+    }
+
+    /// Why a disk can't take this name, or nil. Disk names follow file names' rules.
+    public static func problem(naming newName: String) -> NameProblem? {
+        let name = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty { return .empty }
+        if name.contains(":") { return .colon }
+        if name.utf8.count > 255 { return .tooLong }
+        return nil
+    }
+
+    /// Gives a disk a new name; its folder in /Volumes follows a moment later.
+    public static func rename(_ url: URL, to newName: String) throws {
+        if let problem = problem(naming: newName) { throw problem }
+        var target = url
+        var values = URLResourceValues()
+        values.volumeName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        try target.setResourceValues(values)
     }
 
     /// Free and total space, for the Home page's volumes (S-031).

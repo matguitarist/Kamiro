@@ -82,6 +82,9 @@ struct KamiroCommands: Commands {
             Divider()
             Button("Rename") { menu.browser?.beginRename() }
                 .disabled(!menu.hasSelection)
+            Button("Duplicate") { menu.browser?.duplicateSelection() }
+                .keyboardShortcut("d")
+                .disabled(!(menu.hasSelection && menu.listFocused))
             Button("Pin to Sidebar") { menu.browser?.pinToSidebar() }
                 .keyboardShortcut("t", modifiers: [.command, .control])
                 .disabled(!menu.canPin)

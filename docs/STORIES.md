@@ -417,7 +417,8 @@ Depends: S-011, S-015
 Acceptance:
 - [self] The menu follows the selection: empty space shows New and Paste; a file shows Open, Copy and Copy To; images and media add Convert; actions that don't apply are left out, not dimmed.
 - [snap] Groups are separated, one level of submenus at most; no "Show more options".
-Status: todo
+Status: done
+Built: One right-click menu that follows what's under the pointer. Items get Open, Open With (default app first, then the others, then Other…), Open in New Tab (folders), Quick Look, Cut, Copy, Copy Path, Paste, Duplicate (⌘D), Rename (one item), Move to Trash, Tags, Pin to Sidebar, Open in Terminal (one folder), Eject (a disk in /Volumes) and Properties; empty space gets Paste, New Folder, New File, Open in Terminal, Copy Path and Properties. Disks on the Home page and in the sidebar right-click to Open, Open in New Tab, Open in Terminal, Rename… (when the disk allows it), Copy Path, Properties and Eject (not the startup disk); a disk's Properties shows its format, capacity, available and used space without walking it. Pins and recent files on Home get their own menus. Copy To and Convert come with S-046 and S-045; Compress with S-035; more terminals and the Copy submenu with S-034.
 
 ### S-034 Copy a path and open a terminal here
 As the user, I copy an item's path (⌥⌘C), or from a Copy submenu its name, name without extension, extension or parent folder path; and I open the current folder in Terminal (or Ghostty, iTerm) or the selection in my code editor (VS Code, Cursor, Zed, Xcode).
