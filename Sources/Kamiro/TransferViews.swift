@@ -26,7 +26,8 @@ final class TransferTask: Identifiable {
         self.label = label
     }
 
-    var isIndeterminate: Bool { label != nil }
+    /// A job that tells how far it has got (an FFmpeg conversion) counts in thousandths.
+    var isIndeterminate: Bool { label != nil && progress.totalItems == 0 }
 
     var title: String {
         if let label { return label }
@@ -43,6 +44,13 @@ final class TransferTask: Identifiable {
         case .failed(let message): return message
         case .running:
             if isIndeterminate { return "" }
+            if label != nil {
+                let elapsed = Date.now.timeIntervalSince(started)
+                guard progress.fraction > 0.02, elapsed > 1 else { return "" }
+                let left = elapsed / progress.fraction - elapsed
+                let time = Duration.seconds(max(1, left)).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide, maximumUnitCount: 1))
+                return String(localized: "About \(time) left")
+            }
             let done = ByteCountFormatter.string(fromByteCount: progress.doneBytes, countStyle: .file)
             let total = ByteCountFormatter.string(fromByteCount: progress.totalBytes, countStyle: .file)
             let elapsed = Date.now.timeIntervalSince(started)
@@ -123,7 +131,7 @@ final class TransferCenter {
     /// Compress and Extract: `work` runs off the main thread and returns what it made, which
     /// is selected and can be undone. Shown like a transfer, with Stop.
     func startJob(_ title: String, undoName: String, in folder: URL, browser: BrowserModel,
-                  work: @escaping @Sendable (CancelFlag) async throws -> URL) {
+                  work: @escaping @Sendable (CancelFlag, _ progress: @escaping @Sendable (Double) -> Void) async throws -> URL) {
         let task = TransferTask(kind: .copy, count: 1, destination: folder, label: title)
         running += 1
         Task {
@@ -133,7 +141,13 @@ final class TransferCenter {
         let cancel = task.cancelFlag
         Task {
             let result: Result<URL, any Error>
-            do { result = .success(try await work(cancel)) } catch { result = .failure(error) }
+            let progress: @Sendable (Double) -> Void = { fraction in
+                Task { @MainActor in
+                    task.progress.totalItems = 1000
+                    task.progress.doneItems = Int(fraction * 1000)
+                }
+            }
+            do { result = .success(try await work(cancel, progress)) } catch { result = .failure(error) }
             running -= 1
             switch result {
             case .success(let made):

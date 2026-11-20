@@ -10,6 +10,11 @@ public enum Media {
 
     private static let readableImages = Set((CGImageSourceCopyTypeIdentifiers() as? [String]) ?? [])
     static let writableImages = Set((CGImageDestinationCopyTypeIdentifiers() as? [String]) ?? [])
+    /// Movies AVFoundation opens. AVI is left to FFmpeg: the codecs inside are rarely ones macOS plays.
+    private static let nativeVideos = Set(AVURLAsset.audiovisualTypes().map(\.rawValue)).subtracting(["public.avi"])
+    /// Pictures macOS can't read that ImageMagick can (S-052).
+    static let magickExtensions: Set<String> = ["svg", "svgz", "xcf", "eps", "epsf", "ai", "pcx", "xpm", "xbm", "sgi",
+                                                "ras", "sun", "mng", "miff", "dpx"]
 
     public static func type(of url: URL) -> UTType? {
         url.pathExtension.isEmpty ? nil : UTType(filenameExtension: url.pathExtension.lowercased())
@@ -17,17 +22,28 @@ public enum Media {
 
     public static func kind(of url: URL) -> Kind? {
         guard let type = type(of: url) else { return nil }
-        if type.conforms(to: .pdf) { return .pdf }
         if type.conforms(to: .image), readableImages.contains(type.identifier) { return .image }
+        if magickExtensions.contains(url.pathExtension.lowercased()) { return .image }
+        if type.conforms(to: .pdf) { return .pdf }
         if type.conforms(to: .movie) { return .video }
         return nil
     }
+
+    /// macOS reads it itself; otherwise it takes ImageMagick or FFmpeg (S-051, S-052).
+    public static func isNative(_ url: URL) -> Bool {
+        guard let type = type(of: url), let kind = kind(of: url) else { return false }
+        return switch kind {
+        case .pdf: true
+        case .image: readableImages.contains(type.identifier)
+        case .video: nativeVideos.contains(type.identifier)
+        }
+    }
 }
 
-/// One way to convert files, offered in the right-click menu's Convert submenu (S-045, S-048).
+/// One way to convert files, offered in the right-click menu's Convert submenu (S-045, S-048, S-050 to S-052).
 public enum Conversion: String, CaseIterable, Sendable, Identifiable {
     case jpeg, png, heic, avif, webp, jpeg2000, tiff, gif, bmp, icns, ico
-    case mp4, animatedGIF, audio
+    case mp4, webm, animatedGIF, audio
     /// Images and PDFs, smaller for email.
     case smaller
 
@@ -37,7 +53,7 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
 
     public var group: Group {
         switch self {
-        case .mp4, .animatedGIF, .audio: .video
+        case .mp4, .webm, .animatedGIF, .audio: .video
         case .smaller: .email
         default: .image
         }
@@ -75,13 +91,31 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         case .gif, .animatedGIF: "gif"
         case .icns: "icns"
         case .mp4: "mp4"
+        case .webm: "webm"
         case .audio: "m4a"
         case .smaller: Media.kind(of: source) == .pdf ? "pdf" : "jpg"
         }
     }
 
-    /// The optional tool this conversion needs (S-049); nil for what macOS does itself.
-    public var tool: CommandTool? { nil }
+    /// The optional tools converting `source` this way takes (S-049), none when macOS does it all;
+    /// nil when it can't be done here at all. What macOS reads stays native even with a tool there.
+    public func needs(for source: URL) -> [CommandTool]? {
+        guard let kind = Media.kind(of: source) else { return nil }
+        let native = Media.isNative(source)
+        switch group {
+        case .image:
+            guard kind == .image else { return nil }
+            let reading: [CommandTool] = native ? [] : [.imageMagick]
+            if isAvailable { return reading }
+            return self == .webp ? reading + [.cwebp] : nil
+        case .email:
+            if kind == .pdf { return [] }
+            return kind == .image ? (native ? [] : [.imageMagick]) : nil
+        case .video:
+            guard kind == .video else { return nil }
+            return native && self != .webm ? [] : [.ffmpeg]
+        }
+    }
 
     /// Image formats only when ImageIO on this Mac can write them (macOS 26 reads WebP but can't write it).
     public var isAvailable: Bool {
@@ -93,6 +127,7 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
     public func isSameFormat(as source: URL) -> Bool {
         guard let type = Media.type(of: source) else { return false }
         if let imageType { return type == imageType }
+        if self == .webm { return type.identifier == "org.webmproject.webm" }
         return self == .mp4 && type == .mpeg4Movie
     }
 
@@ -105,19 +140,21 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         if kinds.allSatisfy({ $0 == .image }) {
             offered = [.jpeg, .png, .heic, .avif, .webp, .jpeg2000, .tiff, .gif, .bmp, .icns, .ico, .smaller]
         } else if kinds.allSatisfy({ $0 == .video }) {
-            offered = [.mp4, .animatedGIF, .audio]
+            offered = [.mp4, .webm, .animatedGIF, .audio]
         } else if kinds.allSatisfy({ $0 == .image || $0 == .pdf }) {
             offered = [.smaller]
         } else {
             offered = []
         }
         return offered.filter { choice in
-            choice.isAvailable && (choice.tool.map { tools.contains($0.id) } ?? true) && !urls.allSatisfy { choice.isSameFormat(as: $0) }
+            urls.allSatisfy { source in choice.needs(for: source).map { $0.allSatisfy { tools.contains($0.id) } } ?? false }
+                && !urls.allSatisfy { choice.isSameFormat(as: $0) }
         }
     }
 }
 
-/// Converts on this Mac only, with ImageIO, AVFoundation and PDFKit. The result is made in a
+/// Converts on this Mac only, with ImageIO, AVFoundation and PDFKit, and the optional tools
+/// that are installed (cwebp, FFmpeg, ImageMagick; never downloaded). The result is made in a
 /// staging folder on the same disk and moved next to the original under a free name at the end,
 /// so a stopped or failed conversion leaves nothing and nothing is overwritten.
 public enum Converter {
@@ -146,13 +183,43 @@ public enum Converter {
         return Naming.free(base + "." + conversion.ext(for: source), in: source.deletingLastPathComponent())
     }
 
+    /// `tools` are the installed tools' programs by id. `progress` hears the fraction done, when
+    /// the way it converts tells (FFmpeg does).
     @concurrent
-    public static func convert(_ source: URL, to conversion: Conversion, smallerWord: String = "smaller",
-                               cancel: CancelFlag = CancelFlag()) async throws -> URL {
+    public static func convert(_ source: URL, to conversion: Conversion, tools: [String: URL] = [:],
+                               smallerWord: String = "smaller", cancel: CancelFlag = CancelFlag(),
+                               progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws -> URL {
+        guard let needs = conversion.needs(for: source) else {
+            throw Failure.failed("Can't convert “\(source.lastPathComponent)” to \(conversion.ext(for: source)).")
+        }
+        if let missing = needs.first(where: { tools[$0.id] == nil }) {
+            throw Failure.failed("Converting “\(source.lastPathComponent)” takes \(missing.name).")
+        }
         let folder = source.deletingLastPathComponent().canonical
         let staging = try Archive.stagingFolder(near: folder)
         defer { try? FileManager.default.removeItem(at: staging) }
         let out = staging.appending(path: "converted." + conversion.ext(for: source))
+        var input = source
+        if needs.contains(.imageMagick), let magick = tools[CommandTool.imageMagick.id] {
+            input = try await ToolConvert.magick(source, tool: magick, staging: staging, cancel: cancel)
+        }
+        if conversion.group == .video, let ffmpeg = tools[CommandTool.ffmpeg.id],
+           needs.contains(.ffmpeg) || conversion == .animatedGIF {
+            // FFmpeg's palette makes better GIFs than a frame-by-frame copy, so it wins when it's there.
+            try await ToolConvert.ffmpeg(input, conversion, tool: ffmpeg, to: out, cancel: cancel, progress: progress)
+        } else if conversion == .webp, let cwebp = tools[CommandTool.cwebp.id],
+                  needs.contains(.cwebp) || ToolConvert.isAnimatedGIF(input) {
+            try await ToolConvert.webp(input, cwebp: cwebp, to: out, staging: staging, cancel: cancel)
+        } else {
+            try await natively(input, to: conversion, out: out, cancel: cancel)
+        }
+        if cancel.isCancelled { throw CancellationError() }
+        let target = folder.appending(path: targetName(for: source, conversion, smallerWord: smallerWord))
+        try FileManager.default.moveItem(at: out, to: target)
+        return target.canonical
+    }
+
+    static func natively(_ source: URL, to conversion: Conversion, out: URL, cancel: CancelFlag) async throws {
         switch conversion {
         case .mp4: try await export(source, preset: AVAssetExportPresetHighestQuality, as: .mp4, to: out, cancel: cancel)
         case .audio:
@@ -167,10 +234,6 @@ public enum Converter {
             guard let type = conversion.imageType else { throw Failure.failed("Can't convert to \(conversion.rawValue).") }
             try image(source, to: type, out: out)
         }
-        if cancel.isCancelled { throw CancellationError() }
-        let target = folder.appending(path: targetName(for: source, conversion, smallerWord: smallerWord))
-        try FileManager.default.moveItem(at: out, to: target)
-        return target.canonical
     }
 
     // MARK: Images

@@ -18,6 +18,7 @@ extension Conversion {
         case .icns: String(localized: "Icon (ICNS)")
         case .ico: String(localized: "Windows Icon (ICO)")
         case .mp4: String(localized: "MP4 Video")
+        case .webm: String(localized: "WebM Video")
         case .animatedGIF: String(localized: "Animated GIF")
         case .audio: String(localized: "Audio Only (M4A)")
         case .smaller: String(localized: "Smaller for Email")
@@ -36,11 +37,13 @@ extension BrowserModel {
     /// Each file converts next to itself as its own job in the transfers popover, with Stop and Undo.
     func convertSelection(to conversion: Conversion) {
         let smaller = String(localized: "smaller", comment: "Ends the name of a file made smaller for email: “photo (smaller).jpg”")
+        let tools = ToolStore.shared.urls
         for source in orderedSelection where !conversion.isSameFormat(as: source) {
             TransferCenter.shared.startJob(String(localized: "Converting “\(source.lastPathComponent)” to \(conversion.title)"),
                                            undoName: String(localized: "Convert"),
-                                           in: source.deletingLastPathComponent(), browser: self) { cancel in
-                try await Converter.convert(source, to: conversion, smallerWord: smaller, cancel: cancel)
+                                           in: source.deletingLastPathComponent(), browser: self) { cancel, progress in
+                try await Converter.convert(source, to: conversion, tools: tools, smallerWord: smaller, cancel: cancel,
+                                            progress: progress)
             }
         }
     }

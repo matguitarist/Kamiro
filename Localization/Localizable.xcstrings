@@ -3311,6 +3311,26 @@
         }
       }
     },
+    "WebM Video": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidéo WebM"
+          }
+        }
+      }
+    },
+    "About %@ left": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Environ %@ restant"
+          }
+        }
+      }
+    },
     "Animated GIF": {
       "localizations": {
         "fr": {

@@ -498,21 +498,24 @@ As the user, with cwebp installed (brew install webp), Convert › WebP turns pi
 Depends: S-049
 Acceptance:
 - [unit] With a fake cwebp in a test folder, the arguments are right and the result lands as “photo.webp”, or “photo 2.webp” when taken; Stop ends the tool and leaves nothing.
-Status: todo
+Status: done
+Built: Once cwebp is found, Convert on pictures offers WebP (macOS reads WebP but can't write it). The picture is drawn the way it's shown, then cwebp writes it at quality 90; an animated GIF goes through gif2webp, installed with it, and stays animated. Like every conversion it's made in a staging folder: Stop ends the tool and leaves nothing, and a tool that fails says why in the transfers popover (its last line).
 
 ### S-051 Any video with ffmpeg
 As the user, with ffmpeg installed, Convert also takes videos macOS can't open (WebM, MKV, AVI, FLV), offers WebM as a target, and makes animated GIFs with ffmpeg's palette for better colors, with a progress bar from its time readout.
 Depends: S-049
 Acceptance:
 - [unit] ffmpeg's "time=" lines become a fraction of the length; without ffmpeg, WebM and MKV get no Convert.
-Status: todo
+Status: done
+Built: With FFmpeg found, Convert also takes WebM, MKV, AVI, FLV, WMV, OGV and any other movie AVFoundation can't open (AVI counts as one: the codecs inside rarely play on macOS), to MP4 (H.264 and AAC), Animated GIF and Audio Only, and offers WebM Video (VP9 and Opus) for every video. Animated GIFs come from FFmpeg whenever it's there, with a palette made from the video, the same first 30 seconds at 10 frames a second and 480 pixels. MP4 and Audio Only of what macOS plays stay with AVFoundation. FFmpeg jobs show a real progress bar and the time left, from its Duration and time= readouts.
 
 ### S-052 More pictures with ImageMagick
 As the user, with ImageMagick installed, Convert also takes pictures macOS can't open (SVG, XCF, EPS and other rare formats) and turns them into the usual ones.
 Depends: S-049
 Acceptance:
 - [unit] An SVG becomes a PNG of its own size with magick; formats ImageIO reads stay native even when ImageMagick is there.
-Status: todo
+Status: done
+Built: With ImageMagick found, Convert also takes SVG, XCF (layers merged), EPS, AI, PCX, XPM, XBM, SGI, Sun raster, MNG, MIFF and DPX pictures: magick draws the first page at its own size on a transparent background, then every picture conversion runs on that as usual (WebP too, with cwebp). EPS and AI also need Ghostscript (brew install ghostscript); without it the conversion fails and says so.
 
 ### S-053 Compress to a name and place
 As the user, with several items selected, I choose Compress To… and name the archive and pick its folder.

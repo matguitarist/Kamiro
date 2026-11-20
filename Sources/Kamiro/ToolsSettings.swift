@@ -18,6 +18,9 @@ final class ToolStore {
     /// The ids of the tools found, for what Convert offers.
     var installedIDs: Set<String> { Set(installed.keys) }
 
+    /// Each tool's program by id, for Convert.
+    var urls: [String: URL] { installed.mapValues(\.url) }
+
     func refresh() async {
         guard !isChecking else { return }
         isChecking = true

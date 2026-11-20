@@ -33,7 +33,7 @@ extension BrowserModel {
             : String(localized: "Compressing \(urls.count) items")
         let several = String(localized: "Archive")
         TransferCenter.shared.startJob(title, undoName: String(localized: "Compress"),
-                                       in: first.deletingLastPathComponent(), browser: self) { cancel in
+                                       in: first.deletingLastPathComponent(), browser: self) { cancel, _ in
             try await Archive.compress(urls, several: several, cancel: cancel)
         }
     }
@@ -57,7 +57,7 @@ extension BrowserModel {
         let trash = FileUndo.trash
         TransferCenter.shared.startJob(String(localized: "Compressing to “\(target.lastPathComponent)”"),
                                        undoName: String(localized: "Compress"),
-                                       in: target.deletingLastPathComponent(), browser: self) { cancel in
+                                       in: target.deletingLastPathComponent(), browser: self) { cancel, _ in
             try await Archive.compress(urls, to: target, trash: trash, cancel: cancel)
         }
     }
@@ -67,7 +67,7 @@ extension BrowserModel {
         for zip in extractTargets {
             TransferCenter.shared.startJob(String(localized: "Extracting “\(zip.lastPathComponent)”"),
                                            undoName: String(localized: "Extract"),
-                                           in: zip.deletingLastPathComponent(), browser: self) { cancel in
+                                           in: zip.deletingLastPathComponent(), browser: self) { cancel, _ in
                 try await Archive.extract(zip, cancel: cancel)
             }
         }
