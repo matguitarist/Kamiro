@@ -9,7 +9,7 @@ app=~/Applications/Kamiro.app/Contents/MacOS/Kamiro
 frameKey="NSWindow Frame browser-AppWindow-1"
 savedFrame=$(defaults read com.mathieuares.kamiro "$frameKey" 2>/dev/null)
 restoreFrame() {
-  if [[ -n $savedFrame ]]; then defaults write com.mathieuares.kamiro "$frameKey" "$savedFrame"
+  if [[ -n $savedFrame ]]; then defaults write com.mathieuares.kamiro "$frameKey" -string "$savedFrame"
   else defaults delete com.mathieuares.kamiro "$frameKey" 2>/dev/null; fi
 }
 trap restoreFrame EXIT

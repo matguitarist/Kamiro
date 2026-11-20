@@ -10,6 +10,8 @@ final class MenuState: ObservableObject {
     @Published private(set) var canGoForward = false
     @Published private(set) var canGoUp = false
     @Published private(set) var hasSelection = false
+    /// File › Pin to Sidebar has a folder to pin (S-032).
+    @Published private(set) var canPin = false
     @Published private(set) var isReady = false
     /// The window shows a tag's items or search results (S-027, S-029).
     @Published private(set) var isVirtual = false
@@ -32,6 +34,7 @@ final class MenuState: ObservableObject {
         canGoForward = browser.history.canGoForward
         canGoUp = browser.canGoUp
         hasSelection = !browser.selection.isEmpty
+        canPin = !browser.pinTargets.isEmpty
         // A tag's items aren't a folder: nothing can be made or pasted there.
         isReady = browser.state == .ready && !browser.isVirtual
         isVirtual = browser.isVirtual
@@ -79,6 +82,9 @@ struct KamiroCommands: Commands {
             Divider()
             Button("Rename") { menu.browser?.beginRename() }
                 .disabled(!menu.hasSelection)
+            Button("Pin to Sidebar") { menu.browser?.pinToSidebar() }
+                .keyboardShortcut("t", modifiers: [.command, .control])
+                .disabled(!menu.canPin)
             // Disabled while a text field has the keyboard, so ⌘⌫ still deletes text there.
             Button("Move to Trash") { menu.browser?.trashSelection() }
                 .keyboardShortcut(.delete)
@@ -136,7 +142,9 @@ struct KamiroCommands: Commands {
             Button("Enclosing Folder") { menu.browser?.goUp() }
                 .disabled(!menu.canGoUp)
             Divider()
-            ForEach(Pinned.defaults) { place in
+            Button("Home") { menu.browser?.go(to: VirtualPlace.home.url) }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+            ForEach(GoPlace.all) { place in
                 Button(place.title) { menu.browser?.go(to: place.url) }
                     .keyboardShortcut(place.key, modifiers: place.modifiers)
             }

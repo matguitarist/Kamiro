@@ -15,12 +15,21 @@ struct BrowserView: View {
                 if let search = model.search { SearchScopeBar(model: model, search: search) }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                if showStatusBar, !model.isFailed { StatusBar(model: model) }
+                if showStatusBar, !model.isFailed, model.place != .home { StatusBar(model: model) }
             }
     }
 
     @ViewBuilder
     private var content: some View {
+        if model.place == .home {
+            HomeView(model: model)
+        } else {
+            folderContent
+        }
+    }
+
+    @ViewBuilder
+    private var folderContent: some View {
         switch model.state {
         case .failed(.denied):
             ContentUnavailableView {
@@ -194,69 +203,6 @@ enum StatusText {
     private static func size(_ bytes: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
-}
-
-/// Home, Pinned and Locations, like the Finder's sidebar.
-struct Sidebar: View {
-    let browser: BrowserModel
-    @State private var volumes = Volumes.mounted()
-
-    var body: some View {
-        List(selection: selection) {
-            Section("Pinned") {
-                ForEach(Pinned.defaults) { place in
-                    Label(place.title, systemImage: place.symbol).tag(place.url)
-                        .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: place.url) }
-                }
-            }
-            Section("Locations") {
-                ForEach(volumes) { volume in
-                    Label(volume.name, systemImage: volume.isNetwork ? "network" : volume.isRoot ? "internaldrive" : "externaldrive")
-                        .tag(volume.url)
-                        .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
-                }
-            }
-            TagsSection()
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
-            volumes = Volumes.mounted()
-        }
-        .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
-            volumes = Volumes.mounted()
-        }
-    }
-
-    /// The sidebar shows where the window is when it's a sidebar place, and nothing otherwise.
-    private var selection: Binding<URL?> {
-        Binding {
-            let here = browser.folder
-            return Pinned.defaults.contains { $0.url == here } || volumes.contains { $0.url == here }
-                || VirtualPlace(here) != nil ? here : nil
-        } set: { url in
-            if let url { browser.go(to: url) }
-        }
-    }
-}
-
-/// The sidebar's pinned folders. People pin their own with S-032.
-struct Pinned: Identifiable {
-    let url: URL
-    let symbol: String
-    let key: KeyEquivalent
-    let modifiers: EventModifiers
-    var id: URL { url }
-    var title: String { FileManager.default.displayName(atPath: url.path) }
-
-    static let defaults: [Pinned] = {
-        let home = URL.homeDirectory.canonical
-        return [
-            Pinned(url: home, symbol: "house", key: "h", modifiers: [.command, .shift]),
-            Pinned(url: URL(filePath: "/Applications"), symbol: "square.grid.2x2", key: "a", modifiers: [.command, .shift]),
-            Pinned(url: home.appending(path: "Desktop"), symbol: "menubar.dock.rectangle", key: "d", modifiers: [.command, .shift]),
-            Pinned(url: home.appending(path: "Documents"), symbol: "doc", key: "o", modifiers: [.command, .shift]),
-            Pinned(url: home.appending(path: "Downloads"), symbol: "arrow.down.circle", key: "l", modifiers: [.command, .option]),
-        ]
-    }()
 }
 
 /// Back (hold for recent folders), Forward, Up, and the address bar.

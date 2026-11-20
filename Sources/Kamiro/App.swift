@@ -121,9 +121,9 @@ enum Store {
     /// The sample tree snapshots and the self-test browse (tools/seed-tree.sh).
     static let seedFolder = URL(filePath: "/tmp/Kamiro-seed")
 
-    /// Where a new window opens: the home folder, or the sample tree in a test run.
+    /// Where a new window opens: the Home page (S-031), or the sample tree in a test run.
     static var startFolder: URL {
         if isOverridden, FileManager.default.fileExists(atPath: seedFolder.path) { return seedFolder }
-        return URL.homeDirectory.canonical
+        return VirtualPlace.home.url
     }
 }

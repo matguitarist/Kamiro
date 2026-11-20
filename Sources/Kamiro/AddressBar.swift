@@ -72,14 +72,19 @@ struct AddressBar: View {
         .accessibilityLabel(String(localized: "Path: \(Location(model.folder).crumbs.map { FileManager.default.displayName(atPath: $0.path) }.joined(separator: ", "))"))
     }
 
-    /// A tag's items: "Tags › Red", nothing to click.
+    /// A tag's items: "Tags › Red", nothing to click; the Home page: "Home".
     private func placeCrumbs(_ place: VirtualPlace) -> some View {
         let isSearch = if case .search = place { true } else { false }
         return HStack(spacing: Space.xs) {
-            Image(systemName: isSearch ? "magnifyingglass" : "tag").foregroundStyle(.secondary)
-            Text(isSearch ? "Search" : "Tags").foregroundStyle(.secondary)
-            Image(systemName: "chevron.compact.right").foregroundStyle(.tertiary)
-            Text(isSearch ? String(localized: "“\(place.title)”") : place.title).fontWeight(.semibold)
+            if place == .home {
+                Image(systemName: "house").foregroundStyle(.secondary)
+                Text("Home").fontWeight(.semibold)
+            } else {
+                Image(systemName: isSearch ? "magnifyingglass" : "tag").foregroundStyle(.secondary)
+                Text(isSearch ? "Search" : "Tags").foregroundStyle(.secondary)
+                Image(systemName: "chevron.compact.right").foregroundStyle(.tertiary)
+                Text(isSearch ? String(localized: "“\(place.title)”") : place.title).fontWeight(.semibold)
+            }
             Spacer(minLength: Space.lg)
         }
         .padding(.horizontal, Space.md)

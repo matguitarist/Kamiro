@@ -46,3 +46,18 @@ empty rows (below the last item) in their light-mode colors. The table repainted
 the stripes drawn past them. FileTable now marks itself and its clip view for redrawing in
 viewDidChangeEffectiveAppearance. Seen in the search-results-dark snapshot.
 Rule: an AppKit view that draws its own background redraws it when the appearance changes; check the dark snapshot of every page that leaves the keyboard outside the list.
+
+## 2026-11-20 External drives showed "Zero KB" free
+The status bar and the new Home page read volumeAvailableCapacityForImportantUsage, which is 0
+on some external and network volumes, so a 4 TB drive with 1.3 TB free showed "Zero KB".
+Found by the Home page snapshot.
+Fix: Volumes.availableSpace falls back to volumeAvailableCapacity when the important-usage
+value is 0.
+Rule: "important usage" space is for the boot volume; for any other volume, check it against
+the plain free space.
+
+## 2026-11-20 snap.sh didn't put the real window size back
+restoreFrame wrote the saved frame with `defaults write` without a type, and the frame string
+(with its JSON tiling state) didn't parse, so a snapshot run left the real window at the test
+size. Fix: `defaults write … -string`.
+Rule: write saved strings back with an explicit `-string`; `defaults` reads untyped values as plists.

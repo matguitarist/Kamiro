@@ -157,6 +157,7 @@ enum SelfTest {
 
             await views(browser: browser, seed: seed)
             await fileActions(browser: browser, seed: seed)
+            await homeAndPins(browser: browser, seed: seed)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)
@@ -337,13 +338,18 @@ enum SelfTest {
         await open()
         browser.selection = [url("budget.csv")]
         key(51)
+        await browser.waitUntilLoaded()
         await pause()
-        check("⌫ alone doesn't trash with Return opens items off", exists("budget.csv"))
-        Prefs.defaults.set(true, forKey: Prefs.returnOpensItems)
-        key(51)
+        check("⌫ alone moves to the Trash, like Windows", !exists("budget.csv")
+              && files.fileExists(atPath: trash.appending(path: "budget.csv").path))
+        FileUndo.manager.undo()
         await pause()
-        check("…and trashes with it on, like Windows", !exists("budget.csv"))
-        Prefs.defaults.removeObject(forKey: Prefs.returnOpensItems)
+        await open()
+        browser.selection = [url("budget.csv")]
+        key(117)
+        await browser.waitUntilLoaded()
+        await pause()
+        check("Forward Delete does too", !exists("budget.csv"))
         await open()
         browser.selection = [url("Track 10.m4a"), url("Track 11.m4a")]
         key(51, [.command, .option])

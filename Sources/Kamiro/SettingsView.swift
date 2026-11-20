@@ -1,4 +1,5 @@
 import AppKit
+import KamiroKit
 import SwiftUI
 
 /// The Settings window (Command-Comma). One tab per topic, at most about
@@ -67,6 +68,11 @@ struct GeneralSettings: View {
             Toggle(isOn: $returnOpensItems) {
                 Text("Return opens items")
                 Text("Off, Return renames, like the Finder. On, Return opens, like Windows, and F2 renames.")
+            }
+        }
+        Section("Show in Sidebar") {
+            ForEach(SidebarSection.allCases, id: \.self) { section in
+                Toggle(section.title, isOn: PinStore.shared.showBinding(section))
             }
         }
         Section("Language") {
@@ -176,6 +182,17 @@ struct AppLanguage: Hashable {
         configuration.createsNewApplicationInstance = true
         NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in
             DispatchQueue.main.async { NSApp.terminate(nil) }
+        }
+    }
+}
+
+extension SidebarSection {
+    var title: String {
+        switch self {
+        case .home: String(localized: "Home")
+        case .pinned: String(localized: "Pinned")
+        case .locations: String(localized: "Locations")
+        case .tags: String(localized: "Tags")
         }
     }
 }

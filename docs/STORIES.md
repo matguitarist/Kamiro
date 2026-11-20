@@ -219,7 +219,7 @@ Screens: delete-confirm
 Depends: S-011
 Acceptance:
 - [unit] Trash uses FileManager.trashItem and can be put back; Delete Immediately asks "Delete 3 Items Immediately?".
-- [self] ⌫ alone trashes only when "Return opens items" is on (Explorer habit).
+- [self] ⌫ and ⌦ alone trash too (Explorer habit; owner, 2026-11-20).
 Status: done
 Built: ⌘⌫ and ⌥⌘⌫ are menu shortcuts only while the list has the keyboard, so they still edit text in a field. Test runs trash into /tmp/Kamiro-trash.
 
@@ -399,13 +399,15 @@ Built: Tabs are the system's window tabs. File › New Tab (⌘T) and the tab ba
 As the user, the Home page shows my pinned folders, recent files and volumes with free space.
 Screens: home
 Depends: S-032
-Status: todo
+Status: done
+Built: Home is a place (kamiro:home) at the top of the sidebar and in Go › Home (⇧⌘F); new windows open on it. Recent files are Spotlight's last-used files in the home folder (30 days, 10 shown; the sample tree in test runs). Volumes show free of total space with a bar.
 
 ### S-032 Pin folders to the sidebar
 As the user, I drag a folder to the sidebar or choose Pin to Sidebar; I reorder and unpin pins; I hide sidebar sections I don't use.
 Screens: browse
 Depends: S-001
-Status: todo
+Status: done
+Built: File › Pin to Sidebar (⌃⌘T) and the right-click menu pin selected folders (or the current folder); a folder dragged between pins is pinned there, one dropped on a pin moves into it. Drag pins to reorder; right-click a pin to Unpin. Settings › General › Show in Sidebar hides Home, Pinned, Locations or Tags. The home folder moved to Locations, as the glossary says.
 
 ### S-033 Right-click for everything
 As the user, one right-click menu holds what I need: Open, Open With, Cut, Copy, Paste, Rename, Duplicate, New, Compress, Copy Path, Open in Terminal, Tags, Quick Look, Properties, Move to Trash.

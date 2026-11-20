@@ -86,8 +86,20 @@ public enum Volumes {
         .sorted { $0.isRoot != $1.isRoot ? $0.isRoot : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
+    /// Free and total space, for the Home page's volumes (S-031).
+    public static func space(at url: URL) -> (available: Int64, total: Int64)? {
+        guard let total = (try? url.resourceValues(forKeys: [.volumeTotalCapacityKey]))?.volumeTotalCapacity,
+              let available = availableSpace(at: url) else { return nil }
+        return (available, Int64(total))
+    }
+
     /// Free space for the status bar, as the Finder counts it (purgeable space included).
+    /// Some external and network volumes report 0 for "important usage": then the plain free space counts.
     public static func availableSpace(at url: URL) -> Int64? {
-        (try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]))?.volumeAvailableCapacityForImportantUsage
+        let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
+        let important = values?.volumeAvailableCapacityForImportantUsage
+        let plain = values?.volumeAvailableCapacity.map(Int64.init)
+        guard let important, important > 0 else { return plain ?? important }
+        return max(important, plain ?? 0)
     }
 }

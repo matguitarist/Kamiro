@@ -54,6 +54,7 @@ extension BrowserModel {
     /// A place's name for menus and the title: a folder's name, or a tag's.
     static func name(of url: URL) -> String {
         switch VirtualPlace(url) {
+        case .home: String(localized: "Home")
         case .search(let search): String(localized: "Searching “\(search.text)”")
         case .tag(let name): name
         case nil: FileManager.default.displayName(atPath: url.path)

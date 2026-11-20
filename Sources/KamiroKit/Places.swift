@@ -5,6 +5,8 @@ import UniformTypeIdentifiers
 /// A place the window shows that isn't a folder: the items with one tag (S-027). It travels as
 /// a kamiro: URL, so history, views and the window's memory treat it like any folder.
 public enum VirtualPlace: Hashable, Sendable {
+    /// The Home page: pins, recent files and volumes (S-031).
+    case home
     case tag(String)
     /// Search results (S-029).
     case search(Search)
@@ -13,8 +15,12 @@ public enum VirtualPlace: Hashable, Sendable {
 
     public init?(_ url: URL) {
         guard url.scheme == Self.scheme,
-              let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let query = parts.queryItems else { return nil }
+              let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        if parts.path == "home" {
+            self = .home
+            return
+        }
+        guard let query = parts.queryItems else { return nil }
         func value(_ key: String) -> String? { query.first { $0.name == key }?.value.flatMap { $0.isEmpty ? nil : $0 } }
         switch parts.path {
         case "tag":
@@ -34,6 +40,8 @@ public enum VirtualPlace: Hashable, Sendable {
         var parts = URLComponents()
         parts.scheme = Self.scheme
         switch self {
+        case .home:
+            parts.path = "home"
         case .tag(let name):
             parts.path = "tag"
             parts.queryItems = [URLQueryItem(name: "name", value: name)]
@@ -49,6 +57,7 @@ public enum VirtualPlace: Hashable, Sendable {
 
     public var title: String {
         switch self {
+        case .home: "Home"
         case .tag(let name): name
         case .search(let search): search.text
         }
@@ -58,6 +67,9 @@ public enum VirtualPlace: Hashable, Sendable {
     /// Spotlight: for trees Spotlight doesn't index, like the test tree in /tmp.
     public func items(showHidden: Bool, root: URL? = nil) -> [FileItem] {
         switch self {
+        case .home:
+            // The Home page draws itself; it has no list.
+            return []
         case .tag(let name):
             let urls = root.map { TagFinder.walk(name, in: $0) } ?? TagFinder.spotlight(name)
             return urls.compactMap(FolderReader.item(at:)).filter { showHidden || !$0.isHidden }

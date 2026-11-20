@@ -138,6 +138,15 @@ final class BrowserModel {
     var folder: URL { history.current }
     var title: String { Self.name(of: folder) }
     var selectedItems: [FileItem] { items.filter { selection.contains($0.url) } }
+    /// What Pin to Sidebar pins: the selected folders, or this folder when nothing is selected (S-032).
+    var pinTargets: [URL] {
+        let targets = selection.isEmpty ? (isVirtual || state != .ready ? [] : [folder]) : selectedItems.filter(\.isFolder).map(\.url)
+        return targets.filter { !PinStore.shared.list.contains($0) }
+    }
+    func pinToSidebar() {
+        PinStore.shared.pin(pinTargets)
+        publish()
+    }
     var canGoUp: Bool { folder.isFileURL && Location(folder).parent != nil }
     var isFailed: Bool { if case .failed = state { true } else { false } }
     var counts: StatusCounts { StatusCounts(items: items, selection: selection, available: available, sizes: folderSizes) }
@@ -453,6 +462,9 @@ enum Prefs {
     static let iconSize = "iconSize"
     static let showHidden = "showHidden"
     static let showInspector = "showInspector"
+    /// The sidebar's pinned folders, as paths (S-032).
+    static let pins = "pins"
+    static let hiddenSidebarSections = "hiddenSidebarSections"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

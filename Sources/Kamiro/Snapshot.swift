@@ -24,6 +24,7 @@ enum Snapshot {
         case tags, filter
         case searchResults = "search-results"
         case tabs
+        case home
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
@@ -91,6 +92,10 @@ enum Snapshot {
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
                 browser.filterText = "invoice"
+            case .home:
+                PinStore.shared.pin([seed.appending(path: "Projects"), seed.appending(path: "Photos")])
+                browser.go(to: VirtualPlace.home.url)
+                try? await Task.sleep(for: .seconds(1))
             case .tabs:
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
@@ -159,6 +164,11 @@ enum Snapshot {
                 main?.tabbedWindows?.filter { $0 !== main }.forEach { $0.close() }
                 main?.makeKeyAndOrderFront(nil)
             case .searchResults:
+                browser.go(to: Store.seedFolder)
+                await browser.waitUntilLoaded()
+            case .home:
+                Prefs.defaults.removeObject(forKey: Prefs.pins)
+                PinStore.shared.reload()
                 browser.go(to: Store.seedFolder)
                 await browser.waitUntilLoaded()
             case .tags:
