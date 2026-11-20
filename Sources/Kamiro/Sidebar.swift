@@ -74,7 +74,8 @@ struct Sidebar: View {
 }
 
 extension Volume {
-    var symbol: String { isNetwork ? "network" : isRoot ? "internaldrive" : "externaldrive" }
+    /// The icon picked for it, or its automatic one (S-056).
+    @MainActor var symbol: String { IconStore.shared.symbol(for: self) }
 }
 
 /// The pinned folders and the sidebar parts people hide (S-032), kept in the settings and

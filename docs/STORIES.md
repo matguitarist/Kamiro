@@ -538,6 +538,15 @@ Acceptance:
 Status: done
 Built: Clicking a server under Network, or typing smb://server or \\server in the address bar, opens its page: its shares as folders, listed with macOS's smbutil as guest or with the keychain's password (never asking). Opening a share mounts it with NetFS (macOS asks for a password when needed) and goes in; mounted shares open at once, and their size is never measured across the network. A server that won't list its shares shows Connect As… (macOS's own dialogs) and Try Again. Network lists servers only: found nearby, or connected by address; ⏏ on a server disconnects all its shares. Settings › General › Show in Sidebar › Connected Shares lists them under their server again. Opening a server connects all its shares in the background (Settings › General › Servers, on by default): only the first may ask for a password, the others use the keychain's. Listing retries on a fresh session, then as guest, since right after a disconnect the old session refuses.
 
+### S-056 Pick an icon for a server or disk
+As the user, I right-click a server or disk in the sidebar and pick its icon (network, server, NAS, PC, Mac, laptop, cloud, disk), so my cloud mounts and my Windows PC look like what they are.
+Depends: S-054
+Acceptance:
+- [unit] WebDAV shares and cloud storage mounted by a tool (macFUSE, FUSE-T, rclone's local NFS) show a cloud on their own; a picked icon is kept for a server under any spelling and for a share wherever it mounts; Automatic forgets the pick.
+- [self] A picked icon shows on the row and survives a reload; Automatic brings back the usual one.
+Status: done
+Built: Right-click a server, share or disk in the sidebar › Icon: Automatic (named after the icon it would show), then Network, Server, NAS, PC, Mac, Laptop, Cloud, Internal Disk and External Disk. Servers keep their pick by name, shares by server and share, disks by UUID. Servers got a right-click menu (Open, Icon, Disconnect). Shares no SMB or AFP server owns (WebDAV, NFS, cloud mounts) now list under Network on their own; before, they showed nowhere in the sidebar.
+
 ## M6 System and polish (1.0.0)
 
 ### S-038 Make Kamiro the default file browser

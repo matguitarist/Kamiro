@@ -508,6 +508,8 @@ enum Prefs {
     static let showConnectedShares = "showConnectedShares"
     /// Opening a server connects all its shares; on unless turned off (S-055).
     static let connectAllShares = "connectAllShares"
+    /// The icons picked for servers and disks, by PlaceIcons key (S-056).
+    static let placeIcons = "placeIcons"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

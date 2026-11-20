@@ -232,6 +232,20 @@ extension SelfTest {
         browser.goBack()
         await browser.waitUntilLoaded()
 
+        // S-056: a server or disk shows the icon picked for it, and goes back to its own.
+        let icons = IconStore.shared
+        let dav = Volume(url: URL(filePath: "/Volumes/files"), name: "files", isNetwork: true,
+                         remoteURL: URL(string: "https://dav.example.com/files"), fileSystem: "webdav")
+        check("a WebDAV share shows a cloud until someone picks", dav.symbol == "cloud")
+        icons.set(.nas, for: PlaceIcons.key(volume: dav))
+        icons.set(.pc, for: PlaceIcons.key(server: server))
+        icons.reload()
+        check("picked icons are kept", dav.symbol == PlaceIcon.nas.symbol
+              && icons.symbol(server: URL(string: "smb://test.local")!) == PlaceIcon.pc.symbol)
+        icons.set(nil, for: PlaceIcons.key(volume: dav))
+        icons.set(nil, for: PlaceIcons.key(server: server))
+        check("Automatic goes back to the usual icon", dav.symbol == "cloud" && icons.symbol(server: server) == "server.rack")
+
         // S-037: Go › Connect to Server… (⌘K) opens its sheet on this window.
         let connect = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Connect to Server…") }
         check("Go › Connect to Server… is ⌘K", connect?.keyEquivalent == "k" && connect?.keyEquivalentModifierMask == .command)

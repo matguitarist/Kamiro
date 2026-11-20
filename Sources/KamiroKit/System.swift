@@ -74,10 +74,16 @@ public struct Volume: Hashable, Sendable, Identifiable {
     public let canRename: Bool
     /// A server share's address (smb://HomeServer._smb._tcp.local/isos), nil for a disk.
     public let remoteURL: URL?
+    /// The file system's short name (apfs, smbfs, webdav, macfuse…), for its automatic icon.
+    public let fileSystem: String?
+    public let uuid: String?
 
     public init(url: URL, name: String, isRoot: Bool = false, isNetwork: Bool = false,
-                isEjectable: Bool = false, canRename: Bool = false, remoteURL: URL? = nil) {
+                isEjectable: Bool = false, canRename: Bool = false, remoteURL: URL? = nil,
+                fileSystem: String? = nil, uuid: String? = nil) {
         self.remoteURL = remoteURL
+        self.fileSystem = fileSystem
+        self.uuid = uuid
         self.url = url
         self.name = name
         self.isRoot = isRoot
@@ -120,7 +126,8 @@ public enum Volumes {
     public static func mounted() -> [Volume] {
         let keys: [URLResourceKey] = [.volumeLocalizedNameKey, .volumeIsRootFileSystemKey, .volumeIsLocalKey,
                                       .volumeIsEjectableKey, .volumeIsRemovableKey, .volumeIsBrowsableKey,
-                                      .volumeSupportsRenamingKey, .volumeIsReadOnlyKey, .volumeURLForRemountingKey]
+                                      .volumeSupportsRenamingKey, .volumeIsReadOnlyKey, .volumeURLForRemountingKey,
+                                      .volumeTypeNameKey, .volumeUUIDStringKey]
         let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: keys, options: [.skipHiddenVolumes]) ?? []
         return urls.compactMap { url in
             guard let values = try? url.resourceValues(forKeys: Set(keys)), values.volumeIsBrowsable != false else { return nil }
@@ -128,7 +135,8 @@ public enum Volumes {
                           isRoot: values.volumeIsRootFileSystem ?? false, isNetwork: values.volumeIsLocal == false,
                           isEjectable: values.volumeIsEjectable == true || values.volumeIsRemovable == true,
                           canRename: values.volumeSupportsRenaming == true && values.volumeIsReadOnly != true,
-                          remoteURL: values.volumeIsLocal == false ? values.volumeURLForRemounting : nil)
+                          remoteURL: values.volumeIsLocal == false ? values.volumeURLForRemounting : nil,
+                          fileSystem: values.volumeTypeName, uuid: values.volumeUUIDString)
         }
         .sorted { $0.isRoot != $1.isRoot ? $0.isRoot : $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }

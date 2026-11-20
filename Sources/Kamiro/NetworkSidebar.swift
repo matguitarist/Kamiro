@@ -142,7 +142,7 @@ struct NetworkSection: View {
             ForEach(ServerEntry.all(found: found.servers, mounted: volumes)) { server in
                 let shares = volumes.filter { $0.remoteURL.map { ServerHost.same($0, server.url) } ?? false }
                 HStack(spacing: Space.xs) {
-                    Label { Text(verbatim: server.name) } icon: { Image(systemName: "server.rack") }
+                    Label { Text(verbatim: server.name) } icon: { Image(systemName: IconStore.shared.symbol(server: server.url)) }
                     Spacer(minLength: 0)
                     // Connected: ⏏ disconnects every share of the server.
                     if !shares.isEmpty {
@@ -154,6 +154,7 @@ struct NetworkSection: View {
                     }
                 }
                 .tag(VirtualPlace.server(server.url).url)
+                .contextMenu { ServerMenu(server: server, shares: shares, browser: browser) }
                 // Settings › General › Show in Sidebar › Connected Shares lists them under it.
                 if showShares {
                     ForEach(shares) { volume in
@@ -161,6 +162,10 @@ struct NetworkSection: View {
                             .padding(.leading, Space.lg)
                     }
                 }
+            }
+            // Shares no SMB or AFP server owns (WebDAV, NFS, cloud storage a tool mounted) list on their own.
+            ForEach(volumes.filter { $0.remoteURL.flatMap(ServerHost.server(of:)) == nil }) { volume in
+                VolumeRow(volume: volume, browser: browser, renaming: $renaming)
             }
             Label("Connect to Server…", systemImage: "plus.circle")
                 .tag(Self.connectRow)
@@ -197,6 +202,27 @@ struct VolumeRow: View {
         }
         .tag(volume.url)
         .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
-        .contextMenu { VolumeMenu(volume: volume, model: browser, renaming: $renaming) }
+        .contextMenu {
+            VolumeMenu(volume: volume, model: browser, renaming: $renaming)
+            Divider()
+            IconMenu(key: PlaceIcons.key(volume: volume), automatic: .automatic(for: volume))
+        }
+    }
+}
+
+/// A server's right-click menu: open its page, pick its icon, disconnect its shares.
+struct ServerMenu: View {
+    let server: ServerEntry
+    let shares: [Volume]
+    let browser: BrowserModel
+
+    var body: some View {
+        Button("Open", systemImage: "arrow.up.forward.app") { browser.go(to: VirtualPlace.server(server.url).url) }
+        Divider()
+        IconMenu(key: PlaceIcons.key(server: server.url), automatic: .server)
+        if !shares.isEmpty {
+            Divider()
+            Button("Disconnect", systemImage: "eject") { shares.forEach { ItemActions.eject($0, from: browser) } }
+        }
     }
 }
