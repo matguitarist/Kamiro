@@ -657,8 +657,11 @@ struct PreviewColumn: View {
 
     var body: some View {
         VStack(spacing: Space.md) {
-            QuickLookPreview(url: item.url)
-                .aspectRatio(1, contentMode: .fit)
+            // The preview takes all the room the column has: a whole page of text, or the
+            // picture as large as it fits.
+            QuickLookPreview(url: item.url, style: .normal)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.control))
             VStack(spacing: Space.xs) {
                 Text(item.name)
                     .font(.headline)
@@ -674,12 +677,9 @@ struct PreviewColumn: View {
             }
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
         }
         .padding(Space.lg)
-        // The column fills the window's width: the preview keeps a readable size at its left.
-        .frame(maxWidth: 400)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var summary: String {
@@ -692,9 +692,11 @@ struct PreviewColumn: View {
 /// Quick Look's own preview of one file.
 struct QuickLookPreview: NSViewRepresentable {
     let url: URL
+    /// .compact draws a small thumbnail-like card; .normal shows the whole document, scrollable.
+    var style: QLPreviewViewStyle = .compact
 
     func makeNSView(context: Context) -> QLPreviewView {
-        let view = QLPreviewView(frame: .zero, style: .compact) ?? QLPreviewView()
+        let view = QLPreviewView(frame: .zero, style: style) ?? QLPreviewView()
         view.shouldCloseWithWindow = false
         view.previewItem = url as NSURL
         return view
