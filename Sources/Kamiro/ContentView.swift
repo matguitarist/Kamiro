@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var browser: BrowserModel
     @AppStorage(Prefs.showStatusBar, store: Prefs.defaults) private var showStatusBar = true
     @AppStorage(Prefs.showInspector, store: Prefs.defaults) private var showInspector = false
+    @FocusState private var filterFocused: Bool
 
     init(start: URL) {
         _browser = State(initialValue: BrowserModel(start: start, log: Store.log))
@@ -26,6 +27,10 @@ struct ContentView: View {
                         .inspectorColumnWidth(min: 220, ideal: 260, max: 400)
                 }
         }
+        // Filter this folder by name as you type (S-028); Escape clears it.
+        .searchable(text: $browser.filterText, placement: .toolbar, prompt: Text("Filter by Name"))
+        .searchFocused($filterFocused)
+        .onChange(of: browser.filterFocusToken) { filterFocused = true }
         .navigationTitle(browser.title)
         // The address bar shows where the window is; the title stays for the Window menu and Mission Control.
         .toolbar(removing: .title)

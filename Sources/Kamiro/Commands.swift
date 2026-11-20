@@ -77,6 +77,11 @@ struct KamiroCommands: Commands {
                 .keyboardShortcut(.delete, modifiers: [.command, .option])
                 .disabled(!(menu.hasSelection && menu.listFocused))
         }
+        CommandGroup(replacing: .textEditing) {
+            Button("Find") { menu.browser?.focusFilter() }
+                .keyboardShortcut("f")
+                .disabled(menu.browser == nil)
+        }
         CommandGroup(after: .pasteboard) {
             Button("Move Items Here") { menu.browser?.paste(move: true) }
                 .keyboardShortcut("v", modifiers: [.command, .option])

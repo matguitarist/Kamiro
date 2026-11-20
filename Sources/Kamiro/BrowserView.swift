@@ -44,7 +44,13 @@ struct BrowserView: View {
         default:
             list
                 .overlay {
-                    if model.state == .ready, model.items.isEmpty, let place = model.place {
+                    if model.state == .ready, model.items.isEmpty, !model.filterText.isEmpty {
+                        ContentUnavailableView {
+                            Label(String(localized: "No Items Match “\(model.filterText)”"), systemImage: "line.3.horizontal.decrease")
+                        } actions: {
+                            Button("Clear Filter") { model.filterText = "" }
+                        }
+                    } else if model.state == .ready, model.items.isEmpty, let place = model.place {
                         ContentUnavailableView(String(localized: "Nothing Is Tagged “\(place.title)”"), systemImage: "tag")
                     } else if model.state == .ready, model.items.isEmpty {
                         ContentUnavailableView("Folder Is Empty", systemImage: "folder")

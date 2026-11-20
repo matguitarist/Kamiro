@@ -30,3 +30,4 @@
 | New File | Make a file from a template here | Create file, new document | Nouveau fichier |
 | Transfers | The toolbar popover with copies and moves under way | Jobs, queue, activity | Transferts |
 | Tag | A Finder tag on an item, with a color for the seven standard ones | Label, color label | Tag |
+| Filter | Narrow this folder's list by name as you type | Search (that's S-029, across folders) | Filtre |

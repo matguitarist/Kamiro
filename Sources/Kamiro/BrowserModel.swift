@@ -12,7 +12,20 @@ enum LoadState: Equatable {
 @Observable
 final class BrowserModel {
     private(set) var history: History
+    /// What the list shows: the folder's items, narrowed by the filter (S-028).
     private(set) var items: [FileItem] = []
+    /// Everything in the folder, before the filter.
+    @ObservationIgnored private var allItems: [FileItem] = []
+    /// Edit › Find (⌘F) puts the keyboard in the filter.
+    private(set) var filterFocusToken = 0
+    func focusFilter() { filterFocusToken += 1 }
+    /// The toolbar filter; going to another folder clears it.
+    var filterText = "" {
+        didSet {
+            guard filterText != oldValue else { return }
+            showFiltered()
+        }
+    }
     /// Goes up each time `items` changes, so the table reloads only then.
     private(set) var itemsVersion = 0
     var selection: Set<URL> = [] {
@@ -301,8 +314,8 @@ final class BrowserModel {
         let keep = select ?? selection
         let keepIDs = select == nil ? Set(selectedItems.compactMap(\.fileID)) : []
         if select != nil, clear {
-            items = []
-            itemsVersion += 1
+            setItems([])
+            if filterText != "" { filterText = "" }
             state = .loading
             showsLoading = false
             selection = []
@@ -329,8 +342,7 @@ final class BrowserModel {
             showsLoading = false
             switch result {
             case .success(let (list, space)):
-                items = list
-                itemsVersion += 1
+                setItems(list)
                 available = space
                 state = .ready
                 var kept = keep.intersection(list.map(\.url))
@@ -341,8 +353,7 @@ final class BrowserModel {
                 if select != nil { revealToken += 1 }
                 sizes.measure(list.filter { ($0.isFolder || $0.isPackage) && folderSizes[$0.url] == nil }.map(\.url))
             case .failure(let error):
-                items = []
-                itemsVersion += 1
+                setItems([])
                 state = .failed(error)
                 log.post(error == .denied ? .warning : .error, "Kamiro can't open \(folder.path): \(error)", source: "Browse")
             }
@@ -384,14 +395,28 @@ final class BrowserModel {
 
     private func resort() {
         let order = order
-        let list = items
+        let list = allItems
         let measured = folderSizes
         Task {
             let sorted = await Self.sort(list, order: order, sizes: measured)
-            guard self.order == order, self.items == list else { return }
-            items = sorted
-            itemsVersion += 1
+            guard self.order == order, self.allItems == list else { return }
+            setItems(sorted)
         }
+    }
+
+    private func setItems(_ list: [FileItem]) {
+        allItems = list
+        items = NameFilter.apply(list, filterText)
+        itemsVersion += 1
+    }
+
+    /// The filter changed: show the matching items, and keep only the selection still shown.
+    private func showFiltered() {
+        items = NameFilter.apply(allItems, filterText)
+        itemsVersion += 1
+        let shown = Set(items.map(\.url))
+        if !selection.isSubset(of: shown) { selection = selection.intersection(shown) }
+        publish()
     }
 
     private func watch(_ folder: URL) {

@@ -67,6 +67,34 @@ extension SelfTest {
         await inspector(browser: browser, seed: seed, pause: pause, open: open)
         await properties(browser: browser, seed: seed, pause: pause, open: open)
         await tags(browser: browser, seed: seed, pause: pause, open: open)
+        await filter(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-028: filter this folder.
+    private static func filter(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        await open("")
+        let all = browser.items.count
+        browser.selection = [seed.appending(path: "notes.md").canonical]
+        browser.filterText = "invoice"
+        await pause(0.3)
+        let names = browser.items.map(\.name)
+        check("typing “invoice” leaves the three invoices, and the status bar counts them",
+              Set(names) == ["Invoice 1.pdf", "Invoice 2.pdf", "Invoice 12.pdf"] && browser.counts.items == 3
+              && browser.details?.table?.numberOfRows == 3, "\(names)")
+        check("…and a selected item it hides is unselected", browser.selection.isEmpty)
+        browser.filterText = "INV 2"
+        await pause(0.2)
+        check("every word counts, in any case", Set(browser.items.map(\.name)) == ["Invoice 2.pdf", "Invoice 12.pdf"])
+        browser.filterText = ""
+        await pause(0.2)
+        check("clearing it shows everything again", browser.items.count == all)
+        browser.filterText = "notes"
+        await open("Projects")
+        check("going to another folder clears the filter", browser.filterText.isEmpty && browser.items.count > 1)
+        let find = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items)
+            .first { $0.keyEquivalent == "f" && $0.keyEquivalentModifierMask == .command }
+        check("⌘F is Edit › Find", find?.title == String(localized: "Find"), find?.title ?? "missing")
+        await open("")
     }
 
     // S-027: tags.

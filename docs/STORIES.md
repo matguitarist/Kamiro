@@ -354,7 +354,17 @@ Built: Right-click › Tags lists the seven color tags (named in the Mac's langu
 As the user, I type in the toolbar search to filter the current folder by name as I type.
 Screens: filter
 Depends: S-002
-Status: todo
+UX:
+- Flow: ⌘F or a click in the toolbar's search field → type → the list keeps the items whose name holds every word, as you type → Escape or the field's ✕ clears it; going to another folder clears it too
+- Surface: the toolbar search field (it narrows what's on screen, nothing opens)
+- States: no match shows "No Items Match “xyz”" with Clear Filter; the status bar counts what's shown; a selected item the filter hides is unselected
+- Words: prompt "Filter by Name" / « Filtrer par nom », Edit › "Find" / « Rechercher », "Clear Filter" / « Effacer le filtre »
+- Access: the field is the search field VoiceOver knows; ⌘F reaches it from the list
+Acceptance:
+- [unit] A name matches when it holds every word typed, ignoring case and accents.
+- [self] Typing "invoice" leaves the three invoices and the status bar says 3 items; "inv 2" leaves two; going to another folder clears the filter; ⌘F is Edit › Find.
+Status: done
+Built: The toolbar search field (SwiftUI searchable, prompt "Filter by Name") filters the folder as you type: an item stays when its name holds every word typed, ignoring case and accents (NameFilter in KamiroKit). Edit › Find (⌘F) puts the keyboard in it, Escape or ✕ clears it, and going to another folder clears it. The status bar counts what's shown; a selected item the filter hides is unselected; no match shows "No Items Match …" with Clear Filter. At the smallest window width the field folds into a button.
 
 ### S-029 Search everywhere
 As the user, I search This Mac or this folder and its subfolders with Spotlight, with Kind and Date filters, and open results in place.

@@ -21,7 +21,7 @@ enum Snapshot {
         case columnsMenu = "columns-menu"
         case grouped, hidden, inspector
         case properties, propertiesFolder = "properties-folder"
-        case tags
+        case tags, filter
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
@@ -78,6 +78,10 @@ enum Snapshot {
                 await browser.waitUntilLoaded()
                 browser.showProperties()
                 try? await Task.sleep(for: .seconds(1.5))
+            case .filter:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                browser.filterText = "invoice"
             case .tags:
                 let red = ColorTag.red.name
                 try? Tags.set(red, present: true, on: ["Owl.jpg", "Lotus.png", "notes.md"].map { seed.appending(path: $0) })
@@ -135,6 +139,7 @@ enum Snapshot {
             case .grouped: browser.groupBy = .none
             case .hidden: HiddenFiles.set(false)
             case .inspector: Prefs.defaults.set(false, forKey: Prefs.showInspector)
+            case .filter: browser.filterText = ""
             case .tags:
                 let seed = Store.seedFolder
                 for name in ["Owl.jpg", "Lotus.png", "notes.md"] {

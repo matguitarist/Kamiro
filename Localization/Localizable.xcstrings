@@ -481,6 +481,16 @@
         }
       }
     },
+    "Clear Filter": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effacer le filtre"
+          }
+        }
+      }
+    },
     "Code": {
       "localizations": {
         "fr": {
@@ -887,6 +897,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Extension"
+          }
+        }
+      }
+    },
+    "Filter by Name": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtrer par nom"
+          }
+        }
+      }
+    },
+    "Find": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechercher"
           }
         }
       }
@@ -1517,6 +1547,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aucun dossier"
+          }
+        }
+      }
+    },
+    "No Items Match “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun élément ne correspond à « %@ »"
           }
         }
       }
