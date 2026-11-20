@@ -57,6 +57,7 @@ final class BrowserModel {
     /// The list, for the self-test (spring-loaded folders, rename).
     @ObservationIgnored weak var details: DetailsCoordinator?
     @ObservationIgnored weak var grid: GridCoordinator?
+    @ObservationIgnored weak var columns: ColumnCoordinator?
 
     @ObservationIgnored private var watcher: FolderWatcher?
     @ObservationIgnored private var loadTask: Task<Void, Never>?
@@ -277,6 +278,7 @@ enum Prefs {
     static let returnOpensItems = "returnOpensItems"
     static let showStatusBar = "showStatusBar"
     static let iconSize = "iconSize"
+    static let showHidden = "showHidden"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

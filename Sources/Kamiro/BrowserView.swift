@@ -63,7 +63,10 @@ extension BrowserView {
                      reveal: model.revealToken, focus: model.focusToken,
                      cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
                      iconSize: min(max(iconSize, IconSize.range.lowerBound), IconSize.range.upperBound))
-        case .details, .columns:
+        case .columns:
+            ColumnBrowser(model: model, version: model.itemsVersion, selection: model.selection, folder: model.folder,
+                          focus: model.focusToken, cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)
+        case .details:
             DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
                          reveal: model.revealToken, focus: model.focusToken,
                          cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)

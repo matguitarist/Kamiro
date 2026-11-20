@@ -1011,6 +1011,16 @@
         }
       }
     },
+    "Modified %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifié le %@"
+          }
+        }
+      }
+    },
     "Move Items Here": {
       "localizations": {
         "fr": {

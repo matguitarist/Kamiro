@@ -260,7 +260,8 @@ Screens: columns
 Depends: S-002
 Acceptance:
 - [self] Columns size to their longest name (up to a limit) and can be resized; arrows move across.
-Status: todo
+Status: done
+Built: View › as Columns (⌘3). NSBrowser, item-based: columns start at the window's folder, the folder holding the selection becomes the window's folder (so cut, copy, paste and the status bar work as in the other views), columns size to their longest name between 160 and 360 pt and can be dragged wider, and a selected file gets a Quick Look preview with its kind, size and date. Rows show the icon as a text attachment (macOS 26 draws them with plain text cells), so renaming puts the plain name in the field.
 
 ### S-021 Choose and sort columns
 As the user, I right-click the header to show columns (Date Created, Date Added, Tags, Extension, Comments) and drag them to reorder.
