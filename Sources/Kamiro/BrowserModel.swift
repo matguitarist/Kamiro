@@ -60,14 +60,10 @@ final class BrowserModel {
     @ObservationIgnored private var restoring = false
     @ObservationIgnored private var widthSave: Task<Void, Never>?
     private(set) var available: Int64?
-    /// Folder sizes measured so far (S-023); folders not in it show "—".
-    private(set) var folderSizes: [URL: Int64] = [:]
-    /// Goes up as sizes arrive, so the list redraws its Size column.
-    private(set) var sizesVersion = 0
-    @ObservationIgnored private var sizeTask: Task<Void, Never>?
-    @ObservationIgnored private var sizeRun = 0
-    @ObservationIgnored private var waitingSizes: [URL] = []
-    @ObservationIgnored private var treeWatcher: TreeWatcher?
+    /// Subfolder sizes (S-023).
+    let sizes = FolderSizes()
+    var folderSizes: [URL: Int64] { sizes.sizes }
+    var sizesVersion: Int { sizes.version }
     @ObservationIgnored private var resortSoon: Task<Void, Never>?
     /// The table scrolls to the selection when this changes.
     private(set) var revealToken = 0
@@ -108,6 +104,11 @@ final class BrowserModel {
     init(start: URL, log: LogStore) {
         history = History(start)
         self.log = log
+        sizes.arrived = { [weak self] in
+            guard let self else { return }
+            if order.key == .size || groupBy == .size { sortSoon() }
+            publish()
+        }
         hiddenWatch = NotificationCenter.default.addObserver(forName: HiddenFiles.changed, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         }
@@ -124,7 +125,7 @@ final class BrowserModel {
     var isFailed: Bool { if case .failed = state { true } else { false } }
     var counts: StatusCounts { StatusCounts(items: items, selection: selection, available: available, sizes: folderSizes) }
     /// Folder sizes are being measured.
-    var isMeasuring: Bool { sizeTask != nil }
+    var isMeasuring: Bool { sizes.isMeasuring }
 
     func startIfNeeded() {
         guard !started else { return }
@@ -304,7 +305,7 @@ final class BrowserModel {
             showsLoading = false
             selection = []
             watch(folder)
-            stopMeasuring()
+            sizes.start(in: folder) { [weak self] in self?.items ?? [] }
             publish()
         }
         // The read starts at once, off the main thread, instead of waiting behind the redraw
@@ -332,7 +333,7 @@ final class BrowserModel {
                 }
                 selection = kept
                 if select != nil { revealToken += 1 }
-                measure(list.filter { ($0.isFolder || $0.isPackage) && folderSizes[$0.url] == nil }.map(\.url))
+                sizes.measure(list.filter { ($0.isFolder || $0.isPackage) && folderSizes[$0.url] == nil }.map(\.url))
             case .failure(let error):
                 items = []
                 itemsVersion += 1
@@ -360,53 +361,6 @@ final class BrowserModel {
 
     // MARK: Folder sizes (S-023)
 
-    /// Measures folders one at a time, off the main thread; leaving the folder stops it.
-    private func measure(_ urls: [URL]) {
-        waitingSizes += urls.filter { !waitingSizes.contains($0) }
-        guard sizeTask == nil, !waitingSizes.isEmpty else { return }
-        let folder = folder
-        sizeRun += 1
-        let run = sizeRun
-        sizeTask = Task { [weak self] in
-            defer { if self?.sizeRun == run { self?.sizeTask = nil } }
-            while let self, !Task.isCancelled, !waitingSizes.isEmpty {
-                let next = waitingSizes.removeFirst()
-                let measured = await Self.size(of: next)
-                guard !Task.isCancelled, self.folder == folder else { break }
-                // A folder that can't be read keeps its "—".
-                guard case .success(let size) = measured else { continue }
-                folderSizes[next] = size
-                sizesVersion += 1
-                if order.key == .size || groupBy == .size { sortSoon() }
-                publish()
-            }
-        }
-    }
-
-    @concurrent
-    nonisolated private static func size(of url: URL) async -> Result<Int64, any Error> {
-        Result { try FolderSize.measure(url) }
-    }
-
-    private func stopMeasuring() {
-        sizeTask?.cancel()
-        sizeTask = nil
-        waitingSizes = []
-        folderSizes = [:]
-        sizesVersion += 1
-        treeWatcher = TreeWatcher(folder: folder) { [weak self] paths in
-            Task { @MainActor in self?.sizesChanged(paths) }
-        }
-    }
-
-    /// Something changed inside a subfolder: measure that subfolder again.
-    private func sizesChanged(_ paths: [String]) {
-        guard let watcher = treeWatcher else { return }
-        let names = Set(paths.compactMap(watcher.child(holding:)))
-        let changed = items.filter { ($0.isFolder || $0.isPackage) && names.contains($0.name) }.map(\.url)
-        measure(changed)
-    }
-
     /// Sizes arrive one by one; the list sorts again once they pause.
     private func sortSoon() {
         resortSoon?.cancel()
@@ -421,9 +375,9 @@ final class BrowserModel {
     private func resort() {
         let order = order
         let list = items
-        let sizes = folderSizes
+        let measured = folderSizes
         Task {
-            let sorted = await Self.sort(list, order: order, sizes: sizes)
+            let sorted = await Self.sort(list, order: order, sizes: measured)
             guard self.order == order, self.items == list else { return }
             items = sorted
             itemsVersion += 1
