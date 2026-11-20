@@ -48,7 +48,15 @@ public struct PinList: Equatable, Sendable {
 
 /// The sidebar's parts people can hide (S-032).
 public enum SidebarSection: String, CaseIterable, Sendable {
-    case home, pinned, locations, network, tags
+    case home, pinned, locations, cloud, network, tags
+
+    /// Where a disk's row goes: cloud storage under Cloud, servers under Network, the rest under
+    /// Locations. A hidden part's rows go to Locations instead.
+    public static func section(for volume: Volume, shows: (SidebarSection) -> Bool) -> SidebarSection {
+        if volume.isCloud, shows(.cloud) { return .cloud }
+        if volume.isNetwork, !volume.isCloud, shows(.network) { return .network }
+        return .locations
+    }
 }
 
 /// Files opened lately, for the Home page (S-031).

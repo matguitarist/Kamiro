@@ -4,7 +4,7 @@ import Observation
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Home, Pinned, Locations, Network and Tags, like the Finder's sidebar. Each part can be hidden in
+/// Home, Pinned, Locations, Cloud, Network and Tags, like the Finder's sidebar. Each part can be hidden in
 /// Settings › General (S-032).
 struct Sidebar: View {
     let browser: BrowserModel
@@ -36,19 +36,18 @@ struct Sidebar: View {
                     Label(GoPlace.name(of: GoPlace.home), systemImage: "person.crop.circle")
                         .tag(GoPlace.home)
                         .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: GoPlace.home) }
-                    ForEach(clouds, id: \.url) { place in
-                        Label(place.name, systemImage: place.isICloud ? "icloud" : "cloud")
-                            .tag(place.url)
-                            .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: place.url) }
-                    }
-                    // Servers go under Network, unless that part is hidden.
-                    ForEach(volumes.filter { !$0.isNetwork || !pins.shows(.network) }) { volume in
+                    // Cloud storage goes under Cloud and servers under Network, unless that part is hidden.
+                    if !pins.shows(.cloud) { cloudRows }
+                    ForEach(volumes(in: .locations)) { volume in
                         VolumeRow(volume: volume, browser: browser, renaming: $renaming)
                     }
                 }
             }
+            if pins.shows(.cloud), !clouds.isEmpty || !volumes(in: .cloud).isEmpty {
+                Section("Cloud") { cloudRows }
+            }
             if pins.shows(.network) {
-                NetworkSection(browser: browser, volumes: volumes.filter(\.isNetwork), renaming: $renaming)
+                NetworkSection(browser: browser, volumes: volumes(in: .network), renaming: $renaming)
             }
             if pins.shows(.tags) {
                 TagsSection()
@@ -57,11 +56,28 @@ struct Sidebar: View {
         .volumeRenameAlert($renaming)
     }
 
+    /// iCloud Drive, each sync app's folder (Google Drive, OneDrive, Dropbox…), then cloud
+    /// storage mounted as a disk.
+    @ViewBuilder private var cloudRows: some View {
+        ForEach(clouds, id: \.url) { place in
+            Label(place.name, systemImage: place.isICloud ? "icloud" : "cloud")
+                .tag(place.url)
+                .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: place.url) }
+        }
+        ForEach(volumes(in: .cloud)) { volume in
+            VolumeRow(volume: volume, browser: browser, renaming: $renaming)
+        }
+    }
+
+    private func volumes(in section: SidebarSection) -> [Volume] {
+        volumes.filter { SidebarSection.section(for: $0, shows: pins.shows) == section }
+    }
+
     /// The sidebar shows where the window is when it's a sidebar place, and nothing otherwise.
     private var selection: Binding<URL?> {
         Binding {
             let here = browser.folder
-            return pins.list.contains(here) || here == GoPlace.home || volumes.contains { $0.url == here && !$0.isNetwork }
+            return pins.list.contains(here) || here == GoPlace.home || volumes.contains { $0.url == here && SidebarSection.section(for: $0, shows: pins.shows) != .network }
                 || clouds.contains { $0.url == here }
                 || VirtualPlace(here) != nil ? here : nil
         } set: { url in

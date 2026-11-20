@@ -66,5 +66,5 @@ import Testing
 }
 
 @Test func networkIsASidebarSection() {
-    #expect(SidebarSection.allCases == [.home, .pinned, .locations, .network, .tags])
+    #expect(SidebarSection.allCases == [.home, .pinned, .locations, .cloud, .network, .tags])
 }

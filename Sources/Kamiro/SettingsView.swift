@@ -255,6 +255,7 @@ extension SidebarSection {
         case .home: String(localized: "Home")
         case .pinned: String(localized: "Pinned")
         case .locations: String(localized: "Locations")
+        case .cloud: String(localized: "Cloud")
         case .network: String(localized: "Network")
         case .tags: String(localized: "Tags")
         }

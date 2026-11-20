@@ -44,3 +44,20 @@ private let mount = URL(filePath: "/Volumes/Share", directoryHint: .isDirectory)
     icons.set(nil, for: "server:r2")
     #expect(icons.icon(for: "server:r2") == nil && icons.icon(for: "server:gaming") == .pc)
 }
+
+@Test func cloudDisksGoUnderCloudServersUnderNetwork() {
+    let dav = Volume(url: URL(filePath: "/Volumes/dav"), name: "dav", isNetwork: true,
+                     remoteURL: URL(string: "https://dav.example.com/files"), fileSystem: "webdav")
+    let rclone = Volume(url: URL(filePath: "/Volumes/gdrive"), name: "gdrive", fileSystem: "macfuse")
+    let smb = Volume(url: URL(filePath: "/Volumes/isos"), name: "isos", isNetwork: true,
+                     remoteURL: URL(string: "smb://homeserver.local/isos"), fileSystem: "smbfs")
+    let usb = Volume(url: URL(filePath: "/Volumes/Backup"), name: "Backup", isEjectable: true)
+    let all: (SidebarSection) -> Bool = { _ in true }
+    #expect([dav, rclone, smb, usb].map { SidebarSection.section(for: $0, shows: all) } == [.cloud, .cloud, .network, .locations])
+    // A hidden part's rows go to Locations.
+    let noCloud: (SidebarSection) -> Bool = { $0 != .cloud }
+    #expect(SidebarSection.section(for: dav, shows: noCloud) == .locations)
+    #expect(SidebarSection.section(for: rclone, shows: noCloud) == .locations)
+    let noNetwork: (SidebarSection) -> Bool = { $0 != .network }
+    #expect(SidebarSection.section(for: smb, shows: noNetwork) == .locations)
+}

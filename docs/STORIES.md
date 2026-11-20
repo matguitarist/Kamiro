@@ -557,8 +557,8 @@ As the user, I open iCloud Drive and my sync apps' folders (Google Drive, OneDri
 Depends: S-032
 Acceptance:
 - [unit] iCloud Drive and each folder in ~/Library/CloudStorage are a top of their path; an app's folder (its container's Documents) is inside iCloud Drive, named after the app; only apps that keep documents there show; sync folders are named after their app ("GoogleDrive-name@example.com" is Google Drive).
-- [self] iCloud Drive and Google Drive show under Locations on the test home; Go › iCloud Drive is ⇧⌘I; iCloud Drive lists its items and the apps' folders; Up from an app's folder goes to iCloud Drive; an app's folder can't be cut, renamed or trashed.
-- Surface: sidebar rows under Locations, the Go menu, the path
+- [self] iCloud Drive and Google Drive show in the sidebar on the test home (under Cloud since S-060); Go › iCloud Drive is ⇧⌘I; iCloud Drive lists its items and the apps' folders; Up from an app's folder goes to iCloud Drive; an app's folder can't be cut, renamed or trashed.
+- Surface: sidebar rows under Cloud (S-060), the Go menu, the path
 Status: done
 Built: Locations lists iCloud Drive (when it's on) and each sync app's folder after the home folder; Go › iCloud Drive (⇧⌘I). iCloud Drive's page adds each app's folder that holds documents (Numbers, Obsidian…), named by macOS; the path reads "iCloud Drive › Numbers", Up goes from an app's folder to iCloud Drive, and iCloud Drive and sync folders are a top like a disk. App folders leave out Cut, Duplicate, Move To, Rename and Move to Trash, as in the Finder. Test runs use a home in /tmp/Kamiro-home (tools/seed-tree.sh).
 
@@ -571,6 +571,15 @@ Acceptance:
 - Performance: the status keys cost about 1 ms an item (a plain listing 0.01 ms), so they are read only in cloud folders, after the list shows, 100 at a time.
 Status: done
 Built: In iCloud Drive and sync folders, a narrow Cloud Status column (a cloud header) after Name shows the Finder's icons: only in the cloud, downloading, uploading, conflict; downloaded shows none. The icon view puts the same badge at the icon's corner, and the inspector has a Cloud Status row. Right-click › Download Now and Remove Download, on files by their status and on folders always. While something moves, statuses are read again every 2 seconds. Not in the column view yet.
+
+### S-060 A Cloud section in the sidebar
+As the user, I find iCloud Drive, my sync apps' folders (Google Drive, OneDrive, Dropbox…) and cloud storage mounted as a disk (WebDAV, rclone) together under their own Cloud heading, apart from my disks.
+Depends: S-057, S-056
+Acceptance:
+- [unit] Cloud disks go under Cloud, servers under Network, the rest under Locations; a hidden part's rows go to Locations.
+- Surface: the sidebar's Cloud section between Locations and Network; Settings › General › Show in Sidebar › Cloud
+Status: done
+Built: Cloud lists iCloud Drive, each sync app's folder by name, then cloud disks (a WebDAV server moves there from Network). Hidden in Settings, they go back under Locations. The section is left out when there is nothing in it.
 
 ## M6 System and polish (1.0.0)
 

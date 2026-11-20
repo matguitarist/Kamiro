@@ -28,7 +28,7 @@ public enum PlaceIcon: String, CaseIterable, Sendable, Identifiable {
         return volume.isRoot ? .internalDrive : .externalDrive
     }
 
-    static func isCloud(_ volume: Volume) -> Bool {
+    public static func isCloud(_ volume: Volume) -> Bool {
         if let fileSystem = volume.fileSystem?.lowercased(), ["fuse", "rclone"].contains(where: fileSystem.contains) {
             return true
         }
@@ -38,6 +38,11 @@ public enum PlaceIcon: String, CaseIterable, Sendable, Identifiable {
         let host = remote.host(percentEncoded: false)?.lowercased() ?? ""
         return scheme == "nfs" && ["localhost", "127.0.0.1", "::1"].contains(host)
     }
+}
+
+extension Volume {
+    /// Cloud storage mounted as a disk (WebDAV, rclone and the like).
+    public var isCloud: Bool { PlaceIcon.isCloud(self) }
 }
 
 /// The icons people picked, by server or disk; the rest keep their automatic icon.
