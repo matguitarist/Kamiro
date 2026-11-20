@@ -80,6 +80,9 @@ extension BrowserModel {
             newFile.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
             newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
             menu.addItem(newFile)
+            if canMakeFromClipboard {
+                add(String(localized: "New File from Clipboard"), "doc.on.clipboard") { [weak self] in self?.newFileFromClipboard() }
+            }
             group()
             let here = folder
             add(ItemActions.openTerminalHereTitle, "terminal") { ItemActions.openInTerminal(here) }

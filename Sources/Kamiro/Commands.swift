@@ -85,6 +85,8 @@ struct KamiroCommands: Commands {
                 NewFileItems { menu.browser?.newFile($0) }
             }
             .disabled(!menu.isReady)
+            Button("New File from Clipboard") { menu.browser?.newFileFromClipboard() }
+                .disabled(!menu.isReady)
             Divider()
             Button("Rename") { menu.browser?.beginRename() }
                 .disabled(!menu.hasSelection)

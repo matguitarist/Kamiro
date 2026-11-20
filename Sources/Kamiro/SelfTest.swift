@@ -327,6 +327,24 @@ enum SelfTest {
               templates(menuNewFile) == FileTemplate.all.count && templates(contextNewFile) == FileTemplate.all.count,
               "\(templates(menuNewFile)), \(templates(contextNewFile))")
 
+        // S-044: New File from Clipboard, on the test pasteboard.
+        let board = FileClipboard.shared.pasteboard
+        board.clearContents()
+        board.setString("{\"from\": \"clipboard\"}", forType: .string)
+        let fromClipboard = String(localized: "New File from Clipboard")
+        check("empty space offers New File from Clipboard when the clipboard has text",
+              browser.details?.contextMenu(onItems: false).items.contains { $0.title == fromClipboard } ?? false)
+        browser.newFileFromClipboard()
+        await browser.waitUntilLoaded()
+        for _ in 0..<20 where browser.details?.renaming == nil { await pause(0.05) }
+        let clipped = String(localized: "untitled") + ".json"
+        check("New File from Clipboard makes JSON into “\(clipped)”, ready to rename",
+              exists(clipped) && browser.details?.renaming == url(clipped))
+        editor?.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+        board.clearContents()
+        check("an empty clipboard leaves it out of the menu",
+              !(browser.details?.contextMenu(onItems: false).items.contains { $0.title == fromClipboard } ?? true))
+
         // S-016: Trash and Delete Immediately.
         await open()
         browser.selection = [url("Invoice 12.pdf")]

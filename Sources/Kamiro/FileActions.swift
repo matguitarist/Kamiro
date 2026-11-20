@@ -135,6 +135,21 @@ extension BrowserModel {
         }
     }
 
+    /// New File from Clipboard (S-044): text, JSON, a table as CSV, a link as .webloc, an image as PNG.
+    var canMakeFromClipboard: Bool { state == .ready && !isVirtual && ClipboardFile.available(in: FileClipboard.shared.pasteboard) }
+
+    func newFileFromClipboard() {
+        guard state == .ready, !isVirtual else { return }
+        guard let content = ClipboardFile.read(from: FileClipboard.shared.pasteboard) else { NSSound.beep(); return }
+        do {
+            let url = try content.make(in: folder, base: String(localized: "untitled"))
+            FileUndo.record(.made([url]), name: String(localized: "New File from Clipboard"))
+            show([url], rename: true)
+        } catch {
+            fail("Couldn't make a file from the clipboard in \(folder.path)", error)
+        }
+    }
+
     // MARK: Rename (S-014)
 
     func beginRename() {

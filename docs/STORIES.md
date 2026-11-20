@@ -450,7 +450,8 @@ Built: Disks that can be ejected show ⏏ at the end of their sidebar row (Eject
 As the user, I choose New File from Clipboard and get a file whose type follows the clipboard: text, JSON, a table as CSV, a link as .webloc, an image as PNG.
 Reference: PowerClick (docs/research/context-menu.md).
 Depends: S-015
-Status: todo
+Status: done
+Built: New File from Clipboard is in File, the toolbar's + menu, and the right-click menu on empty space when the clipboard holds something it can use. A table copied from Numbers or Excel (or tab-separated text) becomes CSV, an image becomes PNG, a lone web link a .webloc, JSON a .json, any other text a .txt; files on the clipboard are left to Paste. The file is named “untitled” (numbered when taken), ready to rename, and Undo takes it away.
 
 ### S-045 Convert files
 As the user, I right-click images to convert them (JPEG, PNG, HEIC, WebP, TIFF, GIF, ICNS), videos to MP4, GIF or audio, and images or PDFs to a smaller size for email; the result lands next to the original as a transfer with progress.

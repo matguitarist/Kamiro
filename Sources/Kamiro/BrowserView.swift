@@ -272,7 +272,8 @@ struct BrowserToolbar: ToolbarContent {
         }
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                NewItemsMenu(newFolder: { model.newFolder() }, newFile: { model.newFile($0) })
+                NewItemsMenu(newFolder: { model.newFolder() }, newFile: { model.newFile($0) },
+                             fromClipboard: { model.newFileFromClipboard() })
             } label: {
                 Label("New", systemImage: "plus")
             }
