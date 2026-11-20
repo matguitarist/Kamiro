@@ -529,6 +529,15 @@ Acceptance:
 Status: done
 Built: Network sits between Locations and Tags: mounted servers (with ⏏), servers found nearby with Bonjour (macOS asks once for local network access; test runs never look), then Connect to Server…. Clicking a found server connects to it like ⌘K (smb://Name._smb._tcp.local) and opens it.
 
+### S-055 Browse a server like \\server on Windows
+As the user, I click a server and see its shares as folders; opening one mounts it and goes in. The sidebar lists servers, not their shares, unless I ask for them.
+Depends: S-054
+Acceptance:
+- [unit] smbutil's list keeps Disk shares only (no IPC$ or admin shares ending in $); a mounted share is found by its server under any spelling (Bonjour name, .local, bare name).
+- [self] smb://server opens a page of its shares as folders, named after the server; a share not mounted yet only offers Open.
+Status: done
+Built: Clicking a server under Network, or typing smb://server or \\server in the address bar, opens its page: its shares as folders, listed with macOS's smbutil as guest or with the keychain's password (never asking). Opening a share mounts it with NetFS (macOS asks for a password when needed) and goes in; mounted shares open at once, and their size is never measured across the network. A server that won't list its shares shows Connect As… (macOS's own dialogs) and Try Again. Network lists servers only: found nearby, or connected by address; ⏏ on a server disconnects all its shares. Settings › General › Show in Sidebar › Connected Shares lists them under their server again.
+
 ## M6 System and polish (1.0.0)
 
 ### S-038 Make Kamiro the default file browser

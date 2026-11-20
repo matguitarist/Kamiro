@@ -10,6 +10,8 @@ public enum VirtualPlace: Hashable, Sendable {
     case tag(String)
     /// Search results (S-029).
     case search(Search)
+    /// A file server's shares, like \\server on Windows (S-055).
+    case server(URL)
 
     static let scheme = "kamiro"
 
@@ -26,6 +28,9 @@ public enum VirtualPlace: Hashable, Sendable {
         case "tag":
             guard let name = value("name") else { return nil }
             self = .tag(name)
+        case "server":
+            guard let address = value("url"), let url = URL(string: address).flatMap(ServerHost.server(of:)) else { return nil }
+            self = .server(url)
         case "search":
             guard let text = value("text") else { return nil }
             self = .search(Search(text: text, scope: value("in").map { URL(filePath: $0) },
@@ -45,6 +50,9 @@ public enum VirtualPlace: Hashable, Sendable {
         case .tag(let name):
             parts.path = "tag"
             parts.queryItems = [URLQueryItem(name: "name", value: name)]
+        case .server(let url):
+            parts.path = "server"
+            parts.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
         case .search(let search):
             parts.path = "search"
             parts.queryItems = [URLQueryItem(name: "text", value: search.text)]
@@ -60,6 +68,7 @@ public enum VirtualPlace: Hashable, Sendable {
         case .home: "Home"
         case .tag(let name): name
         case .search(let search): search.text
+        case .server(let url): ServerHost.displayName(url)
         }
     }
 
@@ -77,6 +86,8 @@ public enum VirtualPlace: Hashable, Sendable {
             // Test runs walk the test tree, whatever the scope: Spotlight doesn't index /tmp.
             let urls = root.map { search.walk(in: search.scope ?? $0) } ?? search.spotlight()
             return urls.compactMap(FolderReader.item(at:)).filter { showHidden || !$0.isHidden }
+        case .server(let url):
+            return (try? ShareList.items(on: url, mounted: Volumes.mounted())) ?? []
         }
     }
 }

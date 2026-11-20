@@ -22,6 +22,11 @@ extension BrowserModel {
         let urls = chosen.map(\.url)
         let files = chosen.filter { !$0.isFolder }
         let folders = chosen.filter(\.isFolder)
+        // A server's share that isn't mounted yet only opens (S-055).
+        if onItems, chosen.contains(where: { !$0.url.isFileURL }) {
+            add(String(localized: "Open"), "arrow.up.forward.app") { [weak self] in self?.open() }
+            return menu
+        }
         if onItems, !chosen.isEmpty {
             add(String(localized: "Open"), "arrow.up.forward.app") { [weak self] in self?.open() }
             if !files.isEmpty, folders.isEmpty {

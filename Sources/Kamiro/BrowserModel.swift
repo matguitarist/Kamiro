@@ -223,6 +223,11 @@ final class BrowserModel {
     // MARK: Going places
 
     func go(to url: URL, select: Set<URL> = []) {
+        // smb://server shows its shares; smb://server/share mounts it and goes in (S-055).
+        if let server = ServerHost.server(of: url) {
+            if ServerHost.share(of: url) != nil { openShare(url) } else { go(to: VirtualPlace.server(server).url) }
+            return
+        }
         let target = url.canonical
         let wanted = Set(select.map(\.canonical))
         guard target != folder else {
@@ -307,6 +312,14 @@ final class BrowserModel {
     }
 
     func submitPath() {
+        // smb://server, \\server\share and the like go to the server (S-055).
+        let typed = pathText.trimmingCharacters(in: .whitespaces)
+        if typed.contains("://") || typed.hasPrefix("\\\\"), let server = ServerAddress.parse(typed) {
+            isEditingPath = false
+            pathError = nil
+            go(to: server)
+            return
+        }
         guard let url = PathInput.resolve(pathText, relativeTo: folder) else { cancelEditingPath(); return }
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
@@ -374,7 +387,10 @@ final class BrowserModel {
                 }
                 selection = kept
                 if select != nil { revealToken += 1 }
-                sizes.measure(list.filter { ($0.isFolder || $0.isPackage) && folderSizes[$0.url] == nil }.map(\.url))
+                // A server page's shares are whole disks across the network: never walked for a size.
+                if !isServerPage {
+                    sizes.measure(list.filter { ($0.isFolder || $0.isPackage) && folderSizes[$0.url] == nil }.map(\.url))
+                }
             case .failure(let error):
                 setItems([])
                 state = .failed(error)
@@ -387,6 +403,13 @@ final class BrowserModel {
     @concurrent
     nonisolated private static func read(_ folder: URL, order: ItemOrder, showHidden: Bool,
                                          tagRoot: URL?) async -> Result<([FileItem], Int64?), FolderError> {
+        if case .server(let server) = VirtualPlace(folder) {
+            do {
+                return .success((order.sorted(try ShareList.items(on: server, mounted: Volumes.mounted())), nil))
+            } catch {
+                return .failure(.other(String(describing: error)))
+            }
+        }
         if let place = VirtualPlace(folder) {
             return .success((order.sorted(place.items(showHidden: showHidden, root: tagRoot)), nil))
         }
@@ -479,6 +502,8 @@ enum Prefs {
     static let hiddenSidebarSections = "hiddenSidebarSections"
     /// Home lists recent files (Settings › General › Show on Home); on unless turned off.
     static let showRecentFiles = "showRecentFiles"
+    /// Network lists each server's mounted shares under it; off, only the servers (S-055).
+    static let showConnectedShares = "showConnectedShares"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

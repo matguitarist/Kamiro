@@ -66,6 +66,7 @@ struct GeneralSettings: View {
     @AppStorage(Prefs.editor, store: Prefs.defaults) private var editor = ""
     private let editors = ItemActions.installedEditors
     @AppStorage(Prefs.showRecentFiles, store: Prefs.defaults) private var showRecentFiles = true
+    @AppStorage(Prefs.showConnectedShares, store: Prefs.defaults) private var showConnectedShares = false
 
     var body: some View {
         @Bindable var model = model
@@ -101,6 +102,11 @@ struct GeneralSettings: View {
             ForEach(SidebarSection.allCases, id: \.self) { section in
                 Toggle(section.title, isOn: PinStore.shared.showBinding(section))
             }
+            Toggle(isOn: $showConnectedShares) {
+                Text("Connected Shares")
+                Text("Under each server in Network. Off, a server's shares open from its page.")
+            }
+            .disabled(!PinStore.shared.shows(.network))
         }
         Section("Show on Home") {
             Toggle("Recent Files", isOn: $showRecentFiles)

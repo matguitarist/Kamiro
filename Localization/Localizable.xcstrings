@@ -3451,6 +3451,76 @@
           }
         }
       }
+    },
+    "“%@” didn't list its shares.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "« %@ » n’a pas donné la liste de ses partages."
+          }
+        }
+      }
+    },
+    "It may need a name and password, or it isn't answering.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il demande peut-être un nom et un mot de passe, ou il ne répond pas."
+          }
+        }
+      }
+    },
+    "Connect As…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter en tant que…"
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayer"
+          }
+        }
+      }
+    },
+    "Disconnect from “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se déconnecter de « %@ »"
+          }
+        }
+      }
+    },
+    "Connected Shares": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partages connectés"
+          }
+        }
+      }
+    },
+    "Under each server in Network. Off, a server's shares open from its page.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sous chaque serveur, dans Réseau. Désactivé, les partages d’un serveur s’ouvrent depuis sa page."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

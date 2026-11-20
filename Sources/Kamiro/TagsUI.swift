@@ -57,6 +57,7 @@ extension BrowserModel {
         case .home: String(localized: "Home")
         case .search(let search): String(localized: "Searching “\(search.text)”")
         case .tag(let name): name
+        case .server(let url): ServerHost.displayName(url)
         case nil: FileManager.default.displayName(atPath: url.path)
         }
     }

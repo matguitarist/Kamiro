@@ -64,7 +64,7 @@ struct Sidebar: View {
     private var selection: Binding<URL?> {
         Binding {
             let here = browser.folder
-            return pins.list.contains(here) || here == GoPlace.home || volumes.contains { $0.url == here }
+            return pins.list.contains(here) || here == GoPlace.home || volumes.contains { $0.url == here && !$0.isNetwork }
                 || VirtualPlace(here) != nil ? here : nil
         } set: { url in
             guard let url, !NetworkSection.act(on: url, browser: browser) else { return }

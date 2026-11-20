@@ -48,6 +48,17 @@ struct BrowserView: View {
             } actions: {
                 Button("Go to Enclosing Folder") { model.goUp() }
             }
+        case .failed where model.isServerPage:
+            if case .server(let server) = model.place {
+                ContentUnavailableView {
+                    Label(String(localized: "“\(ServerHost.displayName(server))” didn't list its shares."), systemImage: "server.rack")
+                } description: {
+                    Text("It may need a name and password, or it isn't answering.")
+                } actions: {
+                    Button("Connect As…") { model.connectAs(server) }
+                    Button("Try Again") { model.refresh() }
+                }
+            }
         case .failed(.other(let message)):
             ContentUnavailableView {
                 Label("Kamiro can't read this folder.", systemImage: "exclamationmark.triangle")

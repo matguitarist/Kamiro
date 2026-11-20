@@ -216,6 +216,21 @@ extension SelfTest {
         Prefs.defaults.removeObject(forKey: Prefs.recentFolders)
         await browser.waitUntilLoaded()
 
+        // S-055: a server's page lists its shares as folders (a fake list: no network in tests).
+        ShareList.fake.withLock { $0 = ["isos", "downloads"] }
+        let server = URL(string: "smb://Test._smb._tcp.local")!
+        browser.go(to: server)
+        await browser.waitUntilLoaded()
+        check("smb://server opens its page with the shares as folders, A to Z",
+              browser.isServerPage && browser.items.map(\.name) == ["downloads", "isos"] && browser.items.allSatisfy { $0.isFolder },
+              "\(browser.items.map(\.name))")
+        check("the page is named after the server", browser.title == "Test")
+        browser.selection = [browser.items[0].url]
+        check("a share that isn't mounted only offers Open", titles(browser.contextMenu(onItems: true)) == [t("Open")])
+        ShareList.fake.withLock { $0 = nil }
+        browser.goBack()
+        await browser.waitUntilLoaded()
+
         // S-037: Go › Connect to Server… (⌘K) opens its sheet on this window.
         let connect = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Connect to Server…") }
         check("Go › Connect to Server… is ⌘K", connect?.keyEquivalent == "k" && connect?.keyEquivalentModifierMask == .command)

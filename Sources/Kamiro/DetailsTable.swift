@@ -533,7 +533,8 @@ final class IconCache {
         let ext = item.url.pathExtension.lowercased()
         let key = (item.isFolder || item.isPackage || ext.isEmpty ? item.url.path : "ext:" + ext) + "@\(size)"
         if let hit = cache[key] { return hit }
-        let image = NSWorkspace.shared.icon(forFile: item.url.path)
+        // A server's share that isn't mounted yet has no file to ask: it shows as a folder.
+        let image = item.url.isFileURL ? NSWorkspace.shared.icon(forFile: item.url.path) : NSWorkspace.shared.icon(for: .folder)
         image.size = NSSize(width: size, height: size)
         cache[key] = image
         return image

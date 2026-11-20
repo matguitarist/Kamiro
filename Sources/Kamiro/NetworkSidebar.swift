@@ -36,11 +36,70 @@ final class NetworkServers {
     }
 }
 
+extension BrowserModel {
+    /// The window shows a server's shares.
+    var isServerPage: Bool { if case .server = place { true } else { false } }
+
+    /// Opens a share: at once when it's mounted, else mounted first (macOS asks for a password
+    /// when the keychain has none).
+    func openShare(_ url: URL) {
+        if let volume = Volumes.mounted().first(where: { volume in
+            volume.remoteURL.map { ServerHost.same($0, url) && ServerHost.share(of: $0)?.lowercased() == ServerHost.share(of: url)?.lowercased() } ?? false
+        }) {
+            go(to: volume.url)
+            return
+        }
+        Task {
+            do {
+                try await connect(to: url)
+            } catch ServerMount.Failure.cancelled {
+            } catch {
+                Store.log.post(.error, "Couldn't open \(url.absoluteString): \(error.localizedDescription)", source: "Servers")
+                NSSound.beep()
+            }
+        }
+    }
+
+    /// Connect As…: macOS's own name, password and share dialogs, for a server that didn't list
+    /// its shares as guest. The shares list again once a share is mounted.
+    func connectAs(_ server: URL) {
+        Task {
+            do {
+                _ = try await ServerMount.mount(server)
+                refresh()
+            } catch ServerMount.Failure.cancelled {
+            } catch {
+                Store.log.post(.error, "Couldn't connect to \(server.absoluteString): \(error.localizedDescription)", source: "Servers")
+                NSSound.beep()
+            }
+        }
+    }
+}
+
+/// One server in the sidebar: found nearby, connected, or both.
+struct ServerEntry: Identifiable, Hashable {
+    let url: URL
+    let name: String
+    var id: String { ServerHost.key(url.host(percentEncoded: false) ?? name) }
+
+    /// Servers found nearby, then the servers of mounted shares that weren't found (an IP, a VPN).
+    static func all(found: [NetworkServer], mounted: [Volume]) -> [ServerEntry] {
+        var list = found.compactMap { server in server.url.map { ServerEntry(url: $0, name: server.name) } }
+        for volume in mounted {
+            guard let remote = volume.remoteURL, let server = ServerHost.server(of: remote),
+                  !list.contains(where: { ServerHost.same($0.url, server) }) else { continue }
+            list.append(ServerEntry(url: server, name: ServerHost.displayName(server)))
+        }
+        return list.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+}
+
 /// Mounted servers, servers found nearby, and Connect to Server….
 struct NetworkSection: View {
     let browser: BrowserModel
     let volumes: [Volume]
     @Binding var renaming: Volume?
+    @AppStorage(Prefs.showConnectedShares, store: Prefs.defaults) private var showShares = false
     private var found: NetworkServers { .shared }
 
     /// Rows that act instead of going somewhere; the sidebar's selection hands them here.
@@ -48,14 +107,27 @@ struct NetworkSection: View {
 
     var body: some View {
         Section("Network") {
-            ForEach(volumes) { volume in
-                VolumeRow(volume: volume, browser: browser, renaming: $renaming)
-            }
-            ForEach(found.servers) { server in
-                if let url = server.url {
+            ForEach(ServerEntry.all(found: found.servers, mounted: volumes)) { server in
+                let shares = volumes.filter { $0.remoteURL.map { ServerHost.same($0, server.url) } ?? false }
+                HStack(spacing: Space.xs) {
                     Label { Text(verbatim: server.name) } icon: { Image(systemName: "server.rack") }
-                        .tag(url)
-                        .help(String(localized: "Connect to “\(server.name)”"))
+                    Spacer(minLength: 0)
+                    // Connected: ⏏ disconnects every share of the server.
+                    if !shares.isEmpty {
+                        Button("Eject", systemImage: "eject") { shares.forEach { ItemActions.eject($0, from: browser) } }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.borderless)
+                            .foregroundStyle(.secondary)
+                            .help(String(localized: "Disconnect from “\(server.name)”"))
+                    }
+                }
+                .tag(VirtualPlace.server(server.url).url)
+                // Settings › General › Show in Sidebar › Connected Shares lists them under it.
+                if showShares {
+                    ForEach(shares) { volume in
+                        VolumeRow(volume: volume, browser: browser, renaming: $renaming)
+                            .padding(.leading, Space.lg)
+                    }
                 }
             }
             Label("Connect to Server…", systemImage: "plus.circle")
@@ -64,22 +136,10 @@ struct NetworkSection: View {
         .onAppear { found.start() }
     }
 
-    /// A server row or Connect to Server… was clicked.
+    /// Connect to Server… was clicked: it opens the sheet instead of going somewhere.
     static func act(on url: URL, browser: BrowserModel) -> Bool {
-        if url == connectRow {
-            browser.showConnectToServer()
-            return true
-        }
-        guard let scheme = url.scheme, ["smb", "afp"].contains(scheme) else { return false }
-        Task {
-            do {
-                try await browser.connect(to: url)
-            } catch ServerMount.Failure.cancelled {
-            } catch {
-                Store.log.post(.error, "Couldn't connect to \(url.absoluteString): \(error.localizedDescription)", source: "Servers")
-                NSSound.beep()
-            }
-        }
+        guard url == connectRow else { return false }
+        browser.showConnectToServer()
         return true
     }
 }
