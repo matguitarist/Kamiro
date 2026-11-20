@@ -11,6 +11,8 @@ struct DetailsTable: NSViewRepresentable {
     let selection: Set<URL>
     let reveal: Int
     let focus: Int
+    let cutVersion: Int
+    let renameToken: Int
 
     func makeCoordinator() -> DetailsCoordinator { DetailsCoordinator(model: model) }
 
@@ -42,7 +44,13 @@ struct DetailsTable: NSViewRepresentable {
         table.target = context.coordinator
         table.doubleAction = #selector(DetailsCoordinator.doubleClicked(_:))
         context.coordinator.table = table
+        model.details = context.coordinator
         model.quickLook = { [weak table] in table?.toggleQuickLook() }
+        // Drag items out to other apps, and drop files on folders or the list (S-018).
+        table.registerForDraggedTypes([.fileURL])
+        table.setDraggingSourceOperationMask([.copy, .move, .generic], forLocal: true)
+        table.setDraggingSourceOperationMask([.copy, .move, .generic], forLocal: false)
+        table.draggingDestinationFeedbackStyle = .regular
 
         let scroll = NSScrollView()
         scroll.documentView = table
@@ -89,12 +97,23 @@ enum DetailsColumn: String, CaseIterable {
 final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
     let model: BrowserModel
     weak var table: FileTable?
-    private var items: [FileItem] = []
-    private var rowOf: [URL: Int] = [:]
+    private(set) var items: [FileItem] = []
+    private(set) var rowOf: [URL: Int] = [:]
     private var version = -1
     private var reveal = -1
     private var focus = -1
+    private var cutVersion = -1
+    private var renameToken = 0
     private var applying = false
+    /// The item whose name is being edited; the list doesn't reload meanwhile.
+    var renaming: URL?
+    var renameField: NSTextField?
+    /// The last rename error shown, for the self-test.
+    var renameError: String?
+    var springTask: Task<Void, Never>?
+    /// A rename asked for an item the list doesn't show yet (a new folder before the reload).
+    var pendingRename: URL?
+    var springRow = -1
 
     init(model: BrowserModel) { self.model = model }
 
@@ -102,6 +121,14 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
 
     func update() {
         guard let table else { return }
+        // A reload would end the rename; it waits until the name is saved. Sending the
+        // keyboard back to the list saves it, like a click elsewhere.
+        if renaming != nil {
+            guard focus != model.focusToken else { return }
+            table.window?.makeFirstResponder(table)
+            if renaming != nil { endRename() }
+            return
+        }
         applying = true
         defer { applying = false }
         if version != model.itemsVersion {
@@ -109,6 +136,12 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             items = model.items
             rowOf = Dictionary(items.enumerated().map { ($1.url, $0) }, uniquingKeysWith: { first, _ in first })
             table.reloadData()
+            cutVersion = FileClipboard.shared.version
+        }
+        if cutVersion != FileClipboard.shared.version {
+            cutVersion = FileClipboard.shared.version
+            table.reloadData(forRowIndexes: IndexSet(integersIn: 0..<items.count),
+                             columnIndexes: IndexSet(integersIn: 0..<table.numberOfColumns))
         }
         let wanted = IndexSet(model.selection.compactMap { rowOf[$0] })
         if wanted != table.selectedRowIndexes {
@@ -118,9 +151,19 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             reveal = model.revealToken
             table.scrollRowToVisible(wanted.first ?? 0)
         }
-        if focus != model.focusToken {
+        // A new list (after a folder that couldn't open) isn't in its window yet: keep the
+        // request until it is (FileTable.viewDidMoveToWindow).
+        if focus != model.focusToken, let window = table.window {
             focus = model.focusToken
-            table.window?.makeFirstResponder(table)
+            window.makeFirstResponder(table)
+        }
+        if renameToken != model.renameToken {
+            renameToken = model.renameToken
+            pendingRename = model.renameTarget
+        }
+        if let target = pendingRename, rowOf[target] != nil {
+            pendingRename = nil
+            beginRename(target)
         }
     }
 
@@ -137,8 +180,8 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             cell.imageView?.image = IconCache.shared.icon(for: item)
             cell.toolTip = item.name
         }
-        // Hidden items show dimmed (S-024).
-        cell.alphaValue = item.isHidden ? 0.5 : 1
+        // Hidden items (S-024) and cut items (S-011) show dimmed.
+        cell.alphaValue = item.isHidden || FileClipboard.shared.isCut(item.url) ? 0.5 : 1
         return cell
     }
 
@@ -168,7 +211,7 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
 
     // MARK: Cells
 
-    private static func makeCell(_ column: DetailsColumn) -> NSTableCellView {
+    static func makeCell(_ column: DetailsColumn) -> NSTableCellView {
         let cell = NSTableCellView()
         cell.identifier = column.identifier
         let text = NSTextField(labelWithString: "")
@@ -219,74 +262,6 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         formatter.doesRelativeDateFormatting = true
         return formatter
     }()
-}
-
-/// The table's keys: Space for Quick Look, ⌘↓ to open, ⌘↑ to go up, Return per the setting.
-/// Arrow shortcuts live here, not in the menu bar, where they would fire in the address field.
-final class FileTable: NSTableView, QLPreviewPanelDataSource, QLPreviewPanelDelegate {
-    weak var coordinator: DetailsCoordinator?
-
-    override func keyDown(with event: NSEvent) {
-        let command = event.modifierFlags.contains(.command)
-        switch event.keyCode {
-        case 36, 76:
-            if coordinator?.model.handleReturn() == true { return }
-        case 49 where !command:
-            toggleQuickLook()
-            return
-        case 125 where command:
-            coordinator?.model.open()
-            return
-        case 126 where command:
-            coordinator?.model.goUp()
-            return
-        default:
-            break
-        }
-        super.keyDown(with: event)
-    }
-
-    func toggleQuickLook() {
-        guard let panel = QLPreviewPanel.shared() else { return }
-        if QLPreviewPanel.sharedPreviewPanelExists(), panel.isVisible {
-            panel.orderOut(nil)
-        } else if !selectedRowIndexes.isEmpty {
-            window?.makeFirstResponder(self)
-            panel.makeKeyAndOrderFront(nil)
-        }
-    }
-
-    private var previewURLs: [URL] { selectedRowIndexes.compactMap { coordinator?.url(at: $0) } }
-
-    // Quick Look calls these on the main thread; AppKit declares them without isolation.
-    nonisolated override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
-
-    nonisolated override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
-        MainActor.assumeIsolated {
-            panel.dataSource = self
-            panel.delegate = self
-        }
-    }
-
-    nonisolated override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
-        MainActor.assumeIsolated {
-            panel.dataSource = nil
-            panel.delegate = nil
-        }
-    }
-
-    func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int { previewURLs.count }
-
-    func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> (any QLPreviewItem)! {
-        previewURLs[index] as NSURL
-    }
-
-    /// Arrows in the panel move the selection in the list, and the preview follows.
-    func previewPanel(_ panel: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
-        guard event.type == .keyDown, [123, 124, 125, 126].contains(event.keyCode) else { return false }
-        keyDown(with: event)
-        return true
-    }
 }
 
 /// File icons: one per extension for plain files, one per path for folders and apps

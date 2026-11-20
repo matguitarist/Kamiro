@@ -20,3 +20,12 @@
 | Locations | Sidebar section of mounted disks and servers | Devices, drives | Emplacements |
 | Enclosing Folder | The folder that holds this one (⌘↑) | Parent, up | Dossier parent |
 | Return opens items | Setting: Return opens instead of renaming | Windows mode, Enter mode | Retour ouvre les éléments |
+| Paste | Put cut or copied items in this folder | Drop here, insert | Coller |
+| Move Items Here | Paste that moves copied items (⌥⌘V) | Paste move, cut paste | Déplacer les éléments ici |
+| Keep Both | Conflict answer: the new item gets "name 2" | Rename, duplicate | Garder les deux |
+| Replace | Conflict answer: the item already there goes to the Trash | Overwrite | Remplacer |
+| Skip | Conflict answer: leave this item out | Ignore, pass | Ignorer |
+| Rename | Edit an item's name in place (Return or F2) | Edit name | Renommer |
+| New Folder | Make "untitled folder" here (⇧⌘N) | Create folder | Nouveau dossier |
+| New File | Make a file from a template here | Create file, new document | Nouveau fichier |
+| Transfers | The toolbar popover with copies and moves under way | Jobs, queue, activity | Transferts |

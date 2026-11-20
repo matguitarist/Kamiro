@@ -42,7 +42,8 @@ struct BrowserView: View {
             }
         default:
             DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
-                         reveal: model.revealToken, focus: model.focusToken)
+                         reveal: model.revealToken, focus: model.focusToken,
+                         cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)
                 .overlay {
                     if model.state == .ready, model.items.isEmpty {
                         ContentUnavailableView("Folder Is Empty", systemImage: "folder")
@@ -110,12 +111,14 @@ struct Sidebar: View {
             Section("Pinned") {
                 ForEach(Pinned.defaults) { place in
                     Label(place.title, systemImage: place.symbol).tag(place.url)
+                        .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: place.url) }
                 }
             }
             Section("Locations") {
                 ForEach(volumes) { volume in
                     Label(volume.name, systemImage: volume.isNetwork ? "network" : volume.isRoot ? "internaldrive" : "externaldrive")
                         .tag(volume.url)
+                        .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
                 }
             }
         }
@@ -164,7 +167,10 @@ struct BrowserToolbar: ToolbarContent {
     @Bindable var model: BrowserModel
 
     var body: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
+        // One ToolbarItem holding one ControlGroup: three separate items split into two
+        // glass capsules whenever their enabled states differ.
+        ToolbarItem(placement: .navigation) {
+            ControlGroup {
             Menu {
                 ForEach(Array(model.history.backList.reversed().enumerated()), id: \.offset) { index, url in
                     Button(FileManager.default.displayName(atPath: url.path)) { model.goBack(index + 1) }
@@ -192,9 +198,26 @@ struct BrowserToolbar: ToolbarContent {
             Button("Enclosing Folder", systemImage: "arrow.up") { model.goUp() }
                 .disabled(!model.canGoUp)
                 .help("Go to the enclosing folder (⌘↑)")
+            }
+            .controlGroupStyle(.navigation)
         }
         ToolbarItem(placement: .principal) {
             AddressBar(model: model)
+        }
+        if !TransferCenter.shared.tasks.isEmpty {
+            ToolbarItem(placement: .primaryAction) {
+                TransferButton(center: TransferCenter.shared)
+            }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Menu {
+                NewItemsMenu(newFolder: { model.newFolder() }, newFile: { model.newFile($0) })
+            } label: {
+                Label("New", systemImage: "plus")
+            }
+            .menuIndicator(.hidden)
+            .disabled(model.state != .ready)
+            .help("Make a new folder or file here")
         }
     }
 }

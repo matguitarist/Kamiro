@@ -10,6 +10,9 @@ final class MenuState: ObservableObject {
     @Published private(set) var canGoForward = false
     @Published private(set) var canGoUp = false
     @Published private(set) var hasSelection = false
+    @Published private(set) var isReady = false
+    /// The key window's list has the keyboard: Delete shortcuts go to it, not to a text field.
+    @Published var listFocused = false
     private(set) weak var browser: BrowserModel?
 
     func activate(_ browser: BrowserModel) {
@@ -23,6 +26,7 @@ final class MenuState: ObservableObject {
         canGoForward = browser.history.canGoForward
         canGoUp = browser.canGoUp
         hasSelection = !browser.selection.isEmpty
+        isReady = browser.state == .ready
     }
 }
 
@@ -42,6 +46,29 @@ struct KamiroCommands: Commands {
             Button("Quick Look") { menu.browser?.quickLook?() }
                 .keyboardShortcut("y")
                 .disabled(!menu.hasSelection)
+            Divider()
+            Button("New Folder") { menu.browser?.newFolder() }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .disabled(!menu.isReady)
+            Menu("New File") {
+                NewFileItems { menu.browser?.newFile($0) }
+            }
+            .disabled(!menu.isReady)
+            Divider()
+            Button("Rename") { menu.browser?.beginRename() }
+                .disabled(!menu.hasSelection)
+            // Disabled while a text field has the keyboard, so ⌘⌫ still deletes text there.
+            Button("Move to Trash") { menu.browser?.trashSelection() }
+                .keyboardShortcut(.delete)
+                .disabled(!(menu.hasSelection && menu.listFocused))
+            Button("Delete Immediately…") { menu.browser?.askDeleteImmediately() }
+                .keyboardShortcut(.delete, modifiers: [.command, .option])
+                .disabled(!(menu.hasSelection && menu.listFocused))
+        }
+        CommandGroup(after: .pasteboard) {
+            Button("Move Items Here") { menu.browser?.paste(move: true) }
+                .keyboardShortcut("v", modifiers: [.command, .option])
+                .disabled(!(menu.listFocused && menu.isReady))
         }
         CommandGroup(after: .toolbar) {
             Button(showStatusBar ? "Hide Status Bar" : "Show Status Bar") { showStatusBar.toggle() }

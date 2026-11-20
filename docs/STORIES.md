@@ -169,7 +169,8 @@ Acceptance:
 - [self] Cut items draw at half opacity until pasted or Escape.
 - [self] ⌘X in a text field (rename, address bar) still cuts text.
 - [unit] Copying files puts file URLs on the pasteboard so Finder and other apps can paste them.
-Status: todo
+Status: done
+Built: Cut, Copy and Paste go through the responder chain (FileTable), so the Edit menu still edits text in a field; Edit › Move Items Here is ⌥⌘V. Test runs use a private pasteboard.
 
 ### S-012 Watch a transfer and cancel it
 As the user, a long copy or move shows its progress with time left, and I can cancel it; nothing half-copied is left behind.
@@ -179,7 +180,8 @@ Acceptance:
 - [unit] Progress counts bytes up front; APFS clones finish at once and count as done.
 - [unit] Cancel removes the partial copy and leaves sources untouched.
 - [self] Several transfers queue in one popover from a toolbar progress button.
-Status: todo
+Status: done
+Built: TransferEngine in KamiroKit (copyfile with COPYFILE_CLONE, bytes counted up front); a ring in the toolbar opens the transfers popover after half a second, each transfer with Stop.
 
 ### S-013 Decide on name conflicts
 As the user, when a pasted item already exists, I choose Replace, Keep Both or Skip, with "Apply to All".
@@ -188,7 +190,8 @@ Depends: S-012
 Acceptance:
 - [unit] Keep Both names "name 2"; Replace moves the old one to the Trash, not deletes it.
 - [self] The sheet shows both items' size and date.
-Status: todo
+Status: done
+Built: the sheet shows both items' icon, size and date; Keep Both is the default button, Replace sends the old one to the Trash, Stop ends the transfer.
 
 ### S-014 Rename inline
 As the user, I press Return (or F2) to rename the selected item in place; the name is selected without its extension.
@@ -197,7 +200,8 @@ Depends: S-002
 Acceptance:
 - [self] Return/F2 starts; Return saves; Escape cancels; Tab moves to the next item.
 - [unit] Illegal names (":" , empty, existing) show an inline error; changing an extension asks first.
-Status: todo
+Status: done
+Built: Return renames (or opens with the setting on), F2 always renames; clicking elsewhere saves; a changed extension asks first, like the Finder.
 
 ### S-015 Make a new folder or file
 As the user, I make a new folder (⇧⌘N) or a new file from a template here, and its name is ready to edit. Templates come in four groups, like PowerClick (docs/research/context-menu.md): Basic (Empty File, Text, Rich Text, Markdown), Data (JSON, XML, YAML, CSV), Web (HTML, CSS, JavaScript, TypeScript), Code (Python, Shell Script, Swift).
@@ -206,7 +210,8 @@ Depends: S-014
 Acceptance:
 - [unit] "untitled folder", "untitled folder 2"; every template writes a valid file (JSON parses, shell script is executable with a shebang).
 - [self] New File submenu in File menu, right-click on empty space and the toolbar.
-Status: todo
+Status: done
+Built: New Folder (⇧⌘N) and New File in the File menu, the right-click menu and a + menu in the toolbar.
 
 ### S-016 Move to Trash or delete
 As the user, I move items to the Trash (⌘⌫) or delete them right away (⌥⌘⌫) after a confirmation.
@@ -215,7 +220,8 @@ Depends: S-011
 Acceptance:
 - [unit] Trash uses FileManager.trashItem and can be put back; Delete Immediately asks "Delete 3 Items Immediately?".
 - [self] ⌫ alone trashes only when "Return opens items" is on (Explorer habit).
-Status: todo
+Status: done
+Built: ⌘⌫ and ⌥⌘⌫ are menu shortcuts only while the list has the keyboard, so they still edit text in a field. Test runs trash into /tmp/Kamiro-trash.
 
 ### S-017 Undo file changes
 As the user, ⌘Z undoes my last rename, move, copy, new item or trash, several levels deep; ⇧⌘Z redoes.
@@ -223,7 +229,8 @@ Depends: S-011, S-014, S-015, S-016
 Acceptance:
 - [unit] Undo per operation type, including a batch move as one step.
 - [self] Edit menu shows "Undo Move of 3 Items".
-Status: todo
+Status: done
+Built: one Undo stack for file changes in every window (FileUndo), each change recorded as moves and trashing (FileChange) so its undo has a redo.
 
 ### S-018 Drag and drop files
 As the user, I drag items to a folder, a crumb, the sidebar or another app; same disk moves, another disk copies, ⌥ copies, ⌘ moves. Hovering a folder springs it open.
@@ -232,7 +239,8 @@ Depends: S-012
 Acceptance:
 - [self] Drop on folder row, crumb, sidebar item; spring-loaded open after 0.7 s.
 - [manual] Drag to and from Finder, Mail and the Desktop works both ways.
-Status: todo
+Status: doing
+Built: drag out of the list, drop on folder rows, the list, crumbs and sidebar items; spring-loaded folder rows. Waits on the owner's drag to and from Finder, Mail and the Desktop.
 
 ## M3 Views (0.3.0)
 

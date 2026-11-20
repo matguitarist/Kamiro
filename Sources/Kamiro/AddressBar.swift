@@ -44,6 +44,7 @@ struct AddressBar: View {
                 switch entry {
                 case .crumb(let url, let last):
                     Crumb(url: url, isFirst: url.path == "/" || Location(url).parent == nil, isLast: last) { model.go(to: $0) }
+                        .dropDestination(for: URL.self) { urls, _ in model.drop(urls, into: url) }
                 case .more(let hidden):
                     Menu {
                         ForEach(hidden, id: \.self) { url in

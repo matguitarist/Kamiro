@@ -21,11 +21,13 @@ print "Kamiro sample" > "A file with a very long name that does not fit in the n
 print "secret" > .hidden-notes
 print "<plist version=\"1.0\"><dict/></plist>" > Sample.app/Contents/Info.plist
 print "readme" > Projects/Kamiro/README.md
+print "# Notes\n\nAn older copy." > Projects/notes.md
 print "print(1)" > Projects/Kamiro/Sources/main.swift
 mkfile -n 300k Photos/Beach.jpg Photos/Mountain.jpg
 stamp 202611190930 Track*.m4a notes.md data.json
 stamp 202611181415 Invoice*.pdf budget.csv
 stamp 202611021000 report.pdf Song.m4a "Holiday Video.mov" A\ file*
+stamp 202609010900 Projects/notes.md
 stamp 202610150800 Projects Photos Music Empty Sample.app
 python3 -I -c "
 import os

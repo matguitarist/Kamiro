@@ -36,6 +36,18 @@ final class BrowserModel {
     var pathError: String?
     private(set) var shakeToken = 0
 
+    // File actions (FileActions.swift).
+    /// The list starts renaming `renameTarget` when this changes.
+    var renameToken = 0
+    var renameTarget: URL?
+    /// Name conflicts waiting for an answer, first one shown.
+    var conflicts: [ConflictQuestion] = []
+    /// Items waiting for "Delete Immediately?".
+    var pendingDelete: [URL]?
+    var pendingExtension: ExtensionQuestion?
+    /// The list, for the self-test (spring-loaded folders, rename).
+    @ObservationIgnored weak var details: DetailsCoordinator?
+
     @ObservationIgnored private var watcher: FolderWatcher?
     @ObservationIgnored private var loadTask: Task<Void, Never>?
     @ObservationIgnored private var remembered: [URL: Set<URL>] = [:]
@@ -111,14 +123,17 @@ final class BrowserModel {
         for file in files { NSWorkspace.shared.open(file.url) }
     }
 
-    /// Return: opens when Settings › General › "Return opens items" is on. Renaming comes with S-014.
+    /// Return renames, like the Finder; with Settings › General › "Return opens items" on, it opens.
     func handleReturn() -> Bool {
-        guard Prefs.defaults.bool(forKey: Prefs.returnOpensItems), !selection.isEmpty else { return false }
-        open()
+        guard !selection.isEmpty else { return false }
+        if Prefs.defaults.bool(forKey: Prefs.returnOpensItems) { open() } else { beginRename() }
         return true
     }
 
     func refresh() { load(select: nil) }
+
+    /// Reads the folder again and selects `urls`, without clearing the list first.
+    func reload(selecting urls: Set<URL>) { load(select: Set(urls.map(\.canonical)), clear: false) }
 
     func focusList() { focusToken += 1 }
 
@@ -158,13 +173,13 @@ final class BrowserModel {
 
     /// Reads the folder off the main thread. `select` nil keeps the selection (a refresh):
     /// the same files by URL, or by file ID when one was renamed.
-    private func load(select: Set<URL>?) {
+    private func load(select: Set<URL>?, clear: Bool = true) {
         loadTask?.cancel()
         let folder = folder
         let order = order
         let keep = select ?? selection
         let keepIDs = select == nil ? Set(selectedItems.compactMap(\.fileID)) : []
-        if select != nil {
+        if select != nil, clear {
             items = []
             itemsVersion += 1
             state = .loading
@@ -173,12 +188,15 @@ final class BrowserModel {
             watch(folder)
             publish()
         }
+        // The read starts at once, off the main thread, instead of waiting behind the redraw
+        // that clearing the list causes (about 50 ms on 10,000 files).
+        let reading = Task.detached(priority: .userInitiated) { await Self.read(folder, order: order) }
         loadTask = Task {
             let spinner = Task {
                 try? await Task.sleep(for: .milliseconds(500))
                 if !Task.isCancelled, state == .loading { showsLoading = true }
             }
-            let result = await Self.read(folder, order: order)
+            let result = await reading.value
             spinner.cancel()
             guard !Task.isCancelled, folder == self.folder else { return }
             showsLoading = false

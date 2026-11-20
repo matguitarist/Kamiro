@@ -11,6 +11,26 @@
         }
       }
     },
+    "%@ of %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sur %@"
+          }
+        }
+      }
+    },
+    "%@ of %@, about %@ left": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sur %@, environ %@ restant"
+          }
+        }
+      }
+    },
     "%lld items": {
       "localizations": {
         "en": {
@@ -151,12 +171,112 @@
         }
       }
     },
+    "Add": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter"
+          }
+        }
+      }
+    },
+    "Already there": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déjà présent"
+          }
+        }
+      }
+    },
+    "An item named “%@” already exists in this location.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un élément nommé « %@ » existe déjà à cet emplacement."
+          }
+        }
+      }
+    },
     "Appearance": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Apparence"
+          }
+        }
+      }
+    },
+    "Apply to All (%lld items)": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Apply to All (%lld item)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Apply to All (%lld items)"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Appliquer à tous (%lld élément)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Appliquer à tous (%lld éléments)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Are you sure you want to add the extension “.%@” to the end of the name?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voulez-vous vraiment ajouter l’extension « .%@ » à la fin du nom ?"
+          }
+        }
+      }
+    },
+    "Are you sure you want to change the extension from “.%@” to “.%@”?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voulez-vous vraiment remplacer l’extension « .%@ » par « .%@ » ?"
+          }
+        }
+      }
+    },
+    "Are you sure you want to remove the extension “.%@”?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voulez-vous vraiment supprimer l’extension « .%@ » ?"
           }
         }
       }
@@ -177,6 +297,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Précédent"
+          }
+        }
+      }
+    },
+    "Basic": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler"
           }
         }
       }
@@ -211,12 +351,222 @@
         }
       }
     },
+    "Code": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code"
+          }
+        }
+      }
+    },
+    "copy": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "copie"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier"
+          }
+        }
+      }
+    },
+    "Copy of %lld Items": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Copy of %lld Item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Copy of %lld Items"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "la copie de %lld élément"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "la copie de %lld éléments"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Copying": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copie"
+          }
+        }
+      }
+    },
+    "Copying %lld items to “%@”": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Copying %lld item to “%@”"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Copying %lld items to “%@”"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Copie de %lld élément vers « %@ »"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Copie de %lld éléments vers « %@ »"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Cut": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couper"
+          }
+        }
+      }
+    },
+    "Data": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données"
+          }
+        }
+      }
+    },
     "Date Modified": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Date de modification"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer"
+          }
+        }
+      }
+    },
+    "Delete “%@” Immediately?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer immédiatement « %@ » ?"
+          }
+        }
+      }
+    },
+    "Delete %lld Items Immediately?": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld Item Immediately?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete %lld Items Immediately?"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Supprimer immédiatement %lld élément ?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Supprimer immédiatement %lld éléments ?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Delete Immediately…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer immédiatement…"
           }
         }
       }
@@ -231,6 +581,26 @@
         }
       }
     },
+    "Do you want to replace it with the one you’re copying?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voulez-vous le remplacer par celui que vous copiez ?"
+          }
+        }
+      }
+    },
+    "Do you want to replace it with the one you’re moving?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voulez-vous le remplacer par celui que vous déplacez ?"
+          }
+        }
+      }
+    },
     "Documents": {
       "localizations": {
         "fr": {
@@ -241,12 +611,42 @@
         }
       }
     },
+    "Don’t Add": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne pas ajouter"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminé"
+          }
+        }
+      }
+    },
     "Edit Address": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Modifier l’adresse"
+          }
+        }
+      }
+    },
+    "Empty File": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichier vide"
           }
         }
       }
@@ -287,6 +687,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Général"
+          }
+        }
+      }
+    },
+    "Give the item a name.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Donnez un nom à l’élément."
           }
         }
       }
@@ -371,6 +781,16 @@
         }
       }
     },
+    "If you make this change, the file may open in a different app.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Après ce changement, le fichier pourrait s’ouvrir dans une autre app."
+          }
+        }
+      }
+    },
     "Kamiro can't open this folder.": {
       "localizations": {
         "fr": {
@@ -387,6 +807,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kamiro ne peut pas lire ce dossier."
+          }
+        }
+      }
+    },
+    "Keep .%@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garder .%@"
+          }
+        }
+      }
+    },
+    "Keep Both": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Garder les deux"
           }
         }
       }
@@ -481,12 +921,172 @@
         }
       }
     },
+    "Make a new folder or file here": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Créer un dossier ou un fichier ici"
+          }
+        }
+      }
+    },
+    "Markdown": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        }
+      }
+    },
+    "Move Items Here": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacer les éléments ici"
+          }
+        }
+      }
+    },
+    "Move of %lld Items": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Move of %lld Item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Move of %lld Items"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "le déplacement de %lld élément"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "le déplacement de %lld éléments"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Move to Trash": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Placer dans la corbeille"
+          }
+        }
+      }
+    },
+    "Moving": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacement"
+          }
+        }
+      }
+    },
+    "Moving %lld items to “%@”": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Moving %lld item to “%@”"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Moving %lld items to “%@”"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Déplacement de %lld élément vers « %@ »"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Déplacement de %lld éléments vers « %@ »"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Name": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Nom"
+          }
+        }
+      }
+    },
+    "Names can’t contain “:”.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les noms ne peuvent pas contenir « : »."
+          }
+        }
+      }
+    },
+    "New": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau"
+          }
+        }
+      }
+    },
+    "New File": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau fichier"
           }
         }
       }
@@ -571,6 +1171,16 @@
         }
       }
     },
+    "Paste": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coller"
+          }
+        }
+      }
+    },
     "Path": {
       "localizations": {
         "fr": {
@@ -651,6 +1261,36 @@
         }
       }
     },
+    "Remove": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renommer"
+          }
+        }
+      }
+    },
+    "Replace": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remplacer"
+          }
+        }
+      }
+    },
     "Restart Now": {
       "localizations": {
         "fr": {
@@ -667,6 +1307,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Retour ouvre les éléments"
+          }
+        }
+      }
+    },
+    "Rich Text": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texte enrichi"
+          }
+        }
+      }
+    },
+    "Shell Script": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Script shell"
           }
         }
       }
@@ -711,6 +1371,16 @@
         }
       }
     },
+    "Show transfers": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les transferts"
+          }
+        }
+      }
+    },
     "Size": {
       "localizations": {
         "fr": {
@@ -721,12 +1391,82 @@
         }
       }
     },
+    "Skip": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorer"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêter"
+          }
+        }
+      }
+    },
+    "Stop this transfer; nothing half-copied stays behind": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêter ce transfert ; rien ne reste à moitié copié"
+          }
+        }
+      }
+    },
+    "Stopped": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêté"
+          }
+        }
+      }
+    },
     "System (%@)": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Système (%@)"
+          }
+        }
+      }
+    },
+    "Text": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texte"
+          }
+        }
+      }
+    },
+    "The item already there goes to the Trash": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’élément déjà présent va dans la corbeille"
+          }
+        }
+      }
+    },
+    "The name “%@” is already taken. Choose a different name.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le nom « %@ » est déjà utilisé. Choisissez-en un autre."
           }
         }
       }
@@ -751,12 +1491,52 @@
         }
       }
     },
+    "This name is too long.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce nom est trop long."
+          }
+        }
+      }
+    },
+    "Transfers": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transferts"
+          }
+        }
+      }
+    },
     "Type a path": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Saisir un chemin"
+          }
+        }
+      }
+    },
+    "untitled": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sans titre"
+          }
+        }
+      }
+    },
+    "untitled folder": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dossier sans titre"
           }
         }
       }
@@ -781,6 +1561,16 @@
         }
       }
     },
+    "Use .%@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utiliser .%@"
+          }
+        }
+      }
+    },
     "Version %@": {
       "localizations": {
         "fr": {
@@ -791,12 +1581,32 @@
         }
       }
     },
+    "Web": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web"
+          }
+        }
+      }
+    },
     "Work": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Travail"
+          }
+        }
+      }
+    },
+    "You can’t undo this action.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous ne pourrez pas annuler cette action."
           }
         }
       }

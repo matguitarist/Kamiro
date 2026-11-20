@@ -15,6 +15,8 @@ enum Snapshot {
     /// The pages, each a place in the sample tree (tools/seed-tree.sh).
     enum Page: String, CaseIterable {
         case browse, selected, details10k = "details-10k", addressEdit = "address-edit", accessDenied = "access-denied", empty
+        case cutDimmed = "cut-dimmed", rename, transferProgress = "transfer-progress", conflictSheet = "conflict-sheet"
+        case deleteConfirm = "delete-confirm"
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -30,9 +32,38 @@ enum Snapshot {
                 browser.beginEditingPath()
             case .accessDenied: browser.go(to: seed.appending(path: "Locked"))
             case .empty: browser.go(to: seed.appending(path: "Empty"))
+            case .cutDimmed, .deleteConfirm:
+                browser.go(to: seed, select: [seed.appending(path: "Invoice 1.pdf"), seed.appending(path: "Invoice 2.pdf")])
+            case .rename: browser.go(to: seed, select: [seed.appending(path: "notes.md")])
+            case .transferProgress, .conflictSheet: browser.go(to: seed)
             }
             await browser.waitUntilLoaded()
             if self != .addressEdit { browser.focusList() }
+            try? await Task.sleep(for: .seconds(0.3))
+            switch self {
+            case .cutDimmed: browser.cutSelection()
+            case .rename: browser.beginRename()
+            case .transferProgress: TransferCenter.shared.showSample()
+            case .conflictSheet:
+                let conflict = Conflict(source: seed.appending(path: "notes.md"), existing: seed.appending(path: "Projects/notes.md"), remaining: 2)
+                browser.conflicts = [ConflictQuestion(conflict: conflict, kind: .copy) { _ in browser.conflicts = [] }]
+            case .deleteConfirm: browser.askDeleteImmediately()
+            default: break
+            }
+        }
+
+        /// Puts things back after the page's snapshot.
+        @MainActor
+        func cleanUp(in browser: BrowserModel) async {
+            switch self {
+            case .cutDimmed: FileClipboard.shared.clearCut()
+            case .rename: browser.details?.endRename()
+            case .transferProgress: TransferCenter.shared.hideSample()
+            case .conflictSheet: browser.conflicts = []
+            case .deleteConfirm: browser.pendingDelete = nil
+            default: return
+            }
+            try? await Task.sleep(for: .seconds(0.5))
         }
     }
 
@@ -68,6 +99,7 @@ enum Snapshot {
                     await page.show(in: browser)
                     try? await Task.sleep(for: .seconds(0.8))
                     capture(to: "\(dir)/\(page.rawValue)-\(mode).png", window: main)
+                    await page.cleanUp(in: browser)
                 }
                 if browser.isEditingPath { browser.cancelEditingPath() }
             }
@@ -123,10 +155,18 @@ enum Snapshot {
         GridProbes.shared.write(to: path.replacingOccurrences(of: ".png", with: "-layout.json"), window: size)
         try? FileManager.default.removeItem(atPath: path)
         // The first capture of a run sometimes misses the window. Try three times.
+        // A sheet or a popover is a window of its own: shoot the screen area of the window instead.
+        var arguments = ["-x", "-o", "-l", String(window.windowNumber), path]
+        if window.attachedSheet != nil || TransferCenter.shared.popoverShown, let top = NSScreen.screens.first?.frame.maxY {
+            // Popovers can reach past the window's edge: take them in too.
+            let popovers = NSApp.windows.filter { $0.isVisible && String(describing: type(of: $0)).contains("Popover") }
+            let frame = popovers.reduce(window.frame) { $0.union($1.frame) }
+            arguments = ["-x", "-R", "\(Int(frame.minX)),\(Int(top - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))", path]
+        }
         for _ in 1...3 {
             let shot = Process()
             shot.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            shot.arguments = ["-x", "-o", "-l", String(window.windowNumber), path]
+            shot.arguments = arguments
             try? shot.run()
             shot.waitUntilExit()
             if FileManager.default.fileExists(atPath: path) {
