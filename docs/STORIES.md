@@ -424,7 +424,8 @@ Built: One right-click menu that follows what's under the pointer. Items get Ope
 ### S-034 Copy a path and open a terminal here
 As the user, I copy an item's path (⌥⌘C), or from a Copy submenu its name, name without extension, extension or parent folder path; and I open the current folder in Terminal (or Ghostty, iTerm) or the selection in my code editor (VS Code, Cursor, Zed, Xcode).
 Depends: S-033
-Status: todo
+Status: done
+Built: Copy Path is Edit › Copy Path (⌥⌘C) too, for the selection or, with nothing selected, the folder on screen; the right-click menu shows the shortcut. A Copy Info submenu beside it copies the name, the name without extension, the extension or the parent folder's path, one line per item; the extension choices are left out for items that have none. Open in Editor: the code editor picked in Settings › General › Code Editor (VS Code, Cursor, Zed, Sublime Text, Nova, BBEdit or Xcode, among those installed; the first installed until one is picked) opens folders and text files from the right-click menu, and empty space gets Open Folder in <editor>. The terminal part came with S-044.
 
 ### S-035 Compress and extract
 As the user, I compress items to a zip and extract a zip next to it.

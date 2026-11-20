@@ -26,8 +26,31 @@ extension SelfTest {
               (openWith?.items.first?.title.hasPrefix(main) ?? false) && openWith?.items.last?.title == t("Other…"),
               openWith.map(titles).map { "\($0)" } ?? "no submenu")
 
+        // S-034: Copy Info, and Open in the code editor for folders and text only.
+        let info = fileMenu.items.first { $0.title == t("Copy Info") }?.submenu
+        check("a file's Copy Info offers its name, name without extension, extension and parent folder path",
+              info.map(titles) == [t("Name"), t("Name Without Extension"), t("Extension"), t("Parent Folder Path")],
+              info.map(titles).map { "\($0)" } ?? "no submenu")
+        if let info, let index = info.items.firstIndex(where: { $0.title == t("Name Without Extension") }) {
+            info.performActionForItem(at: index)
+        }
+        check("Name Without Extension copies “Guide”", FileClipboard.shared.pasteboard.string(forType: .string) == "Guide")
+        let copyPath = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Copy Path") }
+        check("Edit › Copy Path is ⌥⌘C", copyPath?.keyEquivalent == "c" && copyPath?.keyEquivalentModifierMask == [.command, .option])
+        if let editor = ItemActions.editor {
+            // Earlier steps move and rename some sample files: take a text file still here.
+            let textFile = browser.items.first { !$0.isFolder && ["md", "json", "csv", "txt"].contains($0.url.pathExtension) }
+            browser.selection = Set(textFile.map { [$0.url] } ?? [])
+            let text = titles(browser.contextMenu(onItems: true))
+            check("a text file (\(textFile?.name ?? "none")) opens in \(editor.name), a PDF doesn't",
+                  text.contains(t("Open in \(editor.name)")) && !file.contains(t("Open in \(editor.name)")), "\(text)")
+        }
+
         // A folder.
         browser.selection = [url("Projects")]
+        let folderInfo = browser.contextMenu(onItems: true).items.first { $0.title == t("Copy Info") }?.submenu
+        check("a folder's Copy Info leaves out the extension choices",
+              folderInfo.map(titles) == [t("Name"), t("Parent Folder Path")], folderInfo.map(titles).map { "\($0)" } ?? "no submenu")
         let folder = titles(browser.contextMenu(onItems: true))
         check("a folder's menu has Open in New Tab, Open in Terminal and Pin to Sidebar, without Open With",
               [t("Open in New Tab"), t("Open in \("Terminal")")].allSatisfy(folder.contains) && !folder.contains(t("Open With")), "\(folder)")
@@ -39,8 +62,13 @@ extension SelfTest {
 
         // Empty space.
         browser.selection = []
+        browser.copyPathOfSelection()
+        check("Copy Path with nothing selected copies the folder's path", FileClipboard.shared.pasteboard.string(forType: .string) == seed.canonical.path)
         let empty = browser.contextMenu(onItems: false)
         let space = titles(empty)
+        if let editor = ItemActions.editor {
+            check("empty space offers Open Folder in \(editor.name)", space.contains(t("Open Folder in \(editor.name)")), "\(space)")
+        }
         check("empty space has New Folder, New File, Open Terminal Here, Copy Path and Properties, and nothing for items",
               [t("New Folder"), t("New File"), t("Open \("Terminal") Here"), t("Copy Path"), t("Properties")].allSatisfy(space.contains)
               && ![t("Open"), t("Cut"), t("Rename"), t("Move to Trash")].contains(where: space.contains), "\(space)")

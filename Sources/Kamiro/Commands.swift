@@ -103,6 +103,11 @@ struct KamiroCommands: Commands {
                 .disabled(menu.browser == nil)
         }
         CommandGroup(after: .pasteboard) {
+            // The selection's paths, or the folder's; the list must have the keyboard, so a text
+            // field keeps ⌥⌘C.
+            Button("Copy Path") { menu.browser?.copyPathOfSelection() }
+                .keyboardShortcut("c", modifiers: [.command, .option])
+                .disabled(!(menu.listFocused && (menu.hasSelection || menu.isReady)))
             Button("Move Items Here") { menu.browser?.paste(move: true) }
                 .keyboardShortcut("v", modifiers: [.command, .option])
                 .disabled(!(menu.listFocused && menu.isReady))

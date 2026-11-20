@@ -2930,6 +2930,66 @@
           }
         }
       }
+    },
+    "Copy Info": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier les infos"
+          }
+        }
+      }
+    },
+    "Name Without Extension": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom sans extension"
+          }
+        }
+      }
+    },
+    "Parent Folder Path": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemin du dossier parent"
+          }
+        }
+      }
+    },
+    "Open Folder in %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir le dossier dans %@"
+          }
+        }
+      }
+    },
+    "Code Editor": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éditeur de code"
+          }
+        }
+      }
+    },
+    "Open code in": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir le code dans"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

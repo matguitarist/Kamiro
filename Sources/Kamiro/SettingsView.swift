@@ -63,6 +63,8 @@ struct GeneralSettings: View {
     @AppStorage(Prefs.returnOpensItems, store: Prefs.defaults) private var returnOpensItems = false
     @AppStorage(Prefs.terminal, store: Prefs.defaults) private var terminal = TerminalApp.apple.bundleID
     private let terminals = ItemActions.installedTerminals
+    @AppStorage(Prefs.editor, store: Prefs.defaults) private var editor = ""
+    private let editors = ItemActions.installedEditors
 
     var body: some View {
         @Bindable var model = model
@@ -80,6 +82,17 @@ struct GeneralSettings: View {
                 ForEach(terminals) { app in
                     Label { Text(verbatim: app.name) } icon: { TerminalIcon(bundleID: app.bundleID) }
                         .tag(app.bundleID)
+                }
+            }
+        }
+        // Shown once an editor Kamiro knows is installed (VS Code, Cursor, Zed, Xcode…).
+        if let current = EditorApp.chosen(editor, installed: editors) {
+            Section("Code Editor") {
+                Picker("Open code in", selection: Binding(get: { current.bundleID }, set: { editor = $0 })) {
+                    ForEach(editors) { app in
+                        Label { Text(verbatim: app.name) } icon: { TerminalIcon(bundleID: app.bundleID) }
+                            .tag(app.bundleID)
+                    }
                 }
             }
         }
@@ -109,7 +122,7 @@ struct GeneralSettings: View {
     }
 }
 
-/// A terminal's own app icon, small, for the Terminal picker.
+/// An app's own icon, small, for the Terminal and Code Editor pickers.
 private struct TerminalIcon: View {
     let bundleID: String
 

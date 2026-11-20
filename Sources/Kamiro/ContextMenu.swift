@@ -36,6 +36,8 @@ extension BrowserModel {
             add(String(localized: "Cut"), "scissors") { [weak self] in self?.cutSelection() }
             add(String(localized: "Copy"), "doc.on.doc") { [weak self] in self?.copySelection() }
             add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths(urls) }
+            ItemActions.showCopyPathKey(menu.items.last)
+            menu.addItem(ItemActions.copyInfoItem(for: urls))
             if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
             add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
             group()
@@ -54,6 +56,9 @@ extension BrowserModel {
                 let folder = folders[0].url
                 add(ItemActions.openInTerminalTitle, "terminal") { ItemActions.openInTerminal(folder) }
             }
+            if let editor = ItemActions.editor, chosen.allSatisfy({ EditorApp.opens($0.url, isFolder: $0.isFolder) }) {
+                add(String(localized: "Open in \(editor.name)"), ItemActions.editorSymbol) { ItemActions.open(urls, in: editor) }
+            }
             // A disk listed in /Volumes ejects from here too.
             if chosen.count == 1, let volume = Volumes.volume(at: chosen[0].url), volume.actions.contains(.eject) {
                 add(String(localized: "Eject"), "eject") { [weak self] in ItemActions.eject(volume, from: self) }
@@ -69,7 +74,11 @@ extension BrowserModel {
             group()
             let here = folder
             add(ItemActions.openTerminalHereTitle, "terminal") { ItemActions.openInTerminal(here) }
+            if let editor = ItemActions.editor {
+                add(String(localized: "Open Folder in \(editor.name)"), ItemActions.editorSymbol) { ItemActions.open([here], in: editor) }
+            }
             add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths([here]) }
+            ItemActions.showCopyPathKey(menu.items.last)
         }
         if (onItems && !chosen.isEmpty) || (!isVirtual && state == .ready) {
             group()
@@ -77,6 +86,15 @@ extension BrowserModel {
         }
         if let last = menu.items.last, last.isSeparatorItem { menu.removeItem(last) }
         return menu
+    }
+
+    /// Edit › Copy Path (⌥⌘C): the selected items' paths, or the folder's when nothing is selected.
+    func copyPathOfSelection() {
+        if !selection.isEmpty {
+            ItemActions.copyPaths(orderedSelection)
+        } else if !isVirtual {
+            ItemActions.copyPaths([folder])
+        }
     }
 
     /// Duplicate (⌘D): a copy of each selected item next to it, named "name copy".
@@ -98,9 +116,50 @@ enum ItemActions {
     /// Paths, one per line, on the pasteboard (the test pasteboard in test runs).
     static func copyPaths(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
+        copyText(urls.map(\.path).joined(separator: "\n"))
+    }
+
+    /// Copy Path shows ⌥⌘C, its shortcut in the Edit menu.
+    static func showCopyPathKey(_ item: NSMenuItem?) {
+        item?.keyEquivalent = "c"
+        item?.keyEquivalentModifierMask = [.command, .option]
+    }
+
+    /// Copy Info and its submenu: the name, the name without extension, the extension, the
+    /// parent folder's path. Choices that say nothing for these items are left out.
+    static func copyInfoItem(for urls: [URL]) -> NSMenuItem {
+        let item = NSMenuItem(title: String(localized: "Copy Info"), action: nil, keyEquivalent: "")
+        item.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil)
+        let menu = NSMenu()
+        for info in CopyInfo.allCases where info.applies(to: urls) {
+            menu.addItem(MenuAction.item(info.title) { copyText(info.text(for: urls)) })
+        }
+        item.submenu = menu
+        return item
+    }
+
+    static func copyText(_ text: String) {
         let pasteboard = FileClipboard.shared.pasteboard
         pasteboard.clearContents()
-        pasteboard.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
+        pasteboard.setString(text, forType: .string)
+    }
+
+    // MARK: Code editor (S-034)
+
+    static let editorSymbol = "chevron.left.forwardslash.chevron.right"
+
+    static var installedEditors: [EditorApp] {
+        EditorApp.installed { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil }
+    }
+
+    /// The one chosen in Settings › General, or the first installed; nil when there's none.
+    static var editor: EditorApp? {
+        EditorApp.chosen(Prefs.defaults.string(forKey: Prefs.editor), installed: installedEditors)
+    }
+
+    static func open(_ urls: [URL], in editor: EditorApp) {
+        guard let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: editor.bundleID) else { NSSound.beep(); return }
+        open(urls, with: app)
     }
 
     /// The terminals on this Mac that Kamiro knows how to open in a folder.
@@ -238,6 +297,17 @@ enum ItemActions {
 }
 
 // MARK: - SwiftUI menus for the Home page and the sidebar
+
+extension CopyInfo {
+    var title: String {
+        switch self {
+        case .name: String(localized: "Name")
+        case .nameWithoutExtension: String(localized: "Name Without Extension")
+        case .fileExtension: String(localized: "Extension")
+        case .parentPath: String(localized: "Parent Folder Path")
+        }
+    }
+}
 
 extension VolumeAction {
     var title: String {

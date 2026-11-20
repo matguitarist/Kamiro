@@ -466,6 +466,8 @@ enum Prefs {
     static let showColumnPreview = "showColumnPreview"
     /// The bundle ID of the app Open in Terminal uses (Settings › General).
     static let terminal = "terminal"
+    /// The bundle ID of the code editor Open in Editor uses (Settings › General).
+    static let editor = "editor"
     /// The sidebar's pinned folders, as paths (S-032).
     static let pins = "pins"
     static let hiddenSidebarSections = "hiddenSidebarSections"
