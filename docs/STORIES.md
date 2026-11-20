@@ -475,6 +475,42 @@ Reference: PowerClick (docs/research/context-menu.md).
 Depends: S-033, S-040
 Status: todo
 
+### S-048 More native formats
+As the user, Convert also offers the formats macOS writes on its own: AVIF, JPEG 2000, BMP and ICO (Windows icon), so the common cases need nothing installed.
+Depends: S-045
+Acceptance:
+- [unit] Each new format round-trips with ImageIO; ICO keeps 16 to 256 pixels; formats this Mac can't write are left out, not shown dimmed.
+Status: todo
+
+### S-049 Optional tools
+As the user, Settings › Tools lists the free command-line tools Kamiro can use (cwebp, ffmpeg, ImageMagick), shows which are installed with their version, and for the others the Homebrew line to copy. Native first: nothing here is needed, nothing is bundled or downloaded by Kamiro, and a tool's actions appear only once it is installed.
+Depends: S-045
+Acceptance:
+- [unit] A tool is found in /opt/homebrew/bin, /usr/local/bin or /opt/local/bin (an app's PATH has none of them); a missing or broken tool counts as not installed.
+- [self] With no tools, Settings › Tools shows three “brew install …” lines with Copy, and Convert has no tool-only formats.
+Status: todo
+
+### S-050 WebP with cwebp
+As the user, with cwebp installed (brew install webp), Convert › WebP turns pictures into WebP, and an animated GIF into an animated WebP (gif2webp).
+Depends: S-049
+Acceptance:
+- [unit] With a fake cwebp in a test folder, the arguments are right and the result lands as “photo.webp”, or “photo 2.webp” when taken; Stop ends the tool and leaves nothing.
+Status: todo
+
+### S-051 Any video with ffmpeg
+As the user, with ffmpeg installed, Convert also takes videos macOS can't open (WebM, MKV, AVI, FLV), offers WebM as a target, and makes animated GIFs with ffmpeg's palette for better colors, with a progress bar from its time readout.
+Depends: S-049
+Acceptance:
+- [unit] ffmpeg's "time=" lines become a fraction of the length; without ffmpeg, WebM and MKV get no Convert.
+Status: todo
+
+### S-052 More pictures with ImageMagick
+As the user, with ImageMagick installed, Convert also takes pictures macOS can't open (SVG, XCF, EPS and other rare formats) and turns them into the usual ones.
+Depends: S-049
+Acceptance:
+- [unit] An SVG becomes a PNG of its own size with magick; formats ImageIO reads stay native even when ImageMagick is there.
+Status: todo
+
 ## M6 System and polish (1.0.0)
 
 ### S-038 Make Kamiro the default file browser
