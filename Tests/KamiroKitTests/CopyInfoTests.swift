@@ -27,6 +27,9 @@ import Testing
     #expect(EditorApp.chosen(xcode.bundleID, installed: installed) == xcode)
     #expect(EditorApp.chosen("com.microsoft.VSCode", installed: installed) == zed)
     #expect(EditorApp.chosen(nil, installed: []) == nil)
+    let codium = EditorApp.known.first { $0.bundleID == "com.vscodium" }
+    #expect(codium?.name == "VSCodium" && EditorApp.installed { $0 == "com.vscodium" } == [codium!])
+    #expect(Set(EditorApp.known.map(\.bundleID)).count == EditorApp.known.count)
 }
 
 @Test func editorsOpenFoldersAndTextOnly() {
