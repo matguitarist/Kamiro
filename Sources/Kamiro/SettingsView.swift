@@ -61,6 +61,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 struct GeneralSettings: View {
     @Environment(AppModel.self) private var model
     @AppStorage(Prefs.returnOpensItems, store: Prefs.defaults) private var returnOpensItems = false
+    @AppStorage(Prefs.terminal, store: Prefs.defaults) private var terminal = TerminalApp.apple.bundleID
+    private let terminals = ItemActions.installedTerminals
 
     var body: some View {
         @Bindable var model = model
@@ -68,6 +70,17 @@ struct GeneralSettings: View {
             Toggle(isOn: $returnOpensItems) {
                 Text("Return opens items")
                 Text("Off, Return renames, like the Finder. On, Return opens, like Windows, and F2 renames.")
+            }
+        }
+        Section("Terminal") {
+            // A terminal removed since it was chosen shows as Terminal, the one now used.
+            Picker("Open in Terminal uses", selection: Binding(
+                get: { TerminalApp.chosen(terminal, installed: terminals).bundleID },
+                set: { terminal = $0 })) {
+                ForEach(terminals) { app in
+                    Label { Text(verbatim: app.name) } icon: { TerminalIcon(bundleID: app.bundleID) }
+                        .tag(app.bundleID)
+                }
             }
         }
         Section("Show in Sidebar") {
@@ -93,6 +106,23 @@ struct GeneralSettings: View {
                 }
             }
         }
+    }
+}
+
+/// A terminal's own app icon, small, for the Terminal picker.
+private struct TerminalIcon: View {
+    let bundleID: String
+
+    var body: some View {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            Image(nsImage: Self.icon(url))
+        }
+    }
+
+    private static func icon(_ url: URL) -> NSImage {
+        let image = NSWorkspace.shared.icon(forFile: url.path)
+        image.size = NSSize(width: 16, height: 16)
+        return image
     }
 }
 

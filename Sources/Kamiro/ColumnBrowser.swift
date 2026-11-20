@@ -14,6 +14,7 @@ struct ColumnBrowser: NSViewRepresentable {
     let focus: Int
     let cutVersion: Int
     let renameToken: Int
+    let showPreview: Bool
 
     func makeCoordinator() -> ColumnCoordinator { ColumnCoordinator(model: model) }
 
@@ -48,7 +49,11 @@ struct ColumnBrowser: NSViewRepresentable {
         // NSBrowser builds columns, and the SwiftUI preview column, as it goes; doing that inside
         // SwiftUI's own update re-enters observation tracking and crashed (icons → columns).
         let coordinator = context.coordinator
-        DispatchQueue.main.async { coordinator.update() }
+        let showPreview = showPreview
+        DispatchQueue.main.async {
+            coordinator.setShowsPreview(showPreview)
+            coordinator.update()
+        }
     }
 }
 
@@ -90,6 +95,13 @@ final class ColumnCoordinator: NSObject, NSBrowserDelegate {
     /// The item whose name is being edited, for the self-test.
     private(set) var renaming: URL?
     private var applying = false
+    /// Show the last column for a selected file (View › Show Preview).
+    private(set) var showsPreview = Prefs.defaults.object(forKey: Prefs.showColumnPreview) as? Bool ?? true
+    /// Widths people gave columns by dragging, by the column's folder; the rest size to their names.
+    private var chosenWidths: [URL: CGFloat] = [:]
+    private var fitPending = false
+    /// The preview column is never narrower than this; past it, it fills the browser's width.
+    static let previewMinWidth: CGFloat = 200
 
     nonisolated(unsafe) private var hiddenWatch: (any NSObjectProtocol)?
 
@@ -108,6 +120,12 @@ final class ColumnCoordinator: NSObject, NSBrowserDelegate {
 
     func start() {
         setRoot(model.folder)
+    }
+
+    func setShowsPreview(_ shows: Bool) {
+        guard shows != showsPreview else { return }
+        showsPreview = shows
+        readAgain()
     }
 
     private func readAgain() {
@@ -275,9 +293,20 @@ final class ColumnCoordinator: NSObject, NSBrowserDelegate {
         cell.attributedStringValue = text
     }
 
-    /// A column is as wide as its longest name, up to a limit; people can drag it wider.
+    /// A column is as wide as its longest name, up to a limit, or as wide as people dragged it.
+    /// The preview column fills what's left (fitPreview).
     func browser(_ browser: NSBrowser, shouldSizeColumn columnIndex: Int, forUserResize: Bool, toWidth suggestedWidth: CGFloat) -> CGFloat {
-        guard !forUserResize, let parent = browser.parentForItems(inColumn: columnIndex) as? ColumnNode else { return suggestedWidth }
+        guard let parent = browser.parentForItems(inColumn: columnIndex) as? ColumnNode else { return suggestedWidth }
+        guard parent.item.isFolder else { return Self.previewMinWidth }
+        if forUserResize {
+            chosenWidths[parent.url] = suggestedWidth
+            return suggestedWidth
+        }
+        return chosenWidths[parent.url] ?? fittingWidth(parent)
+    }
+
+    /// As wide as the longest name in the folder, between 160 and 360 points.
+    private func fittingWidth(_ parent: ColumnNode) -> CGFloat {
         let font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
         let longest = parent.children.prefix(2_000).map { ($0.item.name as NSString).size(withAttributes: [.font: font]).width }.max() ?? 0
         // Icon, gaps, and the arrow at the right edge.
@@ -285,8 +314,60 @@ final class ColumnCoordinator: NSObject, NSBrowserDelegate {
     }
 
     func browser(_ browser: NSBrowser, previewViewControllerForLeafItem item: Any) -> NSViewController? {
-        guard let node = item as? ColumnNode else { return nil }
+        guard showsPreview, let node = item as? ColumnNode else { return nil }
         return ColumnPreview(item: node.item)
+    }
+
+    // MARK: Column widths
+
+    /// Whether people can drag `column`'s right edge: folder columns, not the preview.
+    func isResizable(_ column: Int) -> Bool {
+        guard let browser, column >= 0, column <= browser.lastColumn else { return false }
+        return (browser.parentForItems(inColumn: column) as? ColumnNode)?.item.isFolder ?? false
+    }
+
+    /// Sets a folder column's width, kept for that folder while the window is open.
+    func setWidth(_ width: CGFloat, ofColumn column: Int) {
+        guard let browser, let parent = browser.parentForItems(inColumn: column) as? ColumnNode, parent.item.isFolder else { return }
+        let width = max(browser.minColumnWidth, width.rounded())
+        chosenWidths[parent.url] = width
+        browser.setWidth(width, ofColumn: column)
+        fitPreview()
+    }
+
+    /// Double-clicking a divider sizes the column to its longest name again.
+    func fitWidth(ofColumn column: Int) {
+        guard let browser, let parent = browser.parentForItems(inColumn: column) as? ColumnNode, parent.item.isFolder else { return }
+        chosenWidths[parent.url] = nil
+        browser.setWidth(fittingWidth(parent), ofColumn: column)
+        fitPreview()
+    }
+
+    /// The preview column, when it's showing.
+    var previewColumn: Int? {
+        guard let browser, browser.lastColumn >= 0,
+              let parent = browser.parentForItems(inColumn: browser.lastColumn) as? ColumnNode, !parent.item.isFolder,
+              showsPreview else { return nil }
+        return browser.lastColumn
+    }
+
+    /// Widens the preview column to the browser's right edge, so no empty space is left
+    /// after it; in a narrow window it keeps its smallest width and the columns scroll.
+    func fitPreview() {
+        guard let browser, let column = previewColumn else { return }
+        let left = browser.frame(ofColumn: column).minX
+        let width = max(Self.previewMinWidth, (browser.bounds.width - left - 1).rounded(.down))
+        if abs(browser.width(ofColumn: column) - width) >= 1 { browser.setWidth(width, ofColumn: column) }
+    }
+
+    /// After the browser lays out its columns (a new column, a resized window).
+    func fitPreviewSoon() {
+        guard !fitPending else { return }
+        fitPending = true
+        DispatchQueue.main.async { [weak self] in
+            self?.fitPending = false
+            self?.fitPreview()
+        }
     }
 
     // MARK: Rename in place (S-014)
@@ -429,6 +510,61 @@ final class FileBrowser: NSBrowser, NSUserInterfaceValidations {
         super.removeFromSuperview()
     }
 
+    // MARK: Dragging a divider (the whole edge, not only the grip at the bottom)
+
+    /// How far from a column's right edge a drag still grabs it.
+    private static let grab: CGFloat = 4
+
+    /// The column whose right edge is at `point` (in this view), when it can be resized.
+    func divider(at point: NSPoint) -> Int? {
+        guard let coordinator, lastColumn >= 0, bounds.contains(point) else { return nil }
+        for column in max(firstVisibleColumn, 0)...lastColumn {
+            let edge = frame(ofColumn: column).maxX
+            // The edge, the 2-point gap after it, and a little on each side.
+            if point.x >= edge - Self.grab, point.x <= edge + 2 + Self.grab, coordinator.isResizable(column) { return column }
+        }
+        return nil
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        if let superview, divider(at: convert(point, from: superview)) != nil { return self }
+        return super.hitTest(point)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let start = convert(event.locationInWindow, from: nil)
+        guard let column = divider(at: start), let coordinator else { super.mouseDown(with: event); return }
+        if event.clickCount == 2 {
+            coordinator.fitWidth(ofColumn: column)
+            return
+        }
+        let startWidth = width(ofColumn: column)
+        NSCursor.resizeLeftRight.push()
+        defer { NSCursor.pop() }
+        while let next = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            let x = convert(next.locationInWindow, from: nil).x
+            coordinator.setWidth(startWidth + x - start.x, ofColumn: column)
+            if next.type == .leftMouseUp { break }
+        }
+        window?.invalidateCursorRects(for: self)
+    }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        guard let coordinator, lastColumn >= 0 else { return }
+        for column in max(firstVisibleColumn, 0)...lastColumn where coordinator.isResizable(column) {
+            let frame = frame(ofColumn: column)
+            let zone = NSRect(x: frame.maxX - Self.grab, y: bounds.minY, width: 2 + Self.grab * 2, height: bounds.height)
+            addCursorRect(zone.intersection(visibleRect), cursor: .resizeLeftRight)
+        }
+    }
+
+    override func tile() {
+        super.tile()
+        window?.invalidateCursorRects(for: self)
+        coordinator?.fitPreviewSoon()
+    }
+
     /// Redraws every column, for cut items, without reading anything again.
     func redrawColumns() {
         func mark(_ view: NSView) {
@@ -541,7 +677,9 @@ struct PreviewColumn: View {
             Spacer(minLength: 0)
         }
         .padding(Space.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The column fills the window's width: the preview keeps a readable size at its left.
+        .frame(maxWidth: 400)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
     private var summary: String {

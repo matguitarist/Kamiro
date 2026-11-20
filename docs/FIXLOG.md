@@ -61,3 +61,15 @@ restoreFrame wrote the saved frame with `defaults write` without a type, and the
 (with its JSON tiling state) didn't parse, so a snapshot run left the real window at the test
 size. Fix: `defaults write … -string`.
 Rule: write saved strings back with an explicit `-string`; `defaults` reads untyped values as plists.
+
+## 2026-11-20 Column view: columns seemed not to resize, and an empty column followed the preview
+NSBrowser's user resizing only works from a small "||" grip at the bottom of each column, which
+people don't find (and which is off screen when the window is taller than the display). The
+preview column was sized like a folder column: a file has no children, so it got the 160 pt
+minimum, and the rest of the browser stayed empty, which read as a third, dead column.
+Fix: FileBrowser takes clicks on the whole edge between columns (hitTest, mouseDown, cursor
+rects) and the coordinator keeps the chosen widths per folder; the preview column widens to
+the right edge after every layout (tile). Found by the owner.
+Rule: an AppKit control's built-in affordance isn't enough if people can't find it; check
+the whole hit area, and size special columns (previews, footers) on their own, not by the
+rule for ordinary ones.

@@ -49,6 +49,7 @@ struct KamiroCommands: Commands {
     @Environment(\.openWindow) private var openWindow
     @AppStorage(Prefs.showStatusBar, store: Prefs.defaults) private var showStatusBar = true
     @AppStorage(Prefs.showInspector, store: Prefs.defaults) private var showInspector = false
+    @AppStorage(Prefs.showColumnPreview, store: Prefs.defaults) private var showColumnPreview = true
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -131,6 +132,10 @@ struct KamiroCommands: Commands {
                 .keyboardShortcut("/")
             Button(showInspector ? "Hide Inspector" : "Show Inspector") { showInspector.toggle() }
                 .keyboardShortcut("i", modifiers: [.command, .option])
+            // The column view's last column for a selected file, as in the Finder.
+            Button(showColumnPreview ? "Hide Preview" : "Show Preview") { showColumnPreview.toggle() }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+                .disabled(menu.mode != .columns)
             Button("Refresh") { menu.browser?.refresh() }
                 .keyboardShortcut("r")
         }

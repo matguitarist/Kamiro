@@ -2850,6 +2850,76 @@
           }
         }
       }
+    },
+    "Hide Preview": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer l’aperçu"
+          }
+        }
+      }
+    },
+    "Show Preview": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l’aperçu"
+          }
+        }
+      }
+    },
+    "Inspector": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspecteur"
+          }
+        }
+      }
+    },
+    "Hide the inspector (⌥⌘I)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer l’inspecteur (⌥⌘I)"
+          }
+        }
+      }
+    },
+    "Show the inspector (⌥⌘I)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l’inspecteur (⌥⌘I)"
+          }
+        }
+      }
+    },
+    "Open in Terminal uses": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir dans Terminal utilise"
+          }
+        }
+      }
+    },
+    "Terminal": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminal"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

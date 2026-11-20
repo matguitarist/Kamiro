@@ -449,6 +449,48 @@ extension SelfTest {
         let third = view?.width(ofColumn: 2) ?? 0
         check("columns size to their longest name, up to a limit", first == 360 && third >= 160 && third < first, "\(first), \(third)")
 
+        // The preview fills the space after the columns: no empty strip after it.
+        func previewGap() -> CGFloat {
+            guard let view, let column = columns?.previewColumn else { return .infinity }
+            return view.bounds.width - view.frame(ofColumn: column).maxX
+        }
+        check("the preview column reaches the right edge", previewGap() >= 0 && previewGap() <= 2, "gap \(previewGap())")
+
+        // Dragging anywhere on the edge between two columns resizes the left one.
+        if let view, let window = view.window {
+            let edge = view.frame(ofColumn: 1).maxX + 1
+            let start = NSPoint(x: edge, y: view.bounds.midY)
+            let grabbed = view.hitTest(view.convert(start, to: view.superview)) === view
+            let before = view.width(ofColumn: 1)
+            func mouse(_ type: NSEvent.EventType, _ x: CGFloat) -> NSEvent? {
+                NSEvent.mouseEvent(with: type, location: view.convert(NSPoint(x: x, y: start.y), to: nil), modifierFlags: [],
+                                   timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                                   context: nil, eventNumber: 0, clickCount: 1, pressure: 1)
+            }
+            if let drag = mouse(.leftMouseDragged, edge + 80), let up = mouse(.leftMouseUp, edge + 80), let down = mouse(.leftMouseDown, edge) {
+                window.postEvent(drag, atStart: false)
+                window.postEvent(up, atStart: false)
+                view.mouseDown(with: down)
+            }
+            await pause(0.3)
+            check("dragging the edge between two columns makes the left one wider, and the preview still fills",
+                  grabbed && view.width(ofColumn: 1) == before + 80 && previewGap() >= 0 && previewGap() <= 2,
+                  "grabbed \(grabbed), \(before) → \(view.width(ofColumn: 1)), gap \(previewGap())")
+            columns?.fitWidth(ofColumn: 1)
+            await pause(0.3)
+            check("double-clicking the edge fits the column to its names again", view.width(ofColumn: 1) == before,
+                  "\(view.width(ofColumn: 1))")
+        }
+
+        // View › Hide Preview (⇧⌘P) takes the preview column away; Show Preview brings it back.
+        Prefs.defaults.set(false, forKey: Prefs.showColumnPreview)
+        await pause(0.5)
+        check("Hide Preview takes the preview column away", view.map(previews) == false && columns?.previewColumn == nil)
+        Prefs.defaults.set(true, forKey: Prefs.showColumnPreview)
+        await pause(0.5)
+        check("Show Preview brings it back", view.map(previews) == true && browser.selection == [url("Projects/Kamiro/README.md")],
+              "\(browser.selection.map(\.lastPathComponent))")
+
         browser.go(to: seed, select: [url("Projects")])
         await browser.waitUntilLoaded()
         await pause(0.5)

@@ -260,8 +260,9 @@ Screens: columns
 Depends: S-002
 Acceptance:
 - [self] Columns size to their longest name (up to a limit) and can be resized; arrows move across.
+- [self] Dragging anywhere on the edge between two columns resizes the left one; double-clicking it fits the names again; the preview column reaches the window's right edge; View › Hide Preview (⇧⌘P) takes it away.
 Status: done
-Built: View › as Columns (⌘3). NSBrowser, item-based: columns start at the window's folder, the folder holding the selection becomes the window's folder (so cut, copy, paste and the status bar work as in the other views), columns size to their longest name between 160 and 360 pt and can be dragged wider, and a selected file gets a Quick Look preview with its kind, size and date. Rows show the icon as a text attachment (macOS 26 draws them with plain text cells), so renaming puts the plain name in the field.
+Built: View › as Columns (⌘3). NSBrowser, item-based: columns start at the window's folder, the folder holding the selection becomes the window's folder (so cut, copy, paste and the status bar work as in the other views), columns size to their longest name between 160 and 360 pt and can be dragged wider, and a selected file gets a Quick Look preview with its kind, size and date. Rows show the icon as a text attachment (macOS 26 draws them with plain text cells), so renaming puts the plain name in the field. Later: the whole edge between columns drags (NSBrowser only gave a small grip at the bottom), widths people choose are kept per folder while the window is open, the preview column fills the space to the right instead of leaving an empty strip, and View › Show/Hide Preview (⇧⌘P) turns it off.
 
 ### S-021 Choose and sort columns
 As the user, I right-click the header to show columns (Date Created, Date Added, Tags, Extension, Comments) and drag them to reorder.
@@ -308,7 +309,7 @@ Screens: inspector, inspector-dark
 Depends: S-002
 UX:
 - Flow: ⌥⌘I or View › Show Inspector → a pane at the right of the list follows the selection → ⌥⌘I or View › Hide Inspector closes it; the choice is kept between launches
-- Surface: inspector (details of the selection while working); no toolbar button, the toolbar is already full at narrow widths
+- Surface: inspector (details of the selection while working); a toolbar button (sidebar.right) at the right of the toolbar, asked for on 2026-11-20 (at the smallest size the address bar already moves into the toolbar's overflow, with or without it)
 - States: nothing selected shows the folder itself; one item shows a preview, name, kind and Information; several show "3 items" and their total size; a folder's size is "—" until measured; facts that don't apply (Dimensions, Duration, Pages, Tags) are left out
 - Words: "Show Inspector" / « Afficher l’inspecteur », "Hide Inspector" / « Masquer l’inspecteur », "Information" / « Informations », Kind, Size, Created, Modified, Added, Where, Tags, Dimensions, Duration, Pages
 - Access: VoiceOver reads each label with its value; the path in Where shows in full on hover
@@ -316,7 +317,7 @@ Acceptance:
 - [unit] Image dimensions, audio and video duration and PDF page counts are read from the file; other files have none.
 - [self] ⌥⌘I shows the inspector with the selected item's name, kind, size and dimensions; nothing selected shows the folder; ⌥⌘I again hides it.
 Status: done
-Built: An inspector pane at the right of the window (⌥⌘I, View › Show Inspector), using SwiftUI's inspector: a Quick Look preview, name and kind, then Information (kind, size with folder sizes, dimensions, duration, pages, created, modified, added, tags, where). Nothing selected shows the folder; several items show the count and total size. Media facts are read in KamiroKit (ImageIO, AVFoundation, PDF). The details list now resizes its columns in reverse sequence (Name first, then the next ones), so the inspector never pushes columns out of sight. The self-test reads what the inspector shows through a small probe, since SwiftUI builds the pane's accessibility only for outside readers. No toolbar button: the toolbar is full at narrow widths.
+Built: An inspector pane at the right of the window (⌥⌘I, View › Show Inspector), using SwiftUI's inspector: a Quick Look preview, name and kind, then Information (kind, size with folder sizes, dimensions, duration, pages, created, modified, added, tags, where). Nothing selected shows the folder; several items show the count and total size. Media facts are read in KamiroKit (ImageIO, AVFoundation, PDF). The details list now resizes its columns in reverse sequence (Name first, then the next ones), so the inspector never pushes columns out of sight. The self-test reads what the inspector shows through a small probe, since SwiftUI builds the pane's accessibility only for outside readers. A toolbar button (sidebar.right) shows and hides it too.
 
 ### S-026 Open Properties
 As the user, I press ⌘I (or ⌥↩) for a Properties window: name, where, size with item count, dates, permissions, Open With, locked, hidden.
@@ -500,6 +501,13 @@ Acceptance:
 - [live] The DMG from the GitHub release opens without a Gatekeeper warning; Sparkle finds the next version.
 - [manual] README.md and README.fr.md credit explorer-macos; LICENSE is MIT with LICENSES/explorer-macos.txt beside it.
 Status: todo
+
+### S-044 Choose the terminal
+As the user, I pick which terminal Open in Terminal uses (Terminal, Ghostty, iTerm, Warp, Hyper, kitty, Alacritty, WezTerm), among those installed.
+Acceptance:
+- [unit] Apple's Terminal is always offered; a chosen terminal that was removed falls back to it; terminals that take a folder on their command line get it there.
+Status: done
+Built: Settings › General › Terminal, a picker with each installed terminal's icon. Terminal, Ghostty, iTerm, Warp and Hyper open the folder like a document; kitty, Alacritty and WezTerm start a new instance with the folder as an argument. The menu item keeps its name, "Open in Terminal".
 
 ## Later
 - Dual pane (side-by-side folders in one tab), with F5 copy / F6 move to the other pane.

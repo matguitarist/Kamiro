@@ -7,6 +7,7 @@ struct BrowserView: View {
     let model: BrowserModel
     let showStatusBar: Bool
     @AppStorage(Prefs.iconSize, store: Prefs.defaults) private var iconSize = IconSize.standard
+    @AppStorage(Prefs.showColumnPreview, store: Prefs.defaults) private var showColumnPreview = true
 
     var body: some View {
         content
@@ -88,7 +89,8 @@ extension BrowserView {
                      iconSize: min(max(iconSize, IconSize.range.lowerBound), IconSize.range.upperBound))
         case .columns:
             ColumnBrowser(model: model, version: model.itemsVersion, selection: model.selection, folder: model.folder,
-                          focus: model.focusToken, cutVersion: FileClipboard.shared.version, renameToken: model.renameToken)
+                          focus: model.focusToken, cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
+                          showPreview: showColumnPreview)
         case .details:
             DetailsTable(model: model, version: model.itemsVersion, selection: model.selection,
                          reveal: model.revealToken, focus: model.focusToken,
@@ -208,6 +210,7 @@ enum StatusText {
 /// Back (hold for recent folders), Forward, Up, and the address bar.
 struct BrowserToolbar: ToolbarContent {
     @Bindable var model: BrowserModel
+    @AppStorage(Prefs.showInspector, store: Prefs.defaults) private var showInspector = false
 
     var body: some ToolbarContent {
         // One ToolbarItem holding one ControlGroup: three separate items split into two
@@ -276,6 +279,12 @@ struct BrowserToolbar: ToolbarContent {
             .menuIndicator(.hidden)
             .disabled(model.state != .ready)
             .help("Make a new folder or file here")
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Toggle(isOn: $showInspector) {
+                Label("Inspector", systemImage: "sidebar.right")
+            }
+            .help(showInspector ? "Hide the inspector (⌥⌘I)" : "Show the inspector (⌥⌘I)")
         }
     }
 }

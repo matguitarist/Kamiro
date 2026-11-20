@@ -103,12 +103,30 @@ enum ItemActions {
         pasteboard.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
     }
 
-    static var terminal: URL? { NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") }
+    /// The terminals on this Mac that Kamiro knows how to open in a folder.
+    static var installedTerminals: [TerminalApp] {
+        TerminalApp.installed { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil }
+    }
 
-    /// Opens a Terminal window in `folder`.
+    /// The one chosen in Settings › General, or Apple's Terminal once that one is gone.
+    static var terminal: TerminalApp {
+        TerminalApp.chosen(Prefs.defaults.string(forKey: Prefs.terminal), installed: installedTerminals)
+    }
+
+    /// Opens a window of the chosen terminal in `folder`.
     static func openInTerminal(_ folder: URL) {
-        guard let terminal else { NSSound.beep(); return }
-        NSWorkspace.shared.open([folder], withApplicationAt: terminal, configuration: NSWorkspace.OpenConfiguration())
+        let terminal = terminal
+        guard let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleID) else { NSSound.beep(); return }
+        let configuration = NSWorkspace.OpenConfiguration()
+        switch terminal.launch {
+        case .openFolder:
+            NSWorkspace.shared.open([folder], withApplicationAt: app, configuration: configuration)
+        case .arguments:
+            // These read the folder from their command line only at launch: a new instance each time.
+            configuration.arguments = terminal.arguments(for: folder)
+            configuration.createsNewApplicationInstance = true
+            NSWorkspace.shared.openApplication(at: app, configuration: configuration)
+        }
     }
 
     // MARK: Open With
