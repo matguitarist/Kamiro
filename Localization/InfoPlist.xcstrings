@@ -85,6 +85,23 @@
           }
         }
       }
+    },
+    "NSLocalNetworkUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamiro lists the file servers on your network in the sidebar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamiro affiche les serveurs de fichiers de votre réseau dans la barre latérale."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

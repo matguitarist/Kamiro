@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 import KamiroKit
 
 // MARK: - Compress and extract (S-035)
@@ -34,6 +35,30 @@ extension BrowserModel {
         TransferCenter.shared.startJob(title, undoName: String(localized: "Compress"),
                                        in: first.deletingLastPathComponent(), browser: self) { cancel in
             try await Archive.compress(urls, several: several, cancel: cancel)
+        }
+    }
+
+    /// Compress To…: several items into a zip named and placed in a save panel.
+    func compressSelectionTo() {
+        let urls = compressTargets
+        guard urls.count > 1, let parent = urls.first?.deletingLastPathComponent() else { return }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.zip]
+        panel.directoryURL = parent
+        panel.nameFieldStringValue = Archive.name(for: urls, in: parent, several: String(localized: "Archive"))
+        panel.prompt = String(localized: "Compress")
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let target = panel.url else { return }
+        compress(urls, to: target)
+    }
+
+    /// Zips `urls` into `target`; one already there goes to the Trash (the panel asked).
+    func compress(_ urls: [URL], to target: URL) {
+        let trash = FileUndo.trash
+        TransferCenter.shared.startJob(String(localized: "Compressing to “\(target.lastPathComponent)”"),
+                                       undoName: String(localized: "Compress"),
+                                       in: target.deletingLastPathComponent(), browser: self) { cancel in
+            try await Archive.compress(urls, to: target, trash: trash, cancel: cancel)
         }
     }
 

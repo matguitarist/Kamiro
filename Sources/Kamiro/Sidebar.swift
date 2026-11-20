@@ -4,7 +4,7 @@ import Observation
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Home, Pinned, Locations and Tags, like the Finder's sidebar. Each part can be hidden in
+/// Home, Pinned, Locations, Network and Tags, like the Finder's sidebar. Each part can be hidden in
 /// Settings › General (S-032).
 struct Sidebar: View {
     let browser: BrowserModel
@@ -35,24 +35,14 @@ struct Sidebar: View {
                     Label(GoPlace.name(of: GoPlace.home), systemImage: "person.crop.circle")
                         .tag(GoPlace.home)
                         .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: GoPlace.home) }
-                    ForEach(volumes) { volume in
-                        HStack(spacing: Space.xs) {
-                            Label(volume.name, systemImage: volume.symbol)
-                            Spacer(minLength: 0)
-                            // Disks that can go show ⏏ at the end of their row, like the Finder.
-                            if volume.actions.contains(.eject) {
-                                Button("Eject", systemImage: "eject") { ItemActions.eject(volume, from: browser) }
-                                    .labelStyle(.iconOnly)
-                                    .buttonStyle(.borderless)
-                                    .foregroundStyle(.secondary)
-                                    .help(String(localized: "Eject “\(volume.name)”"))
-                            }
-                        }
-                        .tag(volume.url)
-                        .dropDestination(for: URL.self) { urls, _ in browser.drop(urls, into: volume.url) }
-                        .contextMenu { VolumeMenu(volume: volume, model: browser, renaming: $renaming) }
+                    // Servers go under Network, unless that part is hidden.
+                    ForEach(volumes.filter { !$0.isNetwork || !pins.shows(.network) }) { volume in
+                        VolumeRow(volume: volume, browser: browser, renaming: $renaming)
                     }
                 }
+            }
+            if pins.shows(.network) {
+                NetworkSection(browser: browser, volumes: volumes.filter(\.isNetwork), renaming: $renaming)
             }
             if pins.shows(.tags) {
                 TagsSection()
@@ -77,7 +67,8 @@ struct Sidebar: View {
             return pins.list.contains(here) || here == GoPlace.home || volumes.contains { $0.url == here }
                 || VirtualPlace(here) != nil ? here : nil
         } set: { url in
-            if let url { browser.go(to: url) }
+            guard let url, !NetworkSection.act(on: url, browser: browser) else { return }
+            browser.go(to: url)
         }
     }
 }

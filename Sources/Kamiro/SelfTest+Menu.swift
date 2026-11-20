@@ -155,6 +155,14 @@ extension SelfTest {
         let archive = t("Archive")
         check("…which makes “\(archive).zip”", exists("\(archive).zip"))
         try? FileManager.default.removeItem(at: url("\(archive).zip"))
+        browser.selection = [url("Guide.pdf"), url("Projects")]
+        check("two items also offer Compress To…", titles(browser.contextMenu(onItems: true)).contains(t("Compress To…")))
+        browser.compress([url("Guide.pdf"), url("Projects")], to: url("Empty/Named.zip"))
+        await TransferCenter.shared.waitUntilIdle()
+        check("Compress To makes the archive with the chosen name and place", exists("Empty/Named.zip"))
+        try? FileManager.default.removeItem(at: url("Empty/Named.zip"))
+        browser.selection = [url("Guide.pdf")]
+        check("one item has no Compress To…", !titles(browser.contextMenu(onItems: true)).contains(t("Compress To…")))
         await browser.waitUntilLoaded()
 
         // S-045: Convert, next to the original, as a transfer that can be undone.

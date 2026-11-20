@@ -3411,6 +3411,46 @@
           }
         }
       }
+    },
+    "Network": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réseau"
+          }
+        }
+      }
+    },
+    "Connect to “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se connecter à « %@ »"
+          }
+        }
+      }
+    },
+    "Compress To…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compresser vers…"
+          }
+        }
+      }
+    },
+    "Compressing to “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compression vers « %@ »"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

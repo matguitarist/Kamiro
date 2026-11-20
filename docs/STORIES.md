@@ -512,6 +512,23 @@ Acceptance:
 - [unit] An SVG becomes a PNG of its own size with magick; formats ImageIO reads stay native even when ImageMagick is there.
 Status: todo
 
+### S-053 Compress to a name and place
+As the user, with several items selected, I choose Compress To… and name the archive and pick its folder.
+Depends: S-035
+Acceptance:
+- [unit] The archive gets the chosen name and folder; one already there (the save panel asked) goes to the Trash.
+Status: done
+Built: Right-click › Compress To… (with two or more items) opens a save panel on the items' folder with “Archive.zip” ready to rename; the archive builds like Compress, with progress, Stop and Undo.
+
+### S-054 Network in the sidebar
+As the user, the sidebar's Network section shows the servers I'm connected to, the file servers on my network, and Connect to Server….
+Depends: S-037, S-032
+Acceptance:
+- [unit] Servers found with Bonjour (SMB and AFP) merge by name, SMB first, and become addresses NetFS mounts, accents and spaces included.
+- [self] Network is a sidebar part that Settings › General › Show in Sidebar can hide; hidden, mounted servers go back under Locations.
+Status: done
+Built: Network sits between Locations and Tags: mounted servers (with ⏏), servers found nearby with Bonjour (macOS asks once for local network access; test runs never look), then Connect to Server…. Clicking a found server connects to it like ⌘K (smb://Name._smb._tcp.local) and opens it.
+
 ## M6 System and polish (1.0.0)
 
 ### S-038 Make Kamiro the default file browser

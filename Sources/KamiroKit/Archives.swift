@@ -28,11 +28,14 @@ public enum Archive {
         return Naming.free(base + ".zip", in: folder)
     }
 
-    /// Zips `sources` (all in one folder) into that folder and returns the archive.
+    /// Zips `sources` (all in one folder) into that folder, or into `target` (Compress To…),
+    /// and returns the archive. A `target` already there goes to `trash` at the end: the save
+    /// panel asked first.
     @concurrent
-    public static func compress(_ sources: [URL], several: String = "Archive", cancel: CancelFlag = CancelFlag()) async throws -> URL {
+    public static func compress(_ sources: [URL], to target: URL? = nil, several: String = "Archive",
+                                trash: TrashCan = .system, cancel: CancelFlag = CancelFlag()) async throws -> URL {
         guard let first = sources.first else { throw Failure.tool("Nothing to compress.") }
-        let folder = first.deletingLastPathComponent().canonical
+        let folder = (target?.deletingLastPathComponent() ?? first.deletingLastPathComponent()).canonical
         let staging = try stagingFolder(near: folder)
         defer { try? FileManager.default.removeItem(at: staging) }
         let archive = staging.appending(path: "archive.zip")
@@ -51,9 +54,11 @@ public enum Archive {
             }
             try await run(["-c", "-k", "--sequesterRsrc", top.path, archive.path], cancel: cancel)
         }
-        let target = folder.appending(path: name(for: sources, in: folder, several: several))
-        try FileManager.default.moveItem(at: archive, to: target)
-        return target.canonical
+        if cancel.isCancelled { throw CancellationError() }
+        let destination = target ?? folder.appending(path: name(for: sources, in: folder, several: several))
+        if target != nil, FileManager.default.fileExists(atPath: destination.path) { _ = try trash.put(destination) }
+        try FileManager.default.moveItem(at: archive, to: destination)
+        return destination.canonical
     }
 
     /// Extracts `zip` next to it, like Archive Utility: a lone top-level item comes out as

@@ -47,6 +47,9 @@ extension BrowserModel {
             menu.addItem(sendToMenuItem(.move))
             if !compressTargets.isEmpty {
                 add(compressTitle, "archivebox") { [weak self] in self?.compressSelection() }
+                if compressTargets.count > 1 {
+                    add(String(localized: "Compress To…"), "archivebox") { [weak self] in self?.compressSelectionTo() }
+                }
             }
             if !extractTargets.isEmpty {
                 add(String(localized: "Extract Here"), "arrow.up.bin") { [weak self] in self?.extractSelection() }

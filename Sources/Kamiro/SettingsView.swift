@@ -239,6 +239,7 @@ extension SidebarSection {
         case .home: String(localized: "Home")
         case .pinned: String(localized: "Pinned")
         case .locations: String(localized: "Locations")
+        case .network: String(localized: "Network")
         case .tags: String(localized: "Tags")
         }
     }

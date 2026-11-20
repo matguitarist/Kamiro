@@ -48,7 +48,7 @@ public struct PinList: Equatable, Sendable {
 
 /// The sidebar's parts people can hide (S-032).
 public enum SidebarSection: String, CaseIterable, Sendable {
-    case home, pinned, locations, tags
+    case home, pinned, locations, network, tags
 }
 
 /// Files opened lately, for the Home page (S-031).

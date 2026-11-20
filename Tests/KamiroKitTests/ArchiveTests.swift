@@ -45,6 +45,22 @@ private func names(_ folder: URL) throws -> Set<String> {
     #expect(try String(contentsOf: out.appending(path: "Sources/main.swift"), encoding: .utf8) == "print(1)")
 }
 
+@Test func compressToNamesTheArchive() async throws {
+    let dir = try scratch()
+    let a = dir.appending(path: "a.txt"), b = dir.appending(path: "b.txt")
+    try Data("a".utf8).write(to: a)
+    try Data("b".utf8).write(to: b)
+    let out = dir.appending(path: "Out")
+    try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+    let target = out.appending(path: "Holiday notes.zip")
+    #expect(try await Archive.compress([a, b], to: target) == target.canonical)
+    // Replacing (the save panel asked): the old one goes to the trash folder, not lost.
+    let trash = dir.appending(path: "Trash")
+    #expect(try await Archive.compress([a], to: target, trash: .folder(trash)) == target.canonical)
+    #expect(try names(trash) == ["Holiday notes.zip"])
+    #expect(try names(dir) == ["a.txt", "b.txt", "Out", "Trash"])
+}
+
 @Test func oneFileComesBackAsItself() async throws {
     let dir = try scratch()
     let file = dir.appending(path: "Guide.pdf")

@@ -23,5 +23,7 @@
 <key>NSDocumentsFolderUsageDescription</key><string>Kamiro shows and manages the files in your Documents folder.</string>
 <key>NSDownloadsFolderUsageDescription</key><string>Kamiro shows and manages the files in your Downloads folder.</string>
 <key>NSRemovableVolumesUsageDescription</key><string>Kamiro shows and manages the files on this disk.</string>
+<key>NSLocalNetworkUsageDescription</key><string>Kamiro lists the file servers on your network in the sidebar.</string>
+<key>NSBonjourServices</key><array><string>_smb._tcp</string><string>_afpovertcp._tcp</string></array>
 <key>NSNetworkVolumesUsageDescription</key><string>Kamiro shows and manages the files on this server.</string>
 </dict></plist>
