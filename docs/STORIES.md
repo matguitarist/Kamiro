@@ -425,7 +425,7 @@ Built: One right-click menu that follows what's under the pointer. Items get Ope
 As the user, I copy an item's path (⌥⌘C), or from a Copy submenu its name, name without extension, extension or parent folder path; and I open the current folder in Terminal (or Ghostty, iTerm) or the selection in my code editor (VS Code, Cursor, Zed, Xcode).
 Depends: S-033
 Status: done
-Built: Copy Path is Edit › Copy Path (⌥⌘C) too, for the selection or, with nothing selected, the folder on screen; the right-click menu shows the shortcut. A Copy Info submenu beside it copies the name, the name without extension, the extension or the parent folder's path, one line per item; the extension choices are left out for items that have none. Open in Editor: the code editor picked in Settings › General › Code Editor (VS Code and its forks VSCodium, Cursor and Windsurf; Zed, Sublime Text, Nova, BBEdit, TextMate, CotEditor, MacVim, Emacs; Xcode, the JetBrains IDEs and Android Studio; among those installed, the first installed until one is picked) opens folders and text files from the right-click menu, and empty space gets Open Folder in <editor>. The terminal part came with S-044.
+Built: Copy Path is Edit › Copy Path (⌥⌘C) too, for the selection or, with nothing selected, the folder on screen; the right-click menu shows the shortcut. A Copy Info submenu beside it copies the name, the name without extension, the extension or the parent folder's path, one line per item; the extension choices are left out for items that have none. Open in Editor: the code editor picked in Settings › General › Code Editor (VS Code and its forks VSCodium, Cursor and Windsurf; Zed, Sublime Text, Nova, BBEdit, TextMate, CotEditor, MacVim, Emacs; Xcode, the JetBrains IDEs and Android Studio; among those installed, the first installed until one is picked) opens folders and text files from the right-click menu, and empty space gets Open Folder in <editor>. The terminal part came with S-059.
 
 ### S-035 Compress and extract
 As the user, I compress items to a zip and extract a zip next to it.
@@ -587,20 +587,20 @@ Status: todo
 
 ### S-041 French
 As the user, every screen reads in French when the Mac is in French, with a language choice in Settings.
-Status: todo
+Status: done
 
 ### S-042 App icon
 As the user, Kamiro has its own Liquid Glass icon, distinct from Finder's.
-Status: todo
+Status: done
 
 ### S-043 Release 1.0
 As the user, I download a notarized Kamiro from its public GitHub release (MIT, free) and it updates itself with Sparkle.
 Acceptance:
 - [live] The DMG from the GitHub release opens without a Gatekeeper warning; Sparkle finds the next version.
 - [manual] README.md and README.fr.md name explorer-macos and PowerClick as inspirations (docs/INSPIRATIONS.md); LICENSE is MIT.
-Status: todo
+Status: done
 
-### S-044 Choose the terminal
+### S-059 Choose the terminal
 As the user, I pick which terminal Open in Terminal uses (Terminal, Ghostty, iTerm, Warp, Hyper, kitty, Alacritty, WezTerm), among those installed.
 Acceptance:
 - [unit] Apple's Terminal is always offered; a chosen terminal that was removed falls back to it; terminals that take a folder on their command line get it there.
