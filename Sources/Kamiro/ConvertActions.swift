@@ -30,7 +30,7 @@ extension BrowserModel {
     var convertChoices: [Conversion] {
         let chosen = selectedItems
         guard !chosen.isEmpty, chosen.allSatisfy({ !$0.isFolder && !$0.isPackage }) else { return [] }
-        return Conversion.choices(for: chosen.map(\.url))
+        return Conversion.choices(for: chosen.map(\.url), tools: ToolStore.shared.installedIDs)
     }
 
     /// Each file converts next to itself as its own job in the transfers popover, with Stop and Undo.

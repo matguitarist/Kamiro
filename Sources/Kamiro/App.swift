@@ -77,6 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
         _ = Updater.shared
+        Task { await ToolStore.shared.refresh() }
         Store.log.post(.info, "Kamiro \(UpdateSettings.version) started", source: "App")
     }
 

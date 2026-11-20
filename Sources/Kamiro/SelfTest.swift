@@ -160,6 +160,7 @@ enum SelfTest {
             await homeAndPins(browser: browser, seed: seed)
             await cloud(browser: browser, seed: seed)
             await rightClick(browser: browser, seed: seed)
+            await tools(browser: browser, seed: seed)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)

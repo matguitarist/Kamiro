@@ -490,7 +490,8 @@ Depends: S-045
 Acceptance:
 - [unit] A tool is found in /opt/homebrew/bin, /usr/local/bin or /opt/local/bin (an app's PATH has none of them); a missing or broken tool counts as not installed.
 - [self] With no tools, Settings › Tools shows three “brew install …” lines with Copy, and Convert has no tool-only formats.
-Status: todo
+Status: done
+Built: Settings › Tools lists cwebp, FFmpeg and ImageMagick with what each adds. A tool found in /opt/homebrew/bin, /usr/local/bin or /opt/local/bin that answers its version question shows a check and its version (its path on hover); a missing or broken one shows its “brew install …” line with Copy. Tools are looked for at launch and when the tab opens, and Check Again looks again. A footer says they're optional and Kamiro never downloads one, with a link to Homebrew. Conversions can now name the tool they need, and Convert leaves them out until it's found; none needs one yet (S-050 to S-052). Test runs look in /tmp/Kamiro-tools.
 
 ### S-050 WebP with cwebp
 As the user, with cwebp installed (brew install webp), Convert › WebP turns pictures into WebP, and an animated GIF into an animated WebP (gif2webp).

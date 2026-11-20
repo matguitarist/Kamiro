@@ -3751,6 +3751,96 @@
           }
         }
       }
+    },
+    "Tools": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outils"
+          }
+        }
+      }
+    },
+    "Command-Line Tools": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outils en ligne de commande"
+          }
+        }
+      }
+    },
+    "Copy the line to paste in Terminal": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier la ligne à coller dans Terminal"
+          }
+        }
+      }
+    },
+    "Optional. Kamiro does everything else with macOS itself, and never downloads a tool: install one with Homebrew, then check again.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Facultatifs. Kamiro fait tout le reste avec macOS lui-même et ne télécharge jamais d’outil : installez-en un avec Homebrew, puis vérifiez de nouveau."
+          }
+        }
+      }
+    },
+    "About Homebrew": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À propos de Homebrew"
+          }
+        }
+      }
+    },
+    "Check Again": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier de nouveau"
+          }
+        }
+      }
+    },
+    "Converts pictures to WebP.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convertit les images en WebP."
+          }
+        }
+      }
+    },
+    "Converts WebM, MKV, AVI and other videos macOS can't open.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convertit les vidéos WebM, MKV, AVI et autres que macOS ne sait pas ouvrir."
+          }
+        }
+      }
+    },
+    "Converts SVG, EPS and other pictures macOS can't open.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Convertit les images SVG, EPS et autres que macOS ne sait pas ouvrir."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

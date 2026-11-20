@@ -80,6 +80,9 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// The optional tool this conversion needs (S-049); nil for what macOS does itself.
+    public var tool: CommandTool? { nil }
+
     /// Image formats only when ImageIO on this Mac can write them (macOS 26 reads WebP but can't write it).
     public var isAvailable: Bool {
         guard let type = imageType else { return true }
@@ -93,8 +96,9 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         return self == .mp4 && type == .mpeg4Movie
     }
 
-    /// What can be done to every one of `urls`; formats all of them are already in are left out.
-    public static func choices(for urls: [URL]) -> [Conversion] {
+    /// What can be done to every one of `urls`; formats all of them are already in are left out,
+    /// and so is what needs a tool that isn't in `tools` (installed tools by id).
+    public static func choices(for urls: [URL], tools: Set<String> = []) -> [Conversion] {
         let kinds = urls.map(Media.kind(of:))
         guard !urls.isEmpty, !kinds.contains(nil) else { return [] }
         let offered: [Conversion]
@@ -107,7 +111,9 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         } else {
             offered = []
         }
-        return offered.filter { choice in choice.isAvailable && !urls.allSatisfy { choice.isSameFormat(as: $0) } }
+        return offered.filter { choice in
+            choice.isAvailable && (choice.tool.map { tools.contains($0.id) } ?? true) && !urls.allSatisfy { choice.isSameFormat(as: $0) }
+        }
     }
 }
 
