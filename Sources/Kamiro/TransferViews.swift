@@ -16,14 +16,20 @@ final class TransferTask: Identifiable {
     var progress = TransferProgress()
     var state = State.running
     @ObservationIgnored let cancelFlag = CancelFlag()
+    /// A job other than a copy or move (Compress, Extract) names itself and has no byte count.
+    private let label: String?
 
-    init(kind: TransferKind, count: Int, destination: URL) {
+    init(kind: TransferKind, count: Int, destination: URL, label: String? = nil) {
         self.kind = kind
         self.count = count
         self.destination = destination
+        self.label = label
     }
 
+    var isIndeterminate: Bool { label != nil }
+
     var title: String {
+        if let label { return label }
         let place = FileManager.default.displayName(atPath: destination.path)
         return kind == .copy ? String(localized: "Copying \(count) items to “\(place)”")
             : String(localized: "Moving \(count) items to “\(place)”")
@@ -36,6 +42,7 @@ final class TransferTask: Identifiable {
         case .cancelled: return String(localized: "Stopped")
         case .failed(let message): return message
         case .running:
+            if isIndeterminate { return "" }
             let done = ByteCountFormatter.string(fromByteCount: progress.doneBytes, countStyle: .file)
             let total = ByteCountFormatter.string(fromByteCount: progress.totalBytes, countStyle: .file)
             let elapsed = Date.now.timeIntervalSince(started)
@@ -112,6 +119,41 @@ final class TransferCenter {
         }
     }
 
+    /// Compress and Extract: `work` runs off the main thread and returns what it made, which
+    /// is selected and can be undone. Shown like a transfer, with Stop.
+    func startJob(_ title: String, undoName: String, in folder: URL, browser: BrowserModel,
+                  work: @escaping @Sendable (CancelFlag) async throws -> URL) {
+        let task = TransferTask(kind: .copy, count: 1, destination: folder, label: title)
+        running += 1
+        Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            if task.state == .running { tasks.append(task) }
+        }
+        let cancel = task.cancelFlag
+        Task {
+            let result: Result<URL, any Error>
+            do { result = .success(try await work(cancel)) } catch { result = .failure(error) }
+            running -= 1
+            switch result {
+            case .success(let made):
+                task.state = .done
+                FileUndo.record(.made([made]), name: undoName)
+                Store.log.post(.info, "\(undoName): made \(made.path)", source: "Archive")
+                if browser.folder == folder.canonical { browser.show([made]) } else { browser.refresh() }
+            case .failure(let error) where error is CancellationError:
+                task.state = .cancelled
+            case .failure(let error):
+                task.state = .failed(error.localizedDescription)
+                Store.log.post(.error, "\(undoName) failed in \(folder.path): \(error.localizedDescription)", source: "Archive")
+                NSSound.beep()
+            }
+            let failed = if case .failed = task.state { true } else { false }
+            try? await Task.sleep(for: .seconds(failed ? 10 : 2))
+            tasks.removeAll { $0.id == task.id }
+            if tasks.isEmpty { popoverShown = false }
+        }
+    }
+
     /// For the self-test: wait until every transfer has finished.
     func waitUntilIdle() async {
         while running > 0 { try? await Task.sleep(for: .milliseconds(50)) }
@@ -126,7 +168,9 @@ final class TransferCenter {
         let second = TransferTask(kind: .move, count: 3, destination: seed.appending(path: "Music"))
         second.progress.totalBytes = 52_000_000
         second.progress.doneBytes = 9_000_000
-        tasks = [first, second]
+        let third = TransferTask(kind: .copy, count: 1, destination: seed,
+                                 label: String(localized: "Compressing “\("Photos")”"))
+        tasks = [first, second, third]
         popoverShown = true
     }
 
@@ -205,16 +249,19 @@ private struct TransferRow: View {
                 Text(task.title)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                ProgressView(value: task.state == .running ? task.progress.fraction : 1)
+                ProgressView(value: task.state == .running ? (task.isIndeterminate ? nil : task.progress.fraction) : 1)
                     .tint(failed ? .red : nil)
-                Label {
-                    Text(task.detail)
-                } icon: {
-                    if failed { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+                // Compress and Extract have no byte count: their bar moves, with no line under it.
+                if !task.detail.isEmpty {
+                    Label {
+                        Text(task.detail)
+                    } icon: {
+                        if failed { Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.red) }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
             }
             if task.state == .running {
                 Button("Stop", systemImage: "xmark.circle.fill") { task.cancel() }

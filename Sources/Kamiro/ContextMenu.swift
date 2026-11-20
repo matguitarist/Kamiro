@@ -40,6 +40,12 @@ extension BrowserModel {
             menu.addItem(ItemActions.copyInfoItem(for: urls))
             if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
             add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
+            if !compressTargets.isEmpty {
+                add(compressTitle, "archivebox") { [weak self] in self?.compressSelection() }
+            }
+            if !extractTargets.isEmpty {
+                add(String(localized: "Extract Here"), "arrow.up.bin") { [weak self] in self?.extractSelection() }
+            }
             group()
             if chosen.count == 1 { add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() } }
             add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }

@@ -114,6 +114,39 @@ extension SelfTest {
         let duplicate = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Duplicate") }
         check("File › Duplicate is ⌘D", duplicate?.keyEquivalent == "d" && duplicate?.keyEquivalentModifierMask == .command)
 
+        // S-035: Compress and Extract Here, as transfers that can be undone.
+        func exists(_ path: String) -> Bool { FileManager.default.fileExists(atPath: url(path).path) }
+        browser.selection = [url("Guide.pdf")]
+        let one = titles(browser.contextMenu(onItems: true))
+        // NSMenuItem turns the no-break spaces of French « » into plain spaces.
+        let compressOne = t("Compress “\("Guide.pdf")”").replacingOccurrences(of: "\u{00A0}", with: " ")
+        check("one item offers Compress “Guide.pdf”, not Extract Here",
+              one.contains(compressOne) && !one.contains(t("Extract Here")), "\(one)")
+        browser.compressSelection()
+        await TransferCenter.shared.waitUntilIdle()
+        check("Compress makes “Guide.pdf.zip” beside it, selected", exists("Guide.pdf.zip") && browser.selection == [url("Guide.pdf.zip")],
+              "\(browser.selection.map(\.lastPathComponent))")
+        let zipMenu = titles(browser.contextMenu(onItems: true))
+        check("a zip offers Extract Here", zipMenu.contains(t("Extract Here")), "\(zipMenu)")
+        let fileMenuExtract = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Extract Here") }
+        check("File › Extract Here is there", fileMenuExtract != nil)
+        browser.extractSelection()
+        await TransferCenter.shared.waitUntilIdle()
+        check("Extract Here brings out “Guide 2.pdf” next to it, the original kept", exists("Guide 2.pdf") && exists("Guide.pdf"),
+              ((try? FileManager.default.contentsOfDirectory(atPath: seed.path)) ?? []).filter { $0.hasPrefix("Guide") }.joined(separator: ", "))
+        FileUndo.manager.undo()
+        check("Undo takes the extracted file away", !exists("Guide 2.pdf"))
+        FileUndo.manager.undo()
+        check("Undo again takes the archive away", !exists("Guide.pdf.zip"))
+        browser.selection = [url("Guide.pdf"), url("Projects")]
+        check("two items offer Compress 2 Items", titles(browser.contextMenu(onItems: true)).contains(t("Compress \(2) Items")))
+        browser.compressSelection()
+        await TransferCenter.shared.waitUntilIdle()
+        let archive = t("Archive")
+        check("…which makes “\(archive).zip”", exists("\(archive).zip"))
+        try? FileManager.default.removeItem(at: url("\(archive).zip"))
+        await browser.waitUntilLoaded()
+
         // Disks: Properties shows space without walking the disk.
         let startup = Volumes.facts(at: URL(filePath: "/"))
         let rows = startup.map(PropertiesFacts.rows) ?? []

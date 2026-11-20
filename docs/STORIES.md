@@ -430,7 +430,8 @@ Built: Copy Path is Edit › Copy Path (⌥⌘C) too, for the selection or, with
 ### S-035 Compress and extract
 As the user, I compress items to a zip and extract a zip next to it.
 Depends: S-012
-Status: todo
+Status: done
+Built: Right-click (or File) › Compress “name” / Compress N Items makes “name.zip” (“report.pdf.zip” for a file) or “Archive.zip” next to the items, numbered when taken, with ditto like the Finder. A zip offers Extract Here: a lone top-level item comes out as itself, several in a folder named after the archive, never over an existing name. Both run in the transfers popover with a moving bar and Stop, build in a staging folder on the same disk so a stopped or failed job leaves nothing, select what they made, and Undo takes it away.
 
 ### S-036 Open with another app
 As the user, I pick an app from Open With, or Other…, and can make it the default for that kind.

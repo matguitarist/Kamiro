@@ -12,6 +12,9 @@ final class MenuState: ObservableObject {
     @Published private(set) var hasSelection = false
     /// File › Pin to Sidebar has a folder to pin (S-032).
     @Published private(set) var canPin = false
+    /// File › Compress and Extract Here (S-035).
+    @Published private(set) var compressTitle: String?
+    @Published private(set) var canExtract = false
     @Published private(set) var isReady = false
     /// The window shows a tag's items or search results (S-027, S-029).
     @Published private(set) var isVirtual = false
@@ -35,6 +38,8 @@ final class MenuState: ObservableObject {
         canGoUp = browser.canGoUp
         hasSelection = !browser.selection.isEmpty
         canPin = !browser.pinTargets.isEmpty
+        compressTitle = browser.compressTargets.isEmpty ? nil : browser.compressTitle
+        canExtract = !browser.extractTargets.isEmpty
         // A tag's items aren't a folder: nothing can be made or pasted there.
         isReady = browser.state == .ready && !browser.isVirtual
         isVirtual = browser.isVirtual
@@ -86,6 +91,10 @@ struct KamiroCommands: Commands {
             Button("Duplicate") { menu.browser?.duplicateSelection() }
                 .keyboardShortcut("d")
                 .disabled(!(menu.hasSelection && menu.listFocused))
+            Button(menu.compressTitle ?? String(localized: "Compress")) { menu.browser?.compressSelection() }
+                .disabled(menu.compressTitle == nil)
+            Button("Extract Here") { menu.browser?.extractSelection() }
+                .disabled(!menu.canExtract)
             Button("Pin to Sidebar") { menu.browser?.pinToSidebar() }
                 .keyboardShortcut("t", modifiers: [.command, .control])
                 .disabled(!menu.canPin)

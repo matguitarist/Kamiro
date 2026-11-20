@@ -2990,6 +2990,96 @@
           }
         }
       }
+    },
+    "Compress “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compresser « %@ »"
+          }
+        }
+      }
+    },
+    "Compress %lld Items": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compresser %lld éléments"
+          }
+        }
+      }
+    },
+    "Compressing “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compression de « %@ »"
+          }
+        }
+      }
+    },
+    "Compressing %lld items": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compression de %lld éléments"
+          }
+        }
+      }
+    },
+    "Archive": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        }
+      }
+    },
+    "Compress": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compresser"
+          }
+        }
+      }
+    },
+    "Extract": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extraire"
+          }
+        }
+      }
+    },
+    "Extract Here": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extraire ici"
+          }
+        }
+      }
+    },
+    "Extracting “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extraction de « %@ »"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
