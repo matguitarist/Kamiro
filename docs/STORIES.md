@@ -370,7 +370,17 @@ Built: The toolbar search field (SwiftUI searchable, prompt "Filter by Name") fi
 As the user, I search This Mac or this folder and its subfolders with Spotlight, with Kind and Date filters, and open results in place.
 Screens: search-results
 Depends: S-028
-Status: todo
+UX:
+- Flow: type in the search field (it filters this folder) → Return searches this folder and its subfolders with Spotlight → the results show in the window with a scope bar: This Mac or “Folder”, Kind, Date → Open or double-click opens a result; Show in Enclosing Folder goes to its folder with it selected → Back returns to the folder, in one step however many filters changed
+- Surface: the window itself (results are a place, like a folder); the scope bar sits above the list only while results show
+- States: no results: the system's "No Results for “x”"; Spotlight runs off the main thread with "Loading…" past half a second; a selected result's folder shows in the status bar ("26 items — in ~/Projects"); New Folder, New File and Paste are left out
+- Words: "This Mac" / « Ce Mac », Kind: "Any Kind", Folders, Documents, Images, Movies, "Music and Audio", PDFs, Apps; Date: "Any Date", Today, "Last 7 Days", "Last 30 Days", "This Year"; title "Searching “x”" / « Recherche de « x » »; "Show in Enclosing Folder" / « Afficher dans le dossier parent »
+- Access: the scope bar's controls are standard pickers with labels; Return in the field searches, Escape clears
+Acceptance:
+- [unit] A search survives as a URL; its Spotlight query has every word, the kind and the date; walking a tree finds names in subfolders and honors Kind and Date.
+- [self] Return after "notes" finds both notes.md in the folder and in Projects; Images with "o" leaves only pictures; Back returns to the folder in one step; Show in Enclosing Folder opens Projects with notes.md selected.
+Status: done
+Built: Return in the search field searches this folder and its subfolders with Spotlight. The results are a place (a kamiro:search URL), shown in the window like a folder with a scope bar above them: This Mac or the folder, Kind (folders, documents, images, movies, music and audio, PDFs, apps) and Date (today, 7 days, 30 days, this year). Changing the scope or a filter replaces the results without a new Back step, so Back returns to the folder in one step. The address bar reads "Search › “notes”", the status bar adds the selected result's folder, and Show in Enclosing Folder (File menu and right-click) opens its folder with it selected. Test runs walk the /tmp tree with the same rules, since Spotlight doesn't index /tmp. Results stop at 2,000.
 
 ## M5 Tabs and shortcuts (0.5.0)
 

@@ -30,6 +30,8 @@ struct ContentView: View {
         // Filter this folder by name as you type (S-028); Escape clears it.
         .searchable(text: $browser.filterText, placement: .toolbar, prompt: Text("Filter by Name"))
         .searchFocused($filterFocused)
+        // Return searches this folder and its subfolders (S-029).
+        .onSubmit(of: .search) { browser.searchEverywhere() }
         .onChange(of: browser.filterFocusToken) { filterFocused = true }
         .navigationTitle(browser.title)
         // The address bar shows where the window is; the title stays for the Window menu and Mission Control.

@@ -24,6 +24,11 @@ public struct History: Equatable, Sendable {
     }
 
     /// Goes back `steps` folders (the long-press menu jumps several); nil when it can't.
+    /// Changes where the window is without a new Back step (a search's scope or filters).
+    public mutating func replace(with url: URL) {
+        current = url
+    }
+
     @discardableResult
     public mutating func back(_ steps: Int = 1) -> URL? {
         guard steps >= 1, steps <= backList.count else { return nil }

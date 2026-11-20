@@ -74,11 +74,12 @@ struct AddressBar: View {
 
     /// A tag's items: "Tags › Red", nothing to click.
     private func placeCrumbs(_ place: VirtualPlace) -> some View {
-        HStack(spacing: Space.xs) {
-            Image(systemName: "tag").foregroundStyle(.secondary)
-            Text("Tags").foregroundStyle(.secondary)
+        let isSearch = if case .search = place { true } else { false }
+        return HStack(spacing: Space.xs) {
+            Image(systemName: isSearch ? "magnifyingglass" : "tag").foregroundStyle(.secondary)
+            Text(isSearch ? "Search" : "Tags").foregroundStyle(.secondary)
             Image(systemName: "chevron.compact.right").foregroundStyle(.tertiary)
-            Text(verbatim: place.title).fontWeight(.semibold)
+            Text(isSearch ? String(localized: "“\(place.title)”") : place.title).fontWeight(.semibold)
             Spacer(minLength: Space.lg)
         }
         .padding(.horizontal, Space.md)

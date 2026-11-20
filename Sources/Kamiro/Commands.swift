@@ -11,6 +11,8 @@ final class MenuState: ObservableObject {
     @Published private(set) var canGoUp = false
     @Published private(set) var hasSelection = false
     @Published private(set) var isReady = false
+    /// The window shows a tag's items or search results (S-027, S-029).
+    @Published private(set) var isVirtual = false
     @Published private(set) var mode: ViewMode = .details
     @Published private(set) var groupBy: GroupBy = .none
     /// View › Show or Hide Hidden Files; set by HiddenFiles.
@@ -32,6 +34,7 @@ final class MenuState: ObservableObject {
         hasSelection = !browser.selection.isEmpty
         // A tag's items aren't a folder: nothing can be made or pasted there.
         isReady = browser.state == .ready && !browser.isVirtual
+        isVirtual = browser.isVirtual
         mode = browser.mode
         groupBy = browser.groupBy
         showsHidden = HiddenFiles.shown
@@ -55,6 +58,8 @@ struct KamiroCommands: Commands {
             Button("Quick Look") { menu.browser?.quickLook?() }
                 .keyboardShortcut("y")
                 .disabled(!menu.hasSelection)
+            Button("Show in Enclosing Folder") { menu.browser?.showInEnclosingFolder() }
+                .disabled(!(menu.isVirtual && menu.hasSelection))
             Button("Properties") { menu.browser?.showProperties() }
                 .keyboardShortcut("i")
                 .disabled(!(menu.isReady || menu.hasSelection))

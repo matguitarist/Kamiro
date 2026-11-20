@@ -16,6 +16,8 @@ final class BrowserModel {
     private(set) var items: [FileItem] = []
     /// Everything in the folder, before the filter.
     @ObservationIgnored private var allItems: [FileItem] = []
+    /// The folder a search started from, for the scope bar's second choice (S-029).
+    var searchFolder: URL?
     /// Edit › Find (⌘F) puts the keyboard in the filter.
     private(set) var filterFocusToken = 0
     func focusFilter() { filterFocusToken += 1 }
@@ -222,6 +224,14 @@ final class BrowserModel {
         load(select: wanted)
     }
 
+    /// Shows another place in this history step (a search's new scope or filters).
+    func replace(with url: URL) {
+        remembered[folder] = selection
+        history.replace(with: url)
+        restoreView()
+        load(select: [])
+    }
+
     func goBack(_ steps: Int = 1) {
         let from = folder
         guard history.back(steps) != nil else { return }
@@ -315,7 +325,9 @@ final class BrowserModel {
         let keepIDs = select == nil ? Set(selectedItems.compactMap(\.fileID)) : []
         if select != nil, clear {
             setItems([])
-            if filterText != "" { filterText = "" }
+            // A search keeps its words in the field; a folder starts unfiltered.
+            let words = VirtualPlace(folder).flatMap { if case .search(let search) = $0 { search.text } else { nil } } ?? ""
+            if filterText != words { filterText = words }
             state = .loading
             showsLoading = false
             selection = []

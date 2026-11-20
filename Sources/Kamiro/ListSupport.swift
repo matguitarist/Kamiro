@@ -229,6 +229,9 @@ extension BrowserModel {
         }
         if onItems {
             add(String(localized: "Open")) { [weak self] in self?.open() }
+            if isVirtual, selection.count == 1 {
+                add(String(localized: "Show in Enclosing Folder")) { [weak self] in self?.showInEnclosingFolder() }
+            }
             add(String(localized: "Quick Look")) { [weak self] in self?.quickLook?() }
             menu.addItem(.separator())
             add(String(localized: "Rename")) { [weak self] in self?.beginRename() }

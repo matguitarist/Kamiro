@@ -22,6 +22,7 @@ enum Snapshot {
         case grouped, hidden, inspector
         case properties, propertiesFolder = "properties-folder"
         case tags, filter
+        case searchResults = "search-results"
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
@@ -78,6 +79,13 @@ enum Snapshot {
                 await browser.waitUntilLoaded()
                 browser.showProperties()
                 try? await Task.sleep(for: .seconds(1.5))
+            case .searchResults:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                browser.filterText = "notes"
+                browser.searchEverywhere()
+                await browser.waitUntilLoaded()
+                browser.selection = [seed.appending(path: "Projects/notes.md").canonical]
             case .filter:
                 browser.go(to: seed)
                 await browser.waitUntilLoaded()
@@ -140,6 +148,9 @@ enum Snapshot {
             case .hidden: HiddenFiles.set(false)
             case .inspector: Prefs.defaults.set(false, forKey: Prefs.showInspector)
             case .filter: browser.filterText = ""
+            case .searchResults:
+                browser.go(to: Store.seedFolder)
+                await browser.waitUntilLoaded()
             case .tags:
                 let seed = Store.seedFolder
                 for name in ["Owl.jpg", "Lotus.png", "notes.md"] {

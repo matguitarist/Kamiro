@@ -39,3 +39,10 @@ APP_SNAPSHOT_MIN=1 shrank the window, and macOS saved that frame in the real def
 next self-test ran in a narrow window and failed.
 Fix: tools/snap.sh and tools/selftest.sh put "NSWindow Frame browser-AppWindow-1" back on exit.
 Rule: a test run restores every real setting it can touch, including ones macOS writes for it.
+
+## 2026-11-20 Light stripes in a dark list
+Switching to dark mode while the toolbar search field had the keyboard left the details list's
+empty rows (below the last item) in their light-mode colors. The table repainted its rows but not
+the stripes drawn past them. FileTable now marks itself and its clip view for redrawing in
+viewDidChangeEffectiveAppearance. Seen in the search-results-dark snapshot.
+Rule: an AppKit view that draws its own background redraws it when the appearance changes; check the dark snapshot of every page that leaves the keyboard outside the list.

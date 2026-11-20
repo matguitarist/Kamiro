@@ -16,6 +16,14 @@ final class FileTable: NSTableView, QLPreviewPanelDataSource, QLPreviewPanelDele
         super.keyDown(with: event)
     }
 
+    /// Light to dark while another view has the keyboard (the search field) left the empty
+    /// rows below the last item in their old colors: draw them again.
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+        enclosingScrollView?.contentView.needsDisplay = true
+    }
+
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window != nil { coordinator?.update() }

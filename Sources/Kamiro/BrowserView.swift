@@ -11,6 +11,9 @@ struct BrowserView: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if let search = model.search { SearchScopeBar(model: model, search: search) }
+            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if showStatusBar, !model.isFailed { StatusBar(model: model) }
             }
@@ -50,6 +53,8 @@ struct BrowserView: View {
                         } actions: {
                             Button("Clear Filter") { model.filterText = "" }
                         }
+                    } else if model.state == .ready, model.items.isEmpty, let search = model.search {
+                        ContentUnavailableView.search(text: search.text)
                     } else if model.state == .ready, model.items.isEmpty, let place = model.place {
                         ContentUnavailableView(String(localized: "Nothing Is Tagged “\(place.title)”"), systemImage: "tag")
                     } else if model.state == .ready, model.items.isEmpty {
@@ -133,8 +138,15 @@ struct StatusBar: View {
     let model: BrowserModel
     @AppStorage(Prefs.iconSize, store: Prefs.defaults) private var iconSize = IconSize.standard
 
+    /// In search results, the one selected item's folder follows the counts, as in the Finder.
+    private var statusText: String {
+        let counts = StatusText.make(model.counts)
+        guard model.isVirtual, model.selection.count == 1, let url = model.selection.first else { return counts }
+        return String(localized: "\(counts) — in \(PathInput.display(url.deletingLastPathComponent()))")
+    }
+
     var body: some View {
-        Text(StatusText.make(model.counts))
+        Text(statusText)
             .font(.callout)
             .foregroundStyle(.secondary)
             .lineLimit(1)

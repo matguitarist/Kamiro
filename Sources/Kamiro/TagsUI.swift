@@ -53,7 +53,11 @@ extension BrowserModel {
 
     /// A place's name for menus and the title: a folder's name, or a tag's.
     static func name(of url: URL) -> String {
-        VirtualPlace(url)?.title ?? FileManager.default.displayName(atPath: url.path)
+        switch VirtualPlace(url) {
+        case .search(let search): String(localized: "Searching “\(search.text)”")
+        case .tag(let name): name
+        case nil: FileManager.default.displayName(atPath: url.path)
+        }
     }
 
     /// Adds the tag to every selected item, or takes it off when they all have it.

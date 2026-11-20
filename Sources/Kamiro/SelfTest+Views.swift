@@ -68,6 +68,62 @@ extension SelfTest {
         await properties(browser: browser, seed: seed, pause: pause, open: open)
         await tags(browser: browser, seed: seed, pause: pause, open: open)
         await filter(browser: browser, seed: seed, pause: pause, open: open)
+        await searching(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-029: search this folder and its subfolders.
+    private static func searching(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        let root = seed.canonical
+        /// What a search should find, worked out here without Search.
+        func expected(_ fits: (URL) -> Bool) -> Set<URL> {
+            let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentTypeKey], options: [.skipsHiddenFiles])
+            return Set((files?.allObjects as? [URL] ?? []).filter(fits).map(\.canonical))
+        }
+        await open("")
+        browser.filterText = "notes"
+        browser.searchEverywhere()
+        await browser.waitUntilLoaded()
+        await pause(0.3)
+        let notes = expected { $0.lastPathComponent.localizedCaseInsensitiveContains("notes") }
+        check("Return searches the folder and its subfolders",
+              Set(browser.items.map(\.url)) == notes && notes.contains(root.appending(path: "Projects/notes.md").canonical)
+              && browser.search?.scope == root, "\(browser.items.map(\.url.path)) vs \(notes.map(\.path))")
+        check("…keeping the words in the field, with nothing to make there",
+              browser.filterText == "notes" && MenuState.shared.isVirtual && !MenuState.shared.isReady)
+        // "l": two pictures and several other files, none of the 10,000 photos in 10k.
+        browser.filterText = "l"
+        browser.searchEverywhere()
+        await browser.waitUntilLoaded()
+        if var search = browser.search {
+            search.kind = .image
+            browser.changeSearch(to: search)
+        }
+        await browser.waitUntilLoaded()
+        await pause(0.3)
+        let pictures = expected {
+            $0.lastPathComponent.localizedCaseInsensitiveContains("l")
+                && ((try? $0.resourceValues(forKeys: [.contentTypeKey]))?.contentType?.conforms(to: .image) ?? false)
+        }
+        check("Images keeps only pictures", !pictures.isEmpty && Set(browser.items.map(\.url)) == pictures,
+              "\(browser.items.map(\.name)) vs \(pictures.map(\.lastPathComponent))")
+        browser.goBack()
+        await browser.waitUntilLoaded()
+        check("Back returns to the folder in one step", browser.folder == root, browser.folder.absoluteString)
+
+        browser.filterText = "notes"
+        browser.searchEverywhere()
+        await browser.waitUntilLoaded()
+        let older = root.appending(path: "Projects/notes.md").canonical
+        browser.selection = [older]
+        await pause(0.2)
+        let menu = browser.details?.contextMenu(onItems: true).items.map(\.title) ?? []
+        browser.showInEnclosingFolder()
+        await browser.waitUntilLoaded()
+        await pause(0.2)
+        check("Show in Enclosing Folder opens Projects with notes.md selected",
+              menu.contains(String(localized: "Show in Enclosing Folder")) && browser.folder == older.deletingLastPathComponent().canonical
+              && browser.selection == [older], "\(browser.folder.path) \(browser.selection)")
+        await open("")
     }
 
     // S-028: filter this folder.

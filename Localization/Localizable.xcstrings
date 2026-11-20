@@ -1,6 +1,26 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "“%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "« %@ »"
+          }
+        }
+      }
+    },
+    "%@ — in %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — dans %2$@"
+          }
+        }
+      }
+    },
     "%@ (%@ bytes)": {
       "localizations": {
         "fr": {
@@ -271,6 +291,26 @@
         }
       }
     },
+    "Any Date": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toutes les dates"
+          }
+        }
+      }
+    },
+    "Any Kind": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tous les types"
+          }
+        }
+      }
+    },
     "Appearance": {
       "localizations": {
         "fr": {
@@ -327,6 +367,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Apps": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apps"
           }
         }
       }
@@ -661,6 +711,16 @@
         }
       }
     },
+    "Date": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        }
+      }
+    },
     "Date Added": {
       "localizations": {
         "fr": {
@@ -931,6 +991,16 @@
         }
       }
     },
+    "Folders": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossiers"
+          }
+        }
+      }
+    },
     "Forward": {
       "localizations": {
         "fr": {
@@ -1141,6 +1211,16 @@
         }
       }
     },
+    "Images": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images"
+          }
+        }
+      }
+    },
     "Information": {
       "localizations": {
         "fr": {
@@ -1227,6 +1307,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Langue"
+          }
+        }
+      }
+    },
+    "Last 30 Days": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 derniers jours"
+          }
+        }
+      }
+    },
+    "Last 7 Days": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 derniers jours"
           }
         }
       }
@@ -1401,6 +1501,16 @@
         }
       }
     },
+    "Movies": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidéos"
+          }
+        }
+      }
+    },
     "Moving": {
       "localizations": {
         "fr": {
@@ -1447,6 +1557,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Music and Audio": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musique et audio"
           }
         }
       }
@@ -1701,6 +1821,16 @@
         }
       }
     },
+    "PDFs": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF"
+          }
+        }
+      }
+    },
     "Pictures": {
       "localizations": {
         "fr": {
@@ -1891,6 +2021,46 @@
         }
       }
     },
+    "Search": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recherche"
+          }
+        }
+      }
+    },
+    "Search In": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechercher dans"
+          }
+        }
+      }
+    },
+    "Search the whole Mac, or this folder and its subfolders": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechercher sur tout le Mac, ou dans ce dossier et ses sous-dossiers"
+          }
+        }
+      }
+    },
+    "Searching “%@”": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recherche de « %@ »"
+          }
+        }
+      }
+    },
     "Sharing & Permissions": {
       "localizations": {
         "fr": {
@@ -1947,6 +2117,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Afficher les fichiers masqués"
+          }
+        }
+      }
+    },
+    "Show in Enclosing Folder": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher dans le dossier parent"
           }
         }
       }
@@ -2151,12 +2331,32 @@
         }
       }
     },
+    "This Mac": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce Mac"
+          }
+        }
+      }
+    },
     "This name is too long.": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Ce nom est trop long."
+          }
+        }
+      }
+    },
+    "This Year": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette année"
           }
         }
       }
