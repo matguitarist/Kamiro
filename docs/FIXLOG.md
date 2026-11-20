@@ -88,3 +88,11 @@ Profiled with `sample` during the self-test:
   children's URLs from it.
 Rule: profile before guessing; on main, never call an API that waits on another queue, and
 in per-item code (cells, listings) never touch the disk for what the parent already knows.
+
+## 2026-11-20 Compress kept the file's extension in the zip's name
+Compressing “Capture d’écran 2026-11-17 at 18.25.11.png” made “… 18.25.11.png.zip”. That was
+the Finder's way, copied on purpose in S-035, but the owner wants the extension gone.
+Fix: Archive.name drops a single file's extension (“report.zip”); a folder keeps its whole
+name even with dots in it (“My.Project.zip”).
+Rule: a name built from another file's name splits off the extension only for files, never
+for folders, and the owner's habit wins over copying the Finder.

@@ -134,7 +134,7 @@ extension SelfTest {
               one.contains(compressOne) && !one.contains(t("Extract Here")), "\(one)")
         browser.compressSelection()
         await TransferCenter.shared.waitUntilIdle()
-        check("Compress makes “Guide.pdf.zip” beside it, selected", exists("Guide.pdf.zip") && browser.selection == [url("Guide.pdf.zip")],
+        check("Compress makes “Guide.zip” beside it, selected", exists("Guide.zip") && browser.selection == [url("Guide.zip")],
               "\(browser.selection.map(\.lastPathComponent))")
         let zipMenu = titles(browser.contextMenu(onItems: true))
         check("a zip offers Extract Here", zipMenu.contains(t("Extract Here")), "\(zipMenu)")
@@ -147,7 +147,7 @@ extension SelfTest {
         FileUndo.manager.undo()
         check("Undo takes the extracted file away", !exists("Guide 2.pdf"))
         FileUndo.manager.undo()
-        check("Undo again takes the archive away", !exists("Guide.pdf.zip"))
+        check("Undo again takes the archive away", !exists("Guide.zip"))
         browser.selection = [url("Guide.pdf"), url("Projects")]
         check("two items offer Compress 2 Items", titles(browser.contextMenu(onItems: true)).contains(t("Compress \(2) Items")))
         browser.compressSelection()

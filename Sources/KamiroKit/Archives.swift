@@ -14,10 +14,17 @@ public enum Archive {
 
     public static func isZip(_ url: URL) -> Bool { url.pathExtension.lowercased() == "zip" }
 
-    /// "report.pdf.zip" for one item, like the Finder; `several` (the localized "Archive")
-    /// plus ".zip" for more; numbered when taken.
+    /// "report.zip" for one file (its extension dropped), "My.Project.zip" for a folder;
+    /// `several` (the localized "Archive") plus ".zip" for more; numbered when taken.
     public static func name(for sources: [URL], in folder: URL, several: String = "Archive") -> String {
-        let base = sources.count == 1 ? sources[0].lastPathComponent : several
+        let base: String
+        if sources.count == 1 {
+            let values = try? sources[0].resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+            let isFolder = values?.isDirectory == true && values?.isPackage != true
+            base = Naming.split(sources[0].lastPathComponent, isFolder: isFolder).stem
+        } else {
+            base = several
+        }
         return Naming.free(base + ".zip", in: folder)
     }
 

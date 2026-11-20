@@ -12,10 +12,19 @@ private func names(_ folder: URL) throws -> Set<String> {
     Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
 }
 
-@Test func archiveNamesFollowTheFinder() throws {
+@Test func archiveNamesDropAFilesExtension() throws {
     let dir = try scratch()
     let report = dir.appending(path: "report.pdf")
-    #expect(Archive.name(for: [report], in: dir) == "report.pdf.zip")
+    try Data().write(to: report)
+    #expect(Archive.name(for: [report], in: dir) == "report.zip")
+    let shot = dir.appending(path: "Capture d’écran 2026-11-17 at 18.25.11.png")
+    try Data().write(to: shot)
+    #expect(Archive.name(for: [shot], in: dir) == "Capture d’écran 2026-11-17 at 18.25.11.zip")
+    let dotted = dir.appending(path: "My.Project")
+    try FileManager.default.createDirectory(at: dotted, withIntermediateDirectories: true)
+    #expect(Archive.name(for: [dotted], in: dir) == "My.Project.zip")
+    try Data().write(to: dir.appending(path: "report.zip"))
+    #expect(Archive.name(for: [report], in: dir) == "report 2.zip")
     #expect(Archive.name(for: [report, dir.appending(path: "b")], in: dir) == "Archive.zip")
     try Data().write(to: dir.appending(path: "Archive.zip"))
     #expect(Archive.name(for: [report, dir.appending(path: "b")], in: dir) == "Archive 2.zip")
@@ -41,11 +50,11 @@ private func names(_ folder: URL) throws -> Set<String> {
     let file = dir.appending(path: "Guide.pdf")
     try Data("pdf".utf8).write(to: file)
     let zip = try await Archive.compress([file])
-    #expect(zip.lastPathComponent == "Guide.pdf.zip")
+    #expect(zip.lastPathComponent == "Guide.zip")
     let out = try await Archive.extract(zip)
     #expect(out == dir.appending(path: "Guide 2.pdf").canonical)
     #expect(try String(contentsOf: out, encoding: .utf8) == "pdf")
-    #expect(try names(dir) == ["Guide.pdf", "Guide.pdf.zip", "Guide 2.pdf"])
+    #expect(try names(dir) == ["Guide.pdf", "Guide.zip", "Guide 2.pdf"])
 }
 
 @Test func severalItemsGoInAFolderNamedAfterTheArchive() async throws {
