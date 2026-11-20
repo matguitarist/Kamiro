@@ -59,9 +59,16 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 struct GeneralSettings: View {
     @Environment(AppModel.self) private var model
+    @AppStorage(Prefs.returnOpensItems, store: Prefs.defaults) private var returnOpensItems = false
 
     var body: some View {
         @Bindable var model = model
+        Section("Keyboard") {
+            Toggle(isOn: $returnOpensItems) {
+                Text("Return opens items")
+                Text("Off, Return renames, like the Finder. On, Return opens, like Windows, and F2 renames.")
+            }
+        }
         Section("Language") {
             Picker("Language", selection: $model.language) {
                 Text("System (\(AppLanguage.systemName))").tag(AppLanguage.system)

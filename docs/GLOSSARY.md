@@ -17,3 +17,6 @@
 | Move to Trash | Send to the Trash, can be put back | Delete, recycle | Placer dans la corbeille |
 | Delete Immediately | Remove for good, can't come back | Delete permanently, shred | Supprimer immédiatement |
 | Status bar | Line under the list with counts and free space | Footer, info bar | Barre d'état |
+| Locations | Sidebar section of mounted disks and servers | Devices, drives | Emplacements |
+| Enclosing Folder | The folder that holds this one (⌘↑) | Parent, up | Dossier parent |
+| Return opens items | Setting: Return opens instead of renaming | Windows mode, Enter mode | Retour ouvre les éléments |

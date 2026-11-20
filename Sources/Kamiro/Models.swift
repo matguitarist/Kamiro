@@ -2,10 +2,9 @@ import Foundation
 import LogKitUI
 import Observation
 
-/// The app's state: which page shows, the Settings tab, and the log.
+/// What every window shares: the Settings tab, the language, updates, and the log.
 @Observable
 final class AppModel {
-    var sidebar: SidebarItem? = .overview
     var settingsTab: SettingsTab = .general
     var language = AppLanguage.current {
         didSet { language.apply() }
@@ -21,26 +20,17 @@ final class AppModel {
         self.log = log
         logViewer = LogViewerModel(store: log)
         logViewer.newestFirst = true
+        SeedData.addIfRequested(log: log)
     }
 }
 
-/// The sidebar's pages. Snapshot mode walks through every case.
-enum SidebarItem: String, CaseIterable, Identifiable, Hashable {
-    case overview, log
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .overview: String(localized: "Overview")
-        case .log: String(localized: "Log")
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .overview: "folder"
-        case .log: "list.bullet.rectangle"
-        }
+/// Seed mode for snapshots: a few log lines so the Log window shows something.
+enum SeedData {
+    static func addIfRequested(log: LogStore) {
+        guard ProcessInfo.processInfo.environment["APP_SEED"] == "1", Store.isOverridden else { return }
+        log.post(.info, "Opened ~/Documents", source: "Browse")
+        log.post(.info, "Copied 3 items to ~/Desktop", source: "Transfer", date: .now, detail: "report.pdf\nphoto.heic\nnotes.md")
+        log.post(.warning, "Kamiro can't open ~/Desktop: access was denied", source: "Access")
+        log.post(.error, "Couldn't move budget.xlsx: the disk is full", source: "Transfer")
     }
 }

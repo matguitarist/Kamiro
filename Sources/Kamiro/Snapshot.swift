@@ -1,20 +1,45 @@
 import AppKit
 import IOKit.pwr_mgt
+import KamiroKit
 import SwiftUI
 
-/// Screenshot mode for agents.
-///   APP_STORE=/tmp/Kamiro-test.json APP_SNAPSHOT=/tmp/shots ~/Applications/Kamiro.app/Contents/MacOS/Kamiro
-/// writes <page>-light.png and <page>-dark.png for every sidebar page, and
-/// settings-<tab>-light.png and settings-<tab>-dark.png for every Settings tab, then quits.
+/// Screenshot mode for agents (tools/snap.sh builds the sample tree first):
+///   APP_STORE=/tmp/Kamiro-test.json APP_SEED=1 APP_SNAPSHOT=/tmp/Kamiro-shots ~/Applications/Kamiro.app/Contents/MacOS/Kamiro
+/// writes <page>-light.png and <page>-dark.png for every page below, the Log window, and
+/// settings-<tab>-light.png and -dark.png for every Settings tab, then quits.
 /// Each PNG gets a <page>-<mode>-layout.json with the grid probes (tools/check-layout.swift).
-/// APP_SNAPSHOT_PAGES=overview,log limits the pages. Add "settings" to include Settings.
+/// APP_SNAPSHOT_PAGES=browse,details-10k limits the pages. Add "log" and "settings" to include them.
 /// Add APP_ACCENT=<id> to see the pages in another accent.
 /// Add APP_SNAPSHOT_MIN=1 to shrink the main window to its smallest size first.
 enum Snapshot {
-    static func runIfRequested(model: AppModel, openSettings: OpenSettingsAction, openWindow: OpenWindowAction) {
+    /// The pages, each a place in the sample tree (tools/seed-tree.sh).
+    enum Page: String, CaseIterable {
+        case browse, selected, details10k = "details-10k", addressEdit = "address-edit", accessDenied = "access-denied", empty
+
+        @MainActor
+        func show(in browser: BrowserModel) async {
+            let seed = Store.seedFolder
+            if browser.isEditingPath { browser.cancelEditingPath() }
+            switch self {
+            case .browse: browser.go(to: seed)
+            case .selected: browser.go(to: seed, select: [seed.appending(path: "report.pdf"), seed.appending(path: "Song.m4a")])
+            case .details10k: browser.go(to: seed.appending(path: "10k"))
+            case .addressEdit:
+                browser.go(to: seed.appending(path: "Projects/Kamiro"))
+                await browser.waitUntilLoaded()
+                browser.beginEditingPath()
+            case .accessDenied: browser.go(to: seed.appending(path: "Locked"))
+            case .empty: browser.go(to: seed.appending(path: "Empty"))
+            }
+            await browser.waitUntilLoaded()
+            if self != .addressEdit { browser.focusList() }
+        }
+    }
+
+    static func runIfRequested(app: AppModel, browser: BrowserModel, openSettings: OpenSettingsAction, openWindow: OpenWindowAction) {
         let env = ProcessInfo.processInfo.environment
         guard let dir = env["APP_SNAPSHOT"], !dir.isEmpty else { return }
-        // Snapshots never run against the real database.
+        // Snapshots never run against the real settings.
         guard Store.isOverridden else {
             print("SNAPSHOT refused: set APP_STORE to a file in /tmp")
             NSApp.terminate(nil)
@@ -31,29 +56,42 @@ enum Snapshot {
                                         IOPMAssertionLevel(kIOPMAssertionLevelOn), "Snapshots" as CFString, &awake)
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
             try? await Task.sleep(for: .seconds(1.5))
-            if env["APP_SNAPSHOT_MIN"] != nil, let main = NSApp.windows.first(where: { $0.canBecomeMain && !$0.isSheet }) {
+            let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+            if env["APP_SNAPSHOT_MIN"] != nil, let main {
                 // The window clamps to its content's minimum size.
                 main.setContentSize(NSSize(width: 1, height: 1))
                 try? await Task.sleep(for: .seconds(0.5))
             }
             for mode in ["light", "dark"] {
                 NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
-                for page in SidebarItem.allCases where only?.contains(page.rawValue) ?? true {
-                    model.sidebar = page
+                for page in Page.allCases where only?.contains(page.rawValue) ?? true {
+                    await page.show(in: browser)
                     try? await Task.sleep(for: .seconds(0.8))
-                    capture(to: "\(dir)/\(page.rawValue)-\(mode).png")
+                    capture(to: "\(dir)/\(page.rawValue)-\(mode).png", window: main)
                 }
+                if browser.isEditingPath { browser.cancelEditingPath() }
+            }
+            if only == nil || only?.contains("log") == true {
+                openWindow(id: KamiroApp.logID)
+                try? await Task.sleep(for: .seconds(1))
+                let log = NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue.contains(KamiroApp.logID) == true }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/log-\(mode).png", window: log)
+                }
+                log?.close()
+                try? await Task.sleep(for: .seconds(0.4))
             }
             if only == nil || only?.contains("settings") == true {
-                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
                 openSettings()
                 try? await Task.sleep(for: .seconds(1))
                 for mode in ["light", "dark"] {
                     NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
                     for tab in SettingsTab.allCases {
-                        model.settingsTab = tab
+                        app.settingsTab = tab
                         try? await Task.sleep(for: .seconds(0.8))
-                        let settings = NSApp.windows.first { $0.isVisible && $0 !== main && !$0.isSheet }
+                        let settings = NSApp.windows.first { $0.isVisible && $0 !== main && !$0.isSheet && $0.identifier?.rawValue.contains(KamiroApp.logID) != true }
                         capture(to: "\(dir)/settings-\(tab.rawValue)-\(mode).png", window: settings)
                     }
                 }

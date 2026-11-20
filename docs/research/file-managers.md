@@ -80,6 +80,22 @@ Our chance — cut/paste, typed address bar, Up, Copy Path, New File, folder siz
 6. Keep every Finder shortcut and layer Explorer's on top (⌘X, ⌘L, F2, ⌘↑ Up), all in the menu bar [K].
 7. Leave remote servers, sync and dual pane out of version one; that's ForkLift's ground [V].
 
+## Benchmark (2026-11-19)
+
+100,000 empty files on the internal SSD (macOS 26.2, Apple silicon), `contentsOfDirectory(at:includingPropertiesForKeys:)`, release build:
+
+| Keys asked up front | Time |
+| --- | --- |
+| none | 97 ms |
+| name, folder, size, modified, hidden, package | 213 ms |
+| + created, + allocated size | 214 ms |
+| + localized kind | 2,313 ms |
+| + tags | 1,653 ms |
+| readdir + lstat | 205 ms |
+| sort by name (localizedStandardCompare) | 346 ms |
+
+Decision: list with the base keys only. Kind comes from a per-extension cache (UTType once per extension), tags are read for visible rows only. Sorting 100k names takes 346 ms, so the first screen sorts on a background task and the table fills once sorted; folders under 5,000 items sort at once.
+
 ## Open questions
 
 - Does macOS 26 SwiftUI Table cope with 10k rows? [U] Benchmark before ruling it out for the icon/list views.

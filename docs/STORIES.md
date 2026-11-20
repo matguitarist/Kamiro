@@ -21,7 +21,8 @@ UX:
 - States: empty folder "Folder Is Empty" with "New Folder"; unreadable volume "Kamiro can't read this disk." inline
 - Words: "Home", "Pinned", "Locations" / « Accueil », « Épinglés », « Emplacements »
 - Access: ⌃⌘S toggles sidebar; VoiceOver reads each sidebar item's name
-Status: todo
+Status: doing
+Built: NavigationSplitView with Pinned (home, Applications, Desktop, Documents, Downloads) and Locations (mounted volumes, live). ⌘N opens a window at Home; ⌥-double-click opens a folder in a new one. The empty folder shows "Folder Is Empty"; its New Folder button comes with S-015. Waits on the owner's side-by-side look with Finder.
 
 ### S-002 See a folder in the details view
 As the user, I see the folder's items as rows with Name, Date Modified, Size and Kind, sorted by name, with folders first.
@@ -38,7 +39,8 @@ UX:
 - States: loading only past 0.5 s ("Loading…" with spinner); too many rows scroll smoothly
 - Words: column titles "Name", "Date Modified", "Size", "Kind" / « Nom », « Date de modification », « Taille », « Type »
 - Access: full keyboard; VoiceOver reads name, kind and size per row
-Status: todo
+Status: done
+Built: NSTableView (not SwiftUI Table) with base keys only; Kind from a per-extension cache. Self-test: 10,000 files listed and sorted under 300 ms.
 
 ### S-003 Go back, forward and up
 As the user, I go back and forward through the folders I visited and up to the enclosing folder.
@@ -53,7 +55,7 @@ UX:
 - Surface: toolbar buttons
 - Words: tooltips "Go back (⌘[)", "Go forward (⌘])", "Go to enclosing folder (⌘↑)" / « Revenir (⌘[) », « Avancer (⌘]) », « Dossier parent (⌘↑) »
 - Access: Go menu holds all three with shortcuts
-Status: todo
+Status: done
 
 ### S-004 Jump through the address bar
 As the user, I see the current path as crumbs in the toolbar; clicking one goes there, and its chevron lists the folders inside it.
@@ -68,7 +70,8 @@ UX:
 - Surface: toolbar principal item; menu for subfolders (a few choices tied to one control)
 - Words: "…" menu item "Show Full Path" / « Afficher le chemin complet »
 - Access: VoiceOver reads "Path: Users, mathieu, Documents"
-Status: todo
+Status: done
+Built: dragging onto a crumb comes with S-018.
 
 ### S-005 Type a path
 As the user, I press ⌘L (or ⇧⌘G, or click the empty part of the address bar) and type a path, with Tab completion, to go there.
@@ -84,7 +87,7 @@ UX:
 - States: error "No folder at this path." / « Aucun dossier à ce chemin. »
 - Words: placeholder "Type a path" / « Saisir un chemin »
 - Access: focus returns to the list after Return
-Status: todo
+Status: done
 
 ### S-006 Open files and folders
 As the user, I double-click or press ⌘↓ to open a folder in place or a file in its app; with "Return opens items" on, Return does it too.
@@ -98,7 +101,8 @@ UX:
 - Flow: double-click / ⌘↓ / File › Open → folder shows or app opens
 - Surface: inline
 - Words: "Open", "Return opens items" / « Ouvrir », « Retour ouvre les éléments »
-Status: todo
+Status: done
+Built: Show Package Contents comes with the right-click menu (S-033); packages already open as files.
 
 ### S-007 Preview with Quick Look
 As the user, I press Space to preview the selection with Quick Look, and arrows move through items while it's open.
@@ -110,7 +114,7 @@ UX:
 - Flow: select → Space → panel → arrows → Space closes
 - Surface: system Quick Look panel
 - Words: menu "Quick Look" ⌘Y / « Coup d'œil »
-Status: todo
+Status: done
 
 ### S-008 Read the status bar
 As the user, I see under the list how many items there are, how many are selected with their total size, and the free space on the disk.
@@ -123,7 +127,7 @@ UX:
 - Surface: bar under the content (inline information)
 - Words: "%d items", "%d selected (%@)", "%@ available" / « %d éléments », « %d sélectionnés (%@) », « %@ disponibles »
 - Access: VoiceOver reads it as one static text
-Status: todo
+Status: done
 
 ### S-009 See changes made elsewhere
 As the user, the folder updates on its own when files are added, removed or renamed by another app.
@@ -136,7 +140,8 @@ Acceptance:
 UX:
 - Flow: change outside → row appears or leaves in place, no flash
 - Words: menu "Refresh" ⌘R / « Actualiser »
-Status: todo
+Status: done
+Built: FSEvents on the shown folder; a renamed file keeps its selection by file ID.
 
 ### S-010 Grant folder access
 As the user, the first time I open Desktop, Documents, Downloads or a volume, macOS asks once; if I said no, Kamiro tells me how to allow it, and offers the Full Disk Access guide.
@@ -150,7 +155,8 @@ UX:
 - Flow: open protected folder → system prompt → list; denied → inline message → "Open Privacy Settings" → System Settings › Privacy › Files and Folders
 - Surface: content area (ContentUnavailableView), never an alert
 - States: denied "Kamiro can't open this folder." / « Kamiro ne peut pas ouvrir ce dossier. » with "Open Privacy Settings" / « Ouvrir les réglages de confidentialité »
-Status: todo
+Status: doing
+Built: purpose strings in English and French (InfoPlist.xcstrings); a closed folder shows "Kamiro can't open this folder." with Open Privacy Settings. Waits on the owner's manual check after a TCC reset.
 
 ## M2 Move files (0.2.0)
 

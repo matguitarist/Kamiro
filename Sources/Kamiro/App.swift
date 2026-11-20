@@ -1,4 +1,5 @@
 import AppKit
+import KamiroKit
 import LogKitUI
 import SwiftUI
 
@@ -6,42 +7,47 @@ import SwiftUI
 //   Kamiro                          the app, with its settings in ~/Library/Application Support/Kamiro
 //   APP_STORE=<file> Kamiro         settings in <file> (in /tmp) and the log next to it; never touches the real ones
 //   APP_SNAPSHOT=<dir> Kamiro       save a PNG of every sidebar page and Settings tab in light and dark mode, then quit
-//   APP_SEED=1 Kamiro               with APP_STORE: sample log lines (tools/snap.sh)
+//   APP_SEED=1 Kamiro               with APP_STORE: sample log lines; windows open on /tmp/Kamiro-seed (tools/seed-tree.sh)
 //   Kamiro --selftest               run the self-test on a /tmp store and quit with 0 or 1 (tools/selftest.sh)
 //   APP_ACCENT=<id> Kamiro          run with another accent from Theme.all (UI/Theme.swift)
 //   APP_GRID=1 Kamiro               draw the 8 pt grid and the layout probes over the window
 
 @main
 struct KamiroApp: App {
+    static let browserID = "browser"
+    static let logID = "log"
+
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var model = AppModel(log: Store.log)
 
     var body: some Scene {
-        Window("Kamiro", id: "main") {
-            ContentView()
+        WindowGroup(id: Self.browserID, for: URL.self) { $folder in
+            ContentView(start: folder ?? Store.startFolder)
                 .environment(model)
                 .themed()
                 .overlay { if GridOverlay.enabled { GridOverlay() } }
-                .frame(minWidth: 920, minHeight: 560)
+                .frame(minWidth: 760, minHeight: 440)
         }
-        .defaultSize(width: 1080, height: 720)
+        .defaultSize(width: 1080, height: 680)
         .windowToolbarStyle(.unified)
         .commands {
             SidebarCommands()
             ToolbarCommands()
-            CommandGroup(replacing: .newItem) {}
+            KamiroCommands(menu: MenuState.shared)
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates…") { Updater.shared.checkForUpdates() }
                     .disabled(!Updater.shared.isAvailable)
             }
-            CommandGroup(after: .sidebar) {
-                Divider()
-                ForEach(Array(SidebarItem.allCases.enumerated()), id: \.element) { index, item in
-                    Button(item.title) { model.sidebar = item }
-                        .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: [.command, .option])
-                }
-            }
         }
+
+        Window("Log", id: Self.logID) {
+            LogWindow()
+                .environment(model)
+                .themed()
+                .frame(minWidth: 720, minHeight: 420)
+        }
+        .defaultSize(width: 900, height: 560)
+        .commandsRemoved()
 
         Settings {
             SettingsView()
@@ -98,4 +104,13 @@ enum Store {
     }
 
     static let log = LogStore(fileURL: logURL)
+
+    /// The sample tree snapshots and the self-test browse (tools/seed-tree.sh).
+    static let seedFolder = URL(filePath: "/tmp/Kamiro-seed")
+
+    /// Where a new window opens: the home folder, or the sample tree in a test run.
+    static var startFolder: URL {
+        if isOverridden, FileManager.default.fileExists(atPath: seedFolder.path) { return seedFolder }
+        return URL.homeDirectory.canonical
+    }
 }

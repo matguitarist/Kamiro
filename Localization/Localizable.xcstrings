@@ -1,6 +1,136 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ available": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ disponibles"
+          }
+        }
+      }
+    },
+    "%lld items": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld item"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld items"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld élément"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld éléments"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld selected": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sélectionné"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sélectionnés"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld selected (%@)": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected (%@)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld selected (%@)"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sélectionné (%@)"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld sélectionnés (%@)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "2 items": {
       "localizations": {
         "fr": {
@@ -41,12 +171,22 @@
         }
       }
     },
-    "Check Now": {
+    "Back": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rechercher maintenant"
+            "value": "Précédent"
+          }
+        }
+      }
+    },
+    "Check for updates automatically": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechercher les mises à jour automatiquement"
           }
         }
       }
@@ -61,12 +201,22 @@
         }
       }
     },
-    "Check for updates automatically": {
+    "Check Now": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rechercher les mises à jour automatiquement"
+            "value": "Rechercher maintenant"
+          }
+        }
+      }
+    },
+    "Date Modified": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date de modification"
           }
         }
       }
@@ -91,12 +241,112 @@
         }
       }
     },
+    "Edit Address": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier l’adresse"
+          }
+        }
+      }
+    },
+    "Enclosing Folder": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier parent"
+          }
+        }
+      }
+    },
+    "Folder Is Empty": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossier vide"
+          }
+        }
+      }
+    },
+    "Forward": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suivant"
+          }
+        }
+      }
+    },
     "General": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Général"
+          }
+        }
+      }
+    },
+    "Go": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aller"
+          }
+        }
+      }
+    },
+    "Go back (⌘[)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revenir en arrière (⌘[)"
+          }
+        }
+      }
+    },
+    "Go forward (⌘])": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avancer (⌘])"
+          }
+        }
+      }
+    },
+    "Go to Enclosing Folder": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aller au dossier parent"
+          }
+        }
+      }
+    },
+    "Go to Folder…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aller au dossier…"
+          }
+        }
+      }
+    },
+    "Go to the enclosing folder (⌘↑)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aller au dossier parent (⌘↑)"
           }
         }
       }
@@ -111,12 +361,52 @@
         }
       }
     },
-    "Kamiro": {
+    "Hide Status Bar": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kamiro"
+            "value": "Masquer la barre d’état"
+          }
+        }
+      }
+    },
+    "Kamiro can't open this folder.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamiro ne peut pas ouvrir ce dossier."
+          }
+        }
+      }
+    },
+    "Kamiro can't read this folder.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamiro ne peut pas lire ce dossier."
+          }
+        }
+      }
+    },
+    "Keyboard": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clavier"
+          }
+        }
+      }
+    },
+    "Kind": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
           }
         }
       }
@@ -127,6 +417,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Langue"
+          }
+        }
+      }
+    },
+    "Loading…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chargement…"
+          }
+        }
+      }
+    },
+    "Locations": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emplacements"
           }
         }
       }
@@ -161,12 +471,62 @@
         }
       }
     },
+    "macOS keeps this folder closed to Kamiro. Allow it in Privacy & Security, under Files and Folders or Full Disk Access.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS garde ce dossier fermé à Kamiro. Autorisez-le dans Confidentialité et sécurité, sous Fichiers et dossiers ou Accès complet au disque."
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom"
+          }
+        }
+      }
+    },
     "New Folder": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Nouveau dossier"
+          }
+        }
+      }
+    },
+    "New Window": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvelle fenêtre"
+          }
+        }
+      }
+    },
+    "No folder at this path.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun dossier à ce chemin."
+          }
+        }
+      }
+    },
+    "No Folders": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun dossier"
           }
         }
       }
@@ -181,12 +541,72 @@
         }
       }
     },
-    "Overview": {
+    "Off, Return renames, like the Finder. On, Return opens, like Windows, and F2 renames.": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vue d’ensemble"
+            "value": "Désactivé, Retour renomme, comme dans le Finder. Activé, Retour ouvre, comme dans Windows, et F2 renomme."
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir"
+          }
+        }
+      }
+    },
+    "Open Privacy Settings": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir les réglages de confidentialité"
+          }
+        }
+      }
+    },
+    "Path": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemin"
+          }
+        }
+      }
+    },
+    "Path: %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chemin : %@"
+          }
+        }
+      }
+    },
+    "Pictures": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Images"
+          }
+        }
+      }
+    },
+    "Pinned": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Épinglés"
           }
         }
       }
@@ -211,12 +631,92 @@
         }
       }
     },
+    "Quick Look": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coup d’œil"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiser"
+          }
+        }
+      }
+    },
     "Restart Now": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Redémarrer maintenant"
+          }
+        }
+      }
+    },
+    "Return opens items": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retour ouvre les éléments"
+          }
+        }
+      }
+    },
+    "Show Full Path": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le chemin complet"
+          }
+        }
+      }
+    },
+    "Show Status Bar": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher la barre d’état"
+          }
+        }
+      }
+    },
+    "Show the folders in %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les dossiers dans « %@ »"
+          }
+        }
+      }
+    },
+    "Show the folders in between": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les dossiers intermédiaires"
+          }
+        }
+      }
+    },
+    "Size": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille"
           }
         }
       }
@@ -237,6 +737,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "La nouvelle langue s’applique après un redémarrage."
+          }
+        }
+      }
+    },
+    "This folder isn't there anymore.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce dossier n’existe plus."
+          }
+        }
+      }
+    },
+    "Type a path": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisir un chemin"
           }
         }
       }
@@ -277,26 +797,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Travail"
-          }
-        }
-      }
-    },
-    "Your files, the Finder way, with the habits of Windows File Explorer: cut and paste, a path you can type, details columns, and folder sizes. Browsing comes next.": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vos fichiers, à la manière du Finder, avec les habitudes de l’Explorateur de fichiers de Windows : couper-coller, un chemin à saisir, des colonnes de détails et la taille des dossiers. La navigation arrive bientôt."
-          }
-        }
-      }
-    },
-    "Pictures": {
-      "localizations": {
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Images"
           }
         }
       }
