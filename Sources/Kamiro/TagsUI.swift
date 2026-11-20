@@ -104,7 +104,7 @@ struct TagsSection: View {
                 } icon: {
                     Circle()
                         .fill(Color(nsColor: tag.color))
-                        .frame(width: 10, height: 10)
+                        .frame(width: 12, height: 12)
                 }
                 .tag(tag.place.url)
             }
