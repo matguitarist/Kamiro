@@ -472,6 +472,8 @@ enum Prefs {
     static let editor = "editor"
     /// Connect to Server's recent addresses, newest first (S-037).
     static let recentServers = "recentServers"
+    /// Where things were last copied or moved, newest first (S-046).
+    static let recentFolders = "recentFolders"
     /// The sidebar's pinned folders, as paths (S-032).
     static let pins = "pins"
     static let hiddenSidebarSections = "hiddenSidebarSections"

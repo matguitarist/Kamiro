@@ -467,7 +467,8 @@ Built: Right-click › Convert lists what fits the whole selection. Pictures: JP
 As the user, I copy or move the selection to a folder chosen from my pinned and recent folders, or Other….
 Reference: PowerClick (docs/research/context-menu.md).
 Depends: S-033, S-032
-Status: todo
+Status: done
+Built: Right-click › Copy To and Move To list the pinned folders, then Recent Folders (the last eight folders anything was pasted, dropped, copied or moved into), then Other… (a folder panel starting here, with New Folder, and Copy Here / Move Here). The folder the items are already in, the items themselves and folders inside them are left out, and so are folders that are gone. They run as transfers: same-name questions, progress, Stop and Undo like a paste.
 
 ### S-047 Choose what the right-click menu shows
 As the user, Settings › Menu lets me hide the actions and New File templates I never use.

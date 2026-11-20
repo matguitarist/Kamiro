@@ -3361,6 +3361,56 @@
           }
         }
       }
+    },
+    "Copy To": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier vers"
+          }
+        }
+      }
+    },
+    "Move To": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacer vers"
+          }
+        }
+      }
+    },
+    "Recent Folders": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossiers récents"
+          }
+        }
+      }
+    },
+    "Copy Here": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier ici"
+          }
+        }
+      }
+    },
+    "Move Here": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacer ici"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

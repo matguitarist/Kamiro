@@ -75,6 +75,7 @@ final class TransferCenter {
 
     func start(_ kind: TransferKind, sources: [URL], into destination: URL, browser: BrowserModel) {
         let task = TransferTask(kind: kind, count: sources.count, destination: destination)
+        FolderHistory.record(destination)
         running += 1
         Task {
             try? await Task.sleep(for: .milliseconds(500))

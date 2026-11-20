@@ -43,6 +43,8 @@ extension BrowserModel {
             menu.addItem(ItemActions.copyInfoItem(for: urls))
             if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
             add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
+            menu.addItem(sendToMenuItem(.copy))
+            menu.addItem(sendToMenuItem(.move))
             if !compressTargets.isEmpty {
                 add(compressTitle, "archivebox") { [weak self] in self?.compressSelection() }
             }

@@ -182,6 +182,32 @@ extension SelfTest {
         check("a text file has no Convert", !titles(browser.contextMenu(onItems: true)).contains(t("Convert")))
         await browser.waitUntilLoaded()
 
+        // S-046: Copy To and Move To, as transfers, remembered as recent folders.
+        Prefs.defaults.removeObject(forKey: Prefs.recentFolders)
+        let target = url("Empty"), sent = "Send me.txt"
+        try? Data("x".utf8).write(to: url(sent))
+        for _ in 0..<30 where !browser.items.contains(where: { $0.url == url(sent) }) { try? await Task.sleep(for: .milliseconds(100)) }
+        browser.selection = [url(sent)]
+        let items = titles(browser.contextMenu(onItems: true))
+        check("items offer Copy To and Move To", items.contains(t("Copy To")) && items.contains(t("Move To")), "\(items)")
+        browser.send(.copy, [url(sent)], to: target)
+        await TransferCenter.shared.waitUntilIdle()
+        check("Copy To puts a copy in the folder and keeps the original", exists("Empty/\(sent)") && exists(sent))
+        check("…and remembers the folder", FolderHistory.recent.urls.first == target)
+        let copyTo = browser.contextMenu(onItems: true).items.first { $0.title == t("Copy To") }?.submenu?.items ?? []
+        check("Copy To lists the recent folder, then Other…",
+              copyTo.contains { $0.toolTip == target.path } && copyTo.last?.title == t("Other…"), "\(copyTo.map(\.title))")
+        try? FileManager.default.removeItem(at: url("Empty/\(sent)"))
+        FolderHistory.record(seed)
+        let moveTo = browser.contextMenu(onItems: true).items.first { $0.title == t("Move To") }?.submenu?.items.compactMap(\.toolTip) ?? []
+        check("Move To leaves out the folder the items are in", !moveTo.contains(seed.path) && moveTo.contains(target.path), "\(moveTo)")
+        browser.send(.move, [url(sent)], to: target)
+        await TransferCenter.shared.waitUntilIdle()
+        check("Move To moves it", exists("Empty/\(sent)") && !exists(sent))
+        try? FileManager.default.removeItem(at: url("Empty/\(sent)"))
+        Prefs.defaults.removeObject(forKey: Prefs.recentFolders)
+        await browser.waitUntilLoaded()
+
         // S-037: Go › Connect to Server… (⌘K) opens its sheet on this window.
         let connect = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items).first { $0.title == t("Connect to Server…") }
         check("Go › Connect to Server… is ⌘K", connect?.keyEquivalent == "k" && connect?.keyEquivalentModifierMask == .command)
