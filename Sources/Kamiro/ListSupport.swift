@@ -16,6 +16,11 @@ enum FileKeys {
         let command = flags.contains(.command)
         switch event.keyCode {
         case 36, 76:
+            // ⌥↩ opens Properties, like Alt+Enter in Windows.
+            if flags == .option {
+                model.showProperties()
+                return true
+            }
             return model.handleReturn()
         case 120: // F2 renames, like Windows.
             model.beginRename()
@@ -238,6 +243,8 @@ extension BrowserModel {
         let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
         newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
         menu.addItem(newFile)
+        menu.addItem(.separator())
+        add(String(localized: "Properties")) { [weak self] in self?.showProperties() }
         return menu
     }
 

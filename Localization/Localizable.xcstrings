@@ -1,6 +1,16 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ (%@ bytes)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ (%2$@ octets)"
+          }
+        }
+      }
+    },
     "%@ available": {
       "localizations": {
         "fr": {
@@ -27,6 +37,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ sur %@, environ %@ restant"
+          }
+        }
+      }
+    },
+    "%@ on disk, %lld items": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ sur disque, %2$lld éléments"
+          }
+        }
+      }
+    },
+    "%@ on disk, 1 item": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sur disque, 1 élément"
+          }
+        }
+      }
+    },
+    "%@ Properties": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propriétés de %@"
           }
         }
       }
@@ -241,6 +281,16 @@
         }
       }
     },
+    "Application": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application"
+          }
+        }
+      }
+    },
     "Apply to All (%lld items)": {
       "localizations": {
         "en": {
@@ -367,6 +417,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Base"
+          }
+        }
+      }
+    },
+    "Calculating…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calcul en cours…"
           }
         }
       }
@@ -801,6 +861,16 @@
         }
       }
     },
+    "Everyone": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout le monde"
+          }
+        }
+      }
+    },
     "Extension": {
       "localizations": {
         "fr": {
@@ -921,6 +991,16 @@
         }
       }
     },
+    "Hidden": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masqué"
+          }
+        }
+      }
+    },
     "Hidden Files": {
       "localizations": {
         "fr": {
@@ -1031,6 +1111,16 @@
         }
       }
     },
+    "Kamiro couldn't change this item: %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamiro n’a pas pu modifier cet élément : %@"
+          }
+        }
+      }
+    },
     "Keep .%@": {
       "localizations": {
         "fr": {
@@ -1097,6 +1187,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Emplacements"
+          }
+        }
+      }
+    },
+    "Locked": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verrouillé"
           }
         }
       }
@@ -1351,6 +1451,16 @@
         }
       }
     },
+    "No Access": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun accès"
+          }
+        }
+      }
+    },
     "No Date": {
       "localizations": {
         "fr": {
@@ -1427,6 +1537,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ouvrir les réglages de confidentialité"
+          }
+        }
+      }
+    },
+    "Opens With": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S’ouvre avec"
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
           }
         }
       }
@@ -1541,12 +1671,42 @@
         }
       }
     },
+    "Properties": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propriétés"
+          }
+        }
+      }
+    },
     "Quick Look": {
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
             "value": "Coup d’œil"
+          }
+        }
+      }
+    },
+    "Read & Write": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture et écriture"
+          }
+        }
+      }
+    },
+    "Read only": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture seule"
           }
         }
       }
@@ -1617,6 +1777,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Texte enrichi"
+          }
+        }
+      }
+    },
+    "Sharing & Permissions": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partage et permissions"
           }
         }
       }
@@ -1861,6 +2031,16 @@
         }
       }
     },
+    "This item isn't there anymore.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cet élément n’existe plus."
+          }
+        }
+      }
+    },
     "This name is too long.": {
       "localizations": {
         "fr": {
@@ -2017,6 +2197,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Travail"
+          }
+        }
+      }
+    },
+    "Write only": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Écriture seule"
           }
         }
       }

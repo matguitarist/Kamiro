@@ -80,3 +80,35 @@ private func allocated(_ url: URL) -> Int64 {
     #expect(FolderSize.recheckDelay(after: .seconds(3)) == .seconds(30))
     #expect(FolderSize.recheckDelay(after: .seconds(180)) == .seconds(1800))
 }
+
+@Test func summaryCountsEveryItemInside() throws {
+    let dir = try tree()
+    defer { try? FileManager.default.removeItem(at: dir) }
+    try Data("a".utf8).write(to: dir.appending(path: "a.txt"))
+    try Data("b".utf8).write(to: dir.appending(path: "inner/deeper/b.txt"))
+    try Data("c".utf8).write(to: dir.appending(path: "inner/.hidden"))
+    // inner, inner/deeper, three files
+    #expect(try FolderSize.summary(dir).items == 5)
+}
+
+@Test func permissionsReadAsAccess() {
+    let p = Permissions(mode: 0o640, owner: "me", group: "staff")
+    #expect(p.ownerAccess == .readWrite && p.groupAccess == .readOnly && p.everyoneAccess == .none)
+    #expect(Permissions(mode: 0o222, owner: "me", group: "staff").everyoneAccess == .writeOnly)
+}
+
+@Test func lockingAndHidingReachTheDisk() throws {
+    let dir = try tree()
+    let file = dir.appending(path: "a.txt")
+    defer {
+        try? ItemFlags.setLocked(false, file)
+        try? FileManager.default.removeItem(at: dir)
+    }
+    try Data("a".utf8).write(to: file)
+    try ItemFlags.setLocked(true, file)
+    #expect(ItemFlags.isLocked(file))
+    #expect(throws: (any Error).self) { try FileManager.default.removeItem(at: file) }
+    try ItemFlags.setLocked(false, file)
+    try ItemFlags.setHidden(true, file)
+    #expect(!ItemFlags.isLocked(file) && ItemFlags.isHidden(file))
+}

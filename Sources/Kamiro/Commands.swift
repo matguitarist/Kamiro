@@ -54,6 +54,9 @@ struct KamiroCommands: Commands {
             Button("Quick Look") { menu.browser?.quickLook?() }
                 .keyboardShortcut("y")
                 .disabled(!menu.hasSelection)
+            Button("Properties") { menu.browser?.showProperties() }
+                .keyboardShortcut("i")
+                .disabled(!menu.isReady)
             Divider()
             Button("New Folder") { menu.browser?.newFolder() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])

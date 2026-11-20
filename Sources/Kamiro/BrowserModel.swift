@@ -65,6 +65,8 @@ final class BrowserModel {
     var folderSizes: [URL: Int64] { sizes.sizes }
     var sizesVersion: Int { sizes.version }
     @ObservationIgnored private var resortSoon: Task<Void, Never>?
+    /// Opens a Properties window; set by the window.
+    @ObservationIgnored var openProperties: ((URL) -> Void)?
     /// The table scrolls to the selection when this changes.
     private(set) var revealToken = 0
     /// The table takes the keyboard when this changes.

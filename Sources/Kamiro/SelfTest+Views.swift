@@ -65,6 +65,53 @@ extension SelfTest {
         await folderSizes(browser: browser, seed: seed, pause: pause, open: open)
         await hiddenFiles(browser: browser, seed: seed, pause: pause, open: open)
         await inspector(browser: browser, seed: seed, pause: pause, open: open)
+        await properties(browser: browser, seed: seed, pause: pause, open: open)
+    }
+
+    // S-026: Properties.
+    private static func properties(browser: BrowserModel, seed: URL, pause: (Double) async -> Void, open: (String) async -> Void) async {
+        func url(_ path: String) -> URL { seed.appending(path: path).canonical }
+        func windows() -> [NSWindow] {
+            NSApp.windows.filter { $0.isVisible && $0.identifier?.rawValue.contains(KamiroApp.propertiesID) == true }
+        }
+        func closeAll() { windows().forEach { $0.close() } }
+        let main = browser.details?.table?.window
+        await open("")
+        browser.selection = [url("Owl.jpg")]
+        let menuItem = NSApp.mainMenu?.items.compactMap(\.submenu).flatMap(\.items)
+            .first { $0.keyEquivalent == "i" && $0.keyEquivalentModifierMask == .command }
+        check("⌘I is File › Properties", menuItem?.title == String(localized: "Properties"), menuItem?.title ?? "missing")
+        browser.showProperties()
+        await pause(1.2)
+        let title = String(localized: "\(url("Owl.jpg").lastPathComponent) Properties")
+        check("⌘I opens “Owl.jpg Properties”", windows().map(\.title) == [title], "\(windows().map(\.title))")
+        check("…with the file's size in bytes", PropertiesProbe.shown[url("Owl.jpg")]?.contains("138") == true
+              || PropertiesProbe.shown[url("Owl.jpg")]?.contains("(") == true, PropertiesProbe.shown[url("Owl.jpg")] ?? "nothing")
+        closeAll()
+        main?.makeKeyAndOrderFront(nil)
+        await pause(0.4)
+
+        browser.selection = [url("Photos")]
+        browser.focusList()
+        await pause(0.3)
+        let altReturn = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .option, timestamp: 0,
+                                         windowNumber: main?.windowNumber ?? 0, context: nil, characters: "\r",
+                                         charactersIgnoringModifiers: "\r", isARepeat: false, keyCode: 36)
+        if let altReturn { _ = FileKeys.handle(altReturn, model: browser) }
+        for _ in 0..<30 where PropertiesProbe.shown[url("Photos")]?.contains(",") != true { await pause(0.1) }
+        let expected = (try? FolderSize.summary(url("Photos")))?.items ?? -1
+        let shown = PropertiesProbe.shown[url("Photos")] ?? "nothing"
+        check("⌥↩ opens Properties, and a folder shows its size with the item count",
+              windows().count == 1 && shown.contains("\(expected)"), "\(shown), expected \(expected) items")
+        closeAll()
+        main?.makeKeyAndOrderFront(nil)
+
+        let file = url("notes.md")
+        try? ItemFlags.setLocked(true, file)
+        let lockedOnDisk = ItemFlags.isLocked(file) && (try? Data("x".utf8).write(to: file)) == nil
+        try? ItemFlags.setLocked(false, file)
+        check("Locked locks the file on disk, and unlocking puts it back", lockedOnDisk && !ItemFlags.isLocked(file))
+        await pause(0.3)
     }
 
     // S-025: the inspector.

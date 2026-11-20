@@ -20,6 +20,15 @@ enum Snapshot {
         case icons, columns
         case columnsMenu = "columns-menu"
         case grouped, hidden, inspector
+        case properties, propertiesFolder = "properties-folder"
+
+        /// Pages shot in their own window instead of the main one.
+        var windowID: String? {
+            switch self {
+            case .properties, .propertiesFolder: KamiroApp.propertiesID
+            default: nil
+            }
+        }
 
         @MainActor
         func show(in browser: BrowserModel) async {
@@ -62,6 +71,12 @@ enum Snapshot {
                    case .header(let header) = last {
                     browser.toggleGroup(header.id)
                 }
+            case .properties, .propertiesFolder:
+                let name = self == .properties ? "Owl.jpg" : "Photos"
+                browser.go(to: seed, select: [seed.appending(path: name)])
+                await browser.waitUntilLoaded()
+                browser.showProperties()
+                try? await Task.sleep(for: .seconds(1.5))
             case .inspector:
                 Prefs.defaults.set(true, forKey: Prefs.showInspector)
                 try? await Task.sleep(for: .seconds(1))
@@ -111,6 +126,8 @@ enum Snapshot {
             case .grouped: browser.groupBy = .none
             case .hidden: HiddenFiles.set(false)
             case .inspector: Prefs.defaults.set(false, forKey: Prefs.showInspector)
+            case .properties, .propertiesFolder:
+                NSApp.windows.filter { $0.identifier?.rawValue.contains(KamiroApp.propertiesID) == true }.forEach { $0.close() }
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))
@@ -151,6 +168,11 @@ enum Snapshot {
                     let path = "\(dir)/\(page.rawValue)-\(mode).png"
                     if page == .columnsMenu {
                         captureHeaderMenu(of: browser, to: path, window: main)
+                    } else if let id = page.windowID {
+                        let own = NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue.contains(id) == true }
+                        own?.makeKeyAndOrderFront(nil)
+                        try? await Task.sleep(for: .seconds(0.3))
+                        capture(to: path, window: own)
                     } else {
                         capture(to: path, window: main)
                     }

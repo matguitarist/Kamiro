@@ -16,17 +16,24 @@ public enum FolderSize {
     /// Throws FolderError.denied when the folder itself can't be read: its size isn't known,
     /// which is not the same as zero.
     public static func measure(_ folder: URL) throws -> Int64 {
+        try summary(folder).bytes
+    }
+
+    /// Size on disk and how many items are inside, at every depth, hidden ones included (Properties).
+    public static func summary(_ folder: URL) throws -> (bytes: Int64, items: Int) {
         guard let handle = opendir(folder.path) else { throw FolderError.denied }
         closedir(handle)
         guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: keys, options: [],
-                                                          errorHandler: { _, _ in true }) else { return 0 }
+                                                          errorHandler: { _, _ in true }) else { return (0, 0) }
         var total: Int64 = 0
         var linked: Set<UInt64> = []
         var count = 0
+        var items = 0
         while let url = walker.nextObject() as? URL {
             count += 1
             if count % 256 == 0, Task.isCancelled { throw CancellationError() }
             guard let values = try? url.resourceValues(forKeys: Set(keys)) else { continue }
+            items += 1
             if values.isDirectory == true {
                 if skipped.contains(url.canonical.path) { walker.skipDescendants() }
                 continue
@@ -36,7 +43,7 @@ public enum FolderSize {
             total += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
         }
         if Task.isCancelled { throw CancellationError() }
-        return total
+        return (total, items)
     }
 
     /// How long to wait before measuring a folder again after a change inside it: ten times what

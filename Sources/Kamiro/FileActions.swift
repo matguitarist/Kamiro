@@ -212,6 +212,13 @@ extension BrowserModel {
         pendingDelete = orderedSelection
     }
 
+    /// Properties (⌘I, ⌥↩, S-026): a window per selected item, up to 10; the folder itself when
+    /// nothing is selected.
+    func showProperties() {
+        let chosen = items.filter { selection.contains($0.url) }.map(\.url)
+        for url in (chosen.isEmpty ? [folder] : Array(chosen.prefix(10))) { openProperties?(url) }
+    }
+
     func deleteImmediately() {
         guard let urls = pendingDelete else { return }
         pendingDelete = nil

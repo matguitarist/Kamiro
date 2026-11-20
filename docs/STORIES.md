@@ -320,9 +320,19 @@ Built: An inspector pane at the right of the window (⌥⌘I, View › Show Insp
 
 ### S-026 Open Properties
 As the user, I press ⌘I (or ⌥↩) for a Properties window: name, where, size with item count, dates, permissions, Open With, locked, hidden.
-Screens: properties
+Screens: properties, properties-folder
 Depends: S-023
-Status: todo
+UX:
+- Flow: ⌘I, ⌥↩ (Windows' Alt+Enter), File › Properties or Properties in the right-click menu → a Properties window per selected item (the folder itself when nothing is selected), up to 10 → ⌘W closes it
+- Surface: window (one item's full details, kept open beside the list; the inspector stays the quick look)
+- States: a folder's size reads "Calculating…" until measured, then "193 KB on disk, 4 items"; a file shows "135 KB (138,240 bytes)"; Locked and Hidden apply at once, and a failure shows under the switch in words; apps and folders have no Opens With
+- Words: window title "notes.md Properties" / « Propriétés de notes.md »; sections General, Opens With, Options, Sharing & Permissions; "Locked" / « Verrouillé », "Hidden" / « Masqué », "Read & Write" / « Lecture et écriture », "Read only" / « Lecture seule », "No Access" / « Aucun accès », "Everyone" / « Tout le monde »
+- Access: every row reads label then value; the switches have their names; Tab moves between them
+Acceptance:
+- [unit] A folder's summary counts every item inside it, hidden ones too; permissions read as Read & Write, Read only, Write only or No Access for owner, group and everyone.
+- [self] ⌘I and ⌥↩ open "Owl.jpg Properties"; a folder shows its size with the item count; Locked locks the file on disk and unlocking puts it back.
+Status: done
+Built: File › Properties (⌘I), ⌥↩ like Alt+Enter, and Properties at the bottom of the right-click menu open one window per selected item (up to 10; the folder when nothing is selected). It shows the icon, name and kind; General (size: bytes for files, size on disk and item count for folders, measured in the background; where; created; modified); Opens With (the default app, read only until S-036); Options (Locked and Hidden switches that apply at once, with the error in words if they fail); Sharing & Permissions (owner, group, everyone). Permissions and the folder summary live in KamiroKit with unit tests.
 
 ### S-027 Tag files
 As the user, I add Finder tags from the right-click menu and see them in a Tags column and the sidebar's Tags section.

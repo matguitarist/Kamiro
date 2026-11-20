@@ -16,6 +16,7 @@ import SwiftUI
 struct KamiroApp: App {
     static let browserID = "browser"
     static let logID = "log"
+    static let propertiesID = "properties"
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var model = AppModel(log: Store.log)
@@ -39,6 +40,13 @@ struct KamiroApp: App {
                     .disabled(!Updater.shared.isAvailable)
             }
         }
+
+        WindowGroup(id: Self.propertiesID, for: URL.self) { $url in
+            if let url { PropertiesView(url: url).themed() }
+        }
+        .windowResizability(.contentSize)
+        .windowToolbarStyle(.unified(showsTitle: true))
+        .commandsRemoved()
 
         Window("Log", id: Self.logID) {
             LogWindow()

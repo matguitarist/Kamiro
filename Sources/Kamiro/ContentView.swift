@@ -48,6 +48,7 @@ struct ContentView: View {
         }
         .onAppear {
             browser.openWindow = { url in openWindow(id: KamiroApp.browserID, value: url) }
+            browser.openProperties = { url in openWindow(id: KamiroApp.propertiesID, value: url) }
             browser.startIfNeeded()
             MenuState.shared.activate(browser)
         }
