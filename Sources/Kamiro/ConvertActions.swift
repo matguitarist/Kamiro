@@ -9,10 +9,14 @@ extension Conversion {
         case .jpeg: "JPEG"
         case .png: "PNG"
         case .heic: "HEIC"
+        case .avif: "AVIF"
         case .webp: "WebP"
+        case .jpeg2000: "JPEG 2000"
         case .tiff: "TIFF"
         case .gif: "GIF"
+        case .bmp: "BMP"
         case .icns: String(localized: "Icon (ICNS)")
+        case .ico: String(localized: "Windows Icon (ICO)")
         case .mp4: String(localized: "MP4 Video")
         case .animatedGIF: String(localized: "Animated GIF")
         case .audio: String(localized: "Audio Only (M4A)")

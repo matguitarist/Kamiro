@@ -3741,6 +3741,16 @@
           }
         }
       }
+    },
+    "Windows Icon (ICO)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icône Windows (ICO)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

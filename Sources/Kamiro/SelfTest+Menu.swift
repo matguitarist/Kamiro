@@ -172,6 +172,10 @@ extension SelfTest {
         let formats = convert?.items.map(\.title) ?? []
         check("a picture's Convert submenu has JPEG and Smaller for Email, not PNG",
               formats.contains("JPEG") && formats.contains(t("Smaller for Email")) && !formats.contains("PNG"), "\(formats)")
+        // S-048: the formats macOS writes on its own, and none it can't.
+        check("Convert also offers AVIF, JPEG 2000, BMP and Windows Icon where this Mac writes them",
+              [Conversion.avif, .jpeg2000, .bmp, .ico].allSatisfy { formats.contains($0.title) == $0.isAvailable }
+                && !formats.contains { title in Conversion.allCases.contains { $0.title == title && !$0.isAvailable } }, "\(formats)")
         browser.convertSelection(to: .jpeg)
         await TransferCenter.shared.waitUntilIdle()
         for _ in 0..<30 where browser.selection != [url("Lotus.jpg")] { try? await Task.sleep(for: .milliseconds(100)) }

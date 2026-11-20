@@ -24,9 +24,9 @@ public enum Media {
     }
 }
 
-/// One way to convert files, offered in the right-click menu's Convert submenu.
+/// One way to convert files, offered in the right-click menu's Convert submenu (S-045, S-048).
 public enum Conversion: String, CaseIterable, Sendable, Identifiable {
-    case jpeg, png, heic, webp, tiff, gif, icns
+    case jpeg, png, heic, avif, webp, jpeg2000, tiff, gif, bmp, icns, ico
     case mp4, animatedGIF, audio
     /// Images and PDFs, smaller for email.
     case smaller
@@ -49,10 +49,14 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         case .jpeg: .jpeg
         case .png: .png
         case .heic: .heic
+        case .avif: UTType("public.avif")
         case .webp: .webP
+        case .jpeg2000: UTType("public.jpeg-2000")
         case .tiff: .tiff
         case .gif: .gif
+        case .bmp: .bmp
         case .icns: .icns
+        case .ico: .ico
         default: nil
         }
     }
@@ -62,8 +66,12 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         case .jpeg: "jpg"
         case .png: "png"
         case .heic: "heic"
+        case .avif: "avif"
         case .webp: "webp"
+        case .jpeg2000: "jp2"
         case .tiff: "tiff"
+        case .bmp: "bmp"
+        case .ico: "ico"
         case .gif, .animatedGIF: "gif"
         case .icns: "icns"
         case .mp4: "mp4"
@@ -91,7 +99,7 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         guard !urls.isEmpty, !kinds.contains(nil) else { return [] }
         let offered: [Conversion]
         if kinds.allSatisfy({ $0 == .image }) {
-            offered = [.jpeg, .png, .heic, .webp, .tiff, .gif, .icns, .smaller]
+            offered = [.jpeg, .png, .heic, .avif, .webp, .jpeg2000, .tiff, .gif, .bmp, .icns, .ico, .smaller]
         } else if kinds.allSatisfy({ $0 == .video }) {
             offered = [.mp4, .animatedGIF, .audio]
         } else if kinds.allSatisfy({ $0 == .image || $0 == .pdf }) {
@@ -184,6 +192,7 @@ public enum Converter {
         switch type {
         case .jpeg: try write([flattened(image)], type: type, to: out, properties: [kCGImageDestinationLossyCompressionQuality: 0.9])
         case .icns: try write(iconSizes.map { square(image, side: $0) }, type: type, to: out)
+        case .ico: try write(windowsIconSizes.map { square(image, side: $0) }, type: type, to: out)
         default: try write([image], type: type, to: out)
         }
     }
@@ -194,6 +203,8 @@ public enum Converter {
     }
 
     static let iconSizes = [16, 32, 64, 128, 256, 512, 1024]
+    /// A Windows icon stops at 256 pixels.
+    static let windowsIconSizes = [16, 32, 48, 64, 128, 256]
 
     static func write(_ images: [CGImage], type: UTType, to out: URL, properties: [CFString: Any] = [:]) throws {
         guard let destination = CGImageDestinationCreateWithURL(out as CFURL, type.identifier as CFString, images.count, nil) else {

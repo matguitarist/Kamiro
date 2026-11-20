@@ -481,7 +481,8 @@ As the user, Convert also offers the formats macOS writes on its own: AVIF, JPEG
 Depends: S-045
 Acceptance:
 - [unit] Each new format round-trips with ImageIO; ICO keeps 16 to 256 pixels; formats this Mac can't write are left out, not shown dimmed.
-Status: todo
+Status: done
+Built: Convert on pictures also offers AVIF, JPEG 2000, BMP and Windows Icon (ICO, 16 to 256 pixels in one file), in the order JPEG, PNG, HEIC, AVIF, WebP, JPEG 2000, TIFF, GIF, BMP, Icon (ICNS), Windows Icon (ICO). Each shows only where ImageIO on this Mac can write it; macOS 26 writes all four.
 
 ### S-049 Optional tools
 As the user, Settings › Tools lists the free command-line tools Kamiro can use (cwebp, ffmpeg, ImageMagick), shows which are installed with their version, and for the others the Homebrew line to copy. Native first: nothing here is needed, nothing is bundled or downloaded by Kamiro, and a tool's actions appear only once it is installed.

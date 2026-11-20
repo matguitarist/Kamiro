@@ -59,13 +59,30 @@ private func video(in folder: URL) async throws -> URL {
         #expect(made.lastPathComponent == "photo.\(conversion.ext(for: source))", "\(conversion)")
         #expect(image.map { CGImageSourceGetCount($0) } ?? 0 >= 1, "\(conversion)")
         #expect(image.flatMap { CGImageSourceGetType($0) } as String? == conversion.imageType?.identifier, "\(conversion)")
-        if conversion != .icns, let image, let cg = CGImageSourceCreateImageAtIndex(image, 0, nil) {
+        if conversion != .icns, conversion != .ico, let image, let cg = CGImageSourceCreateImageAtIndex(image, 0, nil) {
             #expect(cg.width == 120 && cg.height == 80, "\(conversion)")
         }
     }
     // Back from JPEG to PNG too.
     let back = try await Converter.convert(folder.appending(path: "photo.jpg"), to: .png)
     #expect(back.lastPathComponent == "photo 2.png")
+}
+
+@Test func moreNativeFormats() async throws {
+    let folder = try tempFolder()
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let source = try picture("photo.png", in: folder)
+    // A Windows icon keeps 16 to 256 pixels.
+    let ico = try await Converter.convert(source, to: .ico)
+    let icon = try #require(CGImageSourceCreateWithURL(ico as CFURL, nil))
+    let sides = (0..<CGImageSourceGetCount(icon)).compactMap { CGImageSourceCreateImageAtIndex(icon, $0, nil)?.width }
+    #expect(ico.lastPathComponent == "photo.ico" && sides.min() == 16 && sides.max() == 256, "\(sides)")
+    // The new formats are in the menu exactly when this Mac writes them; none is ever offered dimmed.
+    let choices = Conversion.choices(for: [source])
+    for format in [Conversion.avif, .jpeg2000, .bmp, .ico] {
+        #expect(choices.contains(format) == format.isAvailable, "\(format)")
+    }
+    #expect(choices.allSatisfy { $0.isAvailable })
 }
 
 @Test func convertedFilesNeverOverwrite() throws {
