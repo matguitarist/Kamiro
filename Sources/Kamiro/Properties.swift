@@ -14,6 +14,9 @@ struct PropertiesView: View {
     @State private var problem: String?
     /// Set for a disk's top folder, which shows its format and space instead of a size.
     @State private var disk: VolumeFacts?
+    /// Opens With: the app picked, and the one that opens this kind now (S-036).
+    @State private var chosenApp: URL?
+    @State private var defaultApp: URL?
 
     var body: some View {
         Form {
@@ -49,15 +52,8 @@ struct PropertiesView: View {
                     if let date = item.created { LabeledContent("Created", value: date.formatted(date: .long, time: .shortened)) }
                     if let date = item.modified { LabeledContent("Modified", value: date.formatted(date: .long, time: .shortened)) }
                 }
-                if let app = PropertiesFacts.opener(of: item) {
-                    Section("Opens With") {
-                        LabeledContent("Application") {
-                            HStack(spacing: Space.xs) {
-                                Image(nsImage: app.icon).resizable().frame(width: 16, height: 16).accessibilityHidden(true)
-                                Text(app.name)
-                            }
-                        }
-                    }
+                if PropertiesFacts.opener(of: item) != nil {
+                    OpensWithSection(url: url, chosen: $chosenApp, current: $defaultApp)
                 }
                 Section("Options") {
                     Toggle("Locked", isOn: $locked)
@@ -152,6 +148,47 @@ struct PropertiesView: View {
     @concurrent
     nonisolated private static func summary(of url: URL) async -> (bytes: Int64, items: Int)? {
         try? FolderSize.summary(url)
+    }
+}
+
+/// Opens With in Properties: pick an app, then Change All… makes it open every file of this
+/// kind, after asking, like the Finder's Get Info.
+private struct OpensWithSection: View {
+    let url: URL
+    @Binding var chosen: URL?
+    @Binding var current: URL?
+
+    var body: some View {
+        let apps = ItemActions.apps(for: [url])
+        let list = (apps.default.map { [$0] } ?? []) + apps.others
+        Section("Opens With") {
+            Picker("Application", selection: $chosen) {
+                ForEach(list, id: \.self) { app in
+                    Label { Text(verbatim: ItemActions.appName(app)) } icon: { Image(nsImage: Self.icon(app)) }
+                        .tag(Optional(app))
+                }
+            }
+            LabeledContent {
+                Button("Change All…") {
+                    guard let chosen, ItemActions.confirmMakeDefault(chosen, for: [url]) else { return }
+                    current = chosen
+                }
+                .disabled(chosen == nil || chosen == current)
+            } label: {
+                Text("Use this app for every “\(ItemActions.kindName([url]))” file.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .task(id: url) {
+            current = apps.default
+            chosen = apps.default
+        }
+    }
+
+    private static func icon(_ app: URL) -> NSImage {
+        let image = NSWorkspace.shared.icon(forFile: app.path)
+        image.size = NSSize(width: 16, height: 16)
+        return image
     }
 }
 

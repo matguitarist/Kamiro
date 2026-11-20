@@ -436,7 +436,8 @@ Built: Right-click (or File) › Compress “name” / Compress N Items makes �
 ### S-036 Open with another app
 As the user, I pick an app from Open With, or Other…, and can make it the default for that kind.
 Depends: S-033
-Status: todo
+Status: done
+Built: Open With came with S-033. Holding ⌥ in the right-click menu turns it into Always Open With: the app picked opens the files and becomes the default for their kinds. Other… has an Always Open With checkbox. Properties › Opens With is a picker of the apps for that file, with Change All…, which asks “Open every “JPEG image” file with Preview?” before making it the default for the whole Mac, Finder included.
 
 ### S-037 Eject volumes and connect to a server
 As the user, I eject a volume from the sidebar and connect to an SMB or AFP server (⌘K).

@@ -24,7 +24,10 @@ extension BrowserModel {
         let folders = chosen.filter(\.isFolder)
         if onItems, !chosen.isEmpty {
             add(String(localized: "Open"), "arrow.up.forward.app") { [weak self] in self?.open() }
-            if !files.isEmpty, folders.isEmpty { menu.addItem(ItemActions.openWithItem(for: files.map(\.url))) }
+            if !files.isEmpty, folders.isEmpty {
+                menu.addItem(ItemActions.openWithItem(for: files.map(\.url)))
+                menu.addItem(ItemActions.openWithItem(for: files.map(\.url), always: true))
+            }
             if !folders.isEmpty, files.isEmpty {
                 add(String(localized: "Open in New Tab"), "plus.square.on.square") { [weak self] in self?.open(newTab: true) }
             }
@@ -227,25 +230,80 @@ enum ItemActions {
         NSWorkspace.shared.open(urls, withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
     }
 
-    /// Open With › Other…: pick any app in /Applications.
+    /// Open With › Other…: pick any app in /Applications; Always Open With makes it the default.
     static func openWithOther(_ urls: [URL]) {
         let panel = NSOpenPanel()
         panel.directoryURL = URL(filePath: "/Applications")
         panel.allowedContentTypes = [.application]
         panel.prompt = String(localized: "Open")
         panel.message = String(localized: "Choose an app to open the selected items.")
+        let always = NSButton(checkboxWithTitle: String(localized: "Always Open With"), target: nil, action: nil)
+        always.sizeToFit()
+        always.frame.size.height += Space.lg
+        panel.accessoryView = always
+        panel.isAccessoryViewDisclosed = true
         guard panel.runModal() == .OK, let app = panel.url else { return }
+        if always.state == .on { makeDefault(app, for: urls) }
         open(urls, with: app)
     }
 
-    /// Open With and its submenu: the default app, the others, then Other….
-    static func openWithItem(for urls: [URL]) -> NSMenuItem {
-        let item = NSMenuItem(title: String(localized: "Open With"), action: nil, keyEquivalent: "")
+    // MARK: Default app (S-036)
+
+    /// "PDF document": the kind the Change All question names.
+    static func kindName(_ urls: [URL]) -> String {
+        let names = DefaultApps.types(of: urls).map { $0.localizedDescription ?? $0.identifier }
+        return ListFormatter.localizedString(byJoining: names)
+    }
+
+    /// Makes `app` open every file of the kinds in `urls`, here and in the Finder.
+    static func makeDefault(_ app: URL, for urls: [URL]) {
+        let types = DefaultApps.types(of: urls)
+        Task {
+            for type in types {
+                do {
+                    try await NSWorkspace.shared.setDefaultApplication(at: app, toOpen: type)
+                    Store.log.post(.info, "\(appName(app)) now opens \(type.identifier)", source: "Open With")
+                } catch {
+                    Store.log.post(.error, "Couldn't make \(appName(app)) open \(type.identifier): \(error.localizedDescription)", source: "Open With")
+                    let alert = NSAlert()
+                    alert.messageText = String(localized: "\(appName(app)) couldn’t be made the default.")
+                    alert.informativeText = error.localizedDescription
+                    alert.runModal()
+                }
+            }
+        }
+    }
+
+    /// Asks before changing the default, like the Finder's Change All…; true when changed.
+    @discardableResult
+    static func confirmMakeDefault(_ app: URL, for urls: [URL]) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Open every “\(kindName(urls))” file with \(appName(app))?")
+        alert.informativeText = String(localized: "Files of this kind will open with \(appName(app)) everywhere on this Mac, the Finder included.")
+        alert.addButton(withTitle: String(localized: "Change All"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return false }
+        makeDefault(app, for: urls)
+        return true
+    }
+
+    /// Open With and its submenu: the default app, the others, then Other…. With ⌥ held it
+    /// reads Always Open With: the app chosen opens them and becomes the default for their kind.
+    static func openWithItem(for urls: [URL], always: Bool = false) -> NSMenuItem {
+        let title = always ? String(localized: "Always Open With") : String(localized: "Open With")
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         item.image = NSImage(systemSymbolName: "arrow.up.forward.square", accessibilityDescription: nil)
+        if always {
+            item.isAlternate = true
+            item.keyEquivalentModifierMask = .option
+        }
         let menu = NSMenu()
         let (main, others) = apps(for: urls)
         func add(_ app: URL, title: String) {
-            let entry = MenuAction.item(title) { open(urls, with: app) }
+            let entry = MenuAction.item(title) {
+                if always { makeDefault(app, for: urls) }
+                open(urls, with: app)
+            }
             let icon = NSWorkspace.shared.icon(forFile: app.path)
             icon.size = NSSize(width: 16, height: 16)
             entry.image = icon

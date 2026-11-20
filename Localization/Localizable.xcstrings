@@ -3080,6 +3080,76 @@
           }
         }
       }
+    },
+    "Always Open With": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toujours ouvrir avec"
+          }
+        }
+      }
+    },
+    "%@ couldn’t be made the default.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ n’a pas pu devenir l’app par défaut."
+          }
+        }
+      }
+    },
+    "Open every “%@” file with %@?": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir tous les fichiers « %@ » avec %@ ?"
+          }
+        }
+      }
+    },
+    "Files of this kind will open with %@ everywhere on this Mac, the Finder included.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fichiers de ce type s’ouvriront avec %@ partout sur ce Mac, y compris dans le Finder."
+          }
+        }
+      }
+    },
+    "Change All": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout modifier"
+          }
+        }
+      }
+    },
+    "Change All…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout modifier…"
+          }
+        }
+      }
+    },
+    "Use this app for every “%@” file.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utiliser cette app pour tous les fichiers « %@ »."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

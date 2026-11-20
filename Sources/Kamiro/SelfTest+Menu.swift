@@ -26,6 +26,16 @@ extension SelfTest {
               (openWith?.items.first?.title.hasPrefix(main) ?? false) && openWith?.items.last?.title == t("Other…"),
               openWith.map(titles).map { "\($0)" } ?? "no submenu")
 
+        // S-036: with ⌥ held, Open With reads Always Open With. Its entries change the system's
+        // default, so the self-test only reads them.
+        let always = fileMenu.items.first { $0.title == t("Always Open With") }
+        check("⌥ turns Open With into Always Open With, with the same apps",
+              always?.isAlternate == true && always?.keyEquivalentModifierMask == .option
+              && always?.submenu.map(titles) == openWith.map(titles), always.map { "\($0.keyEquivalentModifierMask)" } ?? "missing")
+        let openWithIndex = fileMenu.items.firstIndex { $0.title == t("Open With") } ?? -1
+        check("…right after Open With, so they share one line", fileMenu.items.indices.contains(openWithIndex + 1)
+              && fileMenu.items[openWithIndex + 1] === always)
+
         // S-034: Copy Info, and Open in the code editor for folders and text only.
         let info = fileMenu.items.first { $0.title == t("Copy Info") }?.submenu
         check("a file's Copy Info offers its name, name without extension, extension and parent folder path",
