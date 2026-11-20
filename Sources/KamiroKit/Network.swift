@@ -97,15 +97,30 @@ public enum ShareList {
         }
     }
 
+    /// The ways `smbutil view` is tried, in order: the keychain's password on the open session;
+    /// a new session (just after a disconnect the old one can refuse, "Authentication error");
+    /// then as guest.
+    public static let attempts: [[String]] = [["-N"], ["-N", "-f"], ["-N", "-f", "-g"]]
+
     /// The server's shares, or why they can't be listed (a password it doesn't have, no answer).
-    public static func shares(on server: URL) throws -> [Share] {
+    public static func shares(on server: URL,
+                              run: (_ options: [String], _ host: String) throws -> String = runSMBUtil) throws -> [Share] {
         if let names = fake.withLock({ $0 }) { return names.map { Share(name: $0, comment: "") } }
         guard server.scheme?.lowercased() == "smb", let host = server.host(percentEncoded: false) else {
             throw Failure.unreachable("Only SMB servers can list their shares.")
         }
+        var last: (any Error)?
+        for options in attempts {
+            do { return parse(try run(options, host)) } catch { last = error }
+        }
+        throw last ?? Failure.unreachable(host)
+    }
+
+    /// One `smbutil view`; throws with its message when it fails.
+    public static func runSMBUtil(_ options: [String], host: String) throws -> String {
         let process = Process()
         process.executableURL = URL(filePath: "/usr/bin/smbutil")
-        process.arguments = ["view", "-N", "//\(host)"]
+        process.arguments = ["view"] + options + ["//\(host)"]
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
@@ -118,7 +133,7 @@ public enum ShareList {
         guard process.terminationStatus == 0 else {
             throw Failure.unreachable(output.trimmingCharacters(in: .whitespacesAndNewlines))
         }
-        return parse(output)
+        return output
     }
 
     /// The server page's items: each share a folder, the mounted ones at their place in /Volumes.

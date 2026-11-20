@@ -134,6 +134,7 @@ extension SelfTest {
               one.contains(compressOne) && !one.contains(t("Extract Here")), "\(one)")
         browser.compressSelection()
         await TransferCenter.shared.waitUntilIdle()
+        for _ in 0..<30 where browser.selection != [url("Guide.zip")] { try? await Task.sleep(for: .milliseconds(100)) }
         check("Compress makes “Guide.zip” beside it, selected", exists("Guide.zip") && browser.selection == [url("Guide.zip")],
               "\(browser.selection.map(\.lastPathComponent))")
         let zipMenu = titles(browser.contextMenu(onItems: true))

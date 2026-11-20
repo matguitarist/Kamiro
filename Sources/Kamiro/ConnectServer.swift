@@ -20,11 +20,12 @@ enum ServerMount {
         }
     }
 
-    /// Mounts `url` under /Volumes and returns where.
-    static func mount(_ url: URL) async throws -> URL {
+    /// Mounts `url` under /Volumes and returns where. `asking` false never shows a dialog:
+    /// it works with the keychain's password or not at all.
+    static func mount(_ url: URL, asking: Bool = true) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             let options = NSMutableDictionary()
-            options[kNAUIOptionKey] = kNAUIOptionAllowUI
+            options[kNAUIOptionKey] = asking ? kNAUIOptionAllowUI : kNAUIOptionNoUI
             var request: AsyncRequestID?
             let started = NetFSMountURLAsync(url as CFURL, nil, nil, nil, options, nil, &request, .main) { status, _, points in
                 let paths = (points as? [String]) ?? []

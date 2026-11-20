@@ -3521,6 +3521,36 @@
           }
         }
       }
+    },
+    "Servers": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serveurs"
+          }
+        }
+      }
+    },
+    "Connect all shares when opening a server": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecter tous les partages à l’ouverture d’un serveur"
+          }
+        }
+      }
+    },
+    "Only the first may ask for a password; the others use the one in the keychain.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seul le premier peut demander un mot de passe ; les autres utilisent celui du trousseau."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

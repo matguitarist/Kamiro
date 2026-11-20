@@ -96,3 +96,11 @@ Fix: Archive.name drops a single file's extension (“report.zip”); a folder k
 name even with dots in it (“My.Project.zip”).
 Rule: a name built from another file's name splits off the extension only for files, never
 for folders, and the owner's habit wins over copying the Finder.
+
+## 2026-11-20 A server asked for its shares again right after a disconnect
+Ejecting HomeServer's last share, then clicking HomeServer, showed “didn't list its shares”
+and macOS's share picker: `smbutil view -N` reused the session being closed and got
+“server rejected the authentication”. A moment later the same command worked.
+Fix: ShareList tries the open session, then a new one (-f), then guest (-g) before giving up.
+Rule: anything that asks a server right after a disconnect retries on a fresh session before
+reporting the server as closed.

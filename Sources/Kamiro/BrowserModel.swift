@@ -390,6 +390,8 @@ final class BrowserModel {
                 // A server page's shares are whole disks across the network: never walked for a size.
                 if !isServerPage {
                     sizes.measure(list.filter { ($0.isFolder || $0.isPackage) && folderSizes[$0.url] == nil }.map(\.url))
+                } else if select != nil {
+                    connectAllShares()
                 }
             case .failure(let error):
                 setItems([])
@@ -504,6 +506,8 @@ enum Prefs {
     static let showRecentFiles = "showRecentFiles"
     /// Network lists each server's mounted shares under it; off, only the servers (S-055).
     static let showConnectedShares = "showConnectedShares"
+    /// Opening a server connects all its shares; on unless turned off (S-055).
+    static let connectAllShares = "connectAllShares"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

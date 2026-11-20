@@ -60,6 +60,33 @@ extension BrowserModel {
         }
     }
 
+    /// Opening a server connects all its shares (Settings › General › Servers): the first may
+    /// ask for a password, the rest use the keychain's and never ask. The page lists them again after.
+    func connectAllShares() {
+        guard case .server(let server) = place, Prefs.defaults.object(forKey: Prefs.connectAllShares) as? Bool ?? true,
+              !Store.isOverridden else { return }
+        let waiting = items.filter { !$0.url.isFileURL }.map(\.url)
+        guard !waiting.isEmpty, !ServerConnecting.busy.contains(ServerHost.key(server.host(percentEncoded: false) ?? "")) else { return }
+        let key = ServerHost.key(server.host(percentEncoded: false) ?? "")
+        ServerConnecting.busy.insert(key)
+        Task {
+            defer { ServerConnecting.busy.remove(key) }
+            var asked = false
+            for share in waiting {
+                do {
+                    let mounted = try await ServerMount.mount(share, asking: !asked)
+                    Store.log.post(.info, "Connected to \(share.absoluteString) at \(mounted.path)", source: "Servers")
+                } catch ServerMount.Failure.cancelled {
+                    break
+                } catch {
+                    Store.log.post(.error, "Couldn't connect to \(share.absoluteString): \(error.localizedDescription)", source: "Servers")
+                }
+                asked = true
+            }
+            if folder == VirtualPlace.server(server).url { refresh() }
+        }
+    }
+
     /// Connect As…: macOS's own name, password and share dialogs, for a server that didn't list
     /// its shares as guest. The shares list again once a share is mounted.
     func connectAs(_ server: URL) {
@@ -74,6 +101,11 @@ extension BrowserModel {
             }
         }
     }
+}
+
+/// Servers whose shares are being connected, so a refresh doesn't start it twice.
+@MainActor enum ServerConnecting {
+    static var busy: Set<String> = []
 }
 
 /// One server in the sidebar: found nearby, connected, or both.

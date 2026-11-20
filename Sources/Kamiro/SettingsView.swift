@@ -67,6 +67,7 @@ struct GeneralSettings: View {
     private let editors = ItemActions.installedEditors
     @AppStorage(Prefs.showRecentFiles, store: Prefs.defaults) private var showRecentFiles = true
     @AppStorage(Prefs.showConnectedShares, store: Prefs.defaults) private var showConnectedShares = false
+    @AppStorage(Prefs.connectAllShares, store: Prefs.defaults) private var connectAllShares = true
 
     var body: some View {
         @Bindable var model = model
@@ -107,6 +108,12 @@ struct GeneralSettings: View {
                 Text("Under each server in Network. Off, a server's shares open from its page.")
             }
             .disabled(!PinStore.shared.shows(.network))
+        }
+        Section("Servers") {
+            Toggle(isOn: $connectAllShares) {
+                Text("Connect all shares when opening a server")
+                Text("Only the first may ask for a password; the others use the one in the keychain.")
+            }
         }
         Section("Show on Home") {
             Toggle("Recent Files", isOn: $showRecentFiles)

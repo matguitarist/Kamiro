@@ -29,6 +29,20 @@ import Testing
     #expect(ShareList.parse(output).first?.comment == "application data")
 }
 
+@Test func shareListRetriesWithANewSessionThenAsGuest() throws {
+    var tried: [[String]] = []
+    let shares = try ShareList.shares(on: URL(string: "smb://HomeServer._smb._tcp.local")!) { options, host in
+        tried.append(options)
+        #expect(host == "HomeServer._smb._tcp.local")
+        if options.contains("-g") { return "isos                Disk    ISO images\n" }
+        throw ShareList.Failure.unreachable("smbutil: server rejected the authentication: Authentication error")
+    }
+    #expect(tried == ShareList.attempts && shares.map(\.name) == ["isos"])
+    #expect(throws: ShareList.Failure.self) {
+        try ShareList.shares(on: URL(string: "smb://Gone")!) { _, _ in throw ShareList.Failure.unreachable("no") }
+    }
+}
+
 @Test func serverSpellingsAreOneMachine() {
     let bonjour = URL(string: "smb://GUEST:@HomeServer._smb._tcp.local/isos")!
     #expect(ServerHost.same(bonjour, URL(string: "smb://homeserver.local")!))
