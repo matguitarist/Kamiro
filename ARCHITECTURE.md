@@ -17,7 +17,8 @@
 - Three list views, each an AppKit view behind an `NSViewRepresentable` with a coordinator that
   syncs from the model by version counters (`itemsVersion`, `groupVersion`, `sizesVersion`, tokens):
   details (`DetailsTable`, NSTableView), icons (`IconGrid`, NSCollectionView), columns
-  (`ColumnBrowser`, NSBrowser). Shared keys, Quick Look, rename and menus are in `ListSupport`.
+  (`ColumnBrowser`, NSBrowser, with its `FileBrowser` subclass and `ColumnPreview` in their own
+  files). Shared keys, Quick Look, rename and menus are in `ListSupport`.
   The column browser syncs after SwiftUI's update pass, not inside it (FIXLOG 2026-11-19).
 - `MenuState` mirrors the front window for the menu bar; `HiddenFiles` is the one app-wide choice.
 
