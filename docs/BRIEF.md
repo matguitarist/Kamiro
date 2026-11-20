@@ -24,13 +24,13 @@ Mac only: Swift 6, SwiftUI with AppKit where speed needs it, SwiftPM at the root
 One window with native tabs: sidebar (Home, Pinned, Locations, Tags), content (details, icons or columns), inspector on the right, status bar under the content. Toolbar: Back, Forward, Up, the address bar in the middle, view switcher, search. Local data, works offline, no accounts. Developer ID, notarized, no sandbox (decided by the agent: a sandboxed browser can't browse freely).
 
 ## Distribution
-Public, free and open source under MIT (owner, 2026-11-19): public GitHub repo, README.md and README.fr.md, notarized releases with Sparkle updates. Credits explorer-macos in the README and About window.
+Public, free and open source under MIT (owner, 2026-11-19): public GitHub repo, README.md and README.fr.md, notarized releases with Sparkle updates. Names explorer-macos and similar projects as inspirations in the README (no code taken, checked 2026-11-20).
 
 ## System hooks
 Privacy prompts for Desktop, Documents, Downloads and volumes, with a guide to Full Disk Access. FSEvents for live refresh. Quick Look (Space, thumbnails). Spotlight search. Finder tags. Default file viewer (NSFileViewer) so "Reveal in Finder" opens Kamiro. A `kamiro` terminal command. Open in Terminal.
 
 ## Reference
-Finder on macOS 26 for the look; Windows 11 File Explorer and explorer-macos for the habits (docs/research/file-managers.md). Borrowed code and ideas are listed in docs/BORROWED.md.
+Finder on macOS 26 for the look; Windows 11 File Explorer and explorer-macos for the habits (docs/research/file-managers.md). Inspirations are listed in docs/INSPIRATIONS.md.
 
 ## Look
 Native: Finder's sidebar, toolbar and Liquid Glass from the system parts, no custom chrome, no Windows colours. Accent: system (decided by the agent; the owner may pick one). English and French.

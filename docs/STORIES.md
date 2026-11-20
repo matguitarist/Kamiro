@@ -500,7 +500,7 @@ Status: todo
 As the user, I download a notarized Kamiro from its public GitHub release (MIT, free) and it updates itself with Sparkle.
 Acceptance:
 - [live] The DMG from the GitHub release opens without a Gatekeeper warning; Sparkle finds the next version.
-- [manual] README.md and README.fr.md credit explorer-macos; LICENSE is MIT with LICENSES/explorer-macos.txt beside it.
+- [manual] README.md and README.fr.md name explorer-macos and PowerClick as inspirations (docs/INSPIRATIONS.md); LICENSE is MIT.
 Status: todo
 
 ### S-044 Choose the terminal

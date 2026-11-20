@@ -19,7 +19,7 @@ Shared rules for how every project is laid out and named:
 - `build.sh` builds, signs, and installs `~/Applications/Kamiro.app`.
 - Release: `tools/release.sh <version>` (settings in `release.conf`, version in `Info.plist.in`). Use the mac-release skill.
 - `Icon/AppIcon.icon` the app icon, an Icon Composer file (JSON plus SVG layers). `build.sh` compiles it with `tools/make_icon.sh`; `tools/icon_review.sh` renders every look into one PNG.
-- `docs/` the brief, research, glossary, user stories, and BORROWED.md (what comes from explorer-macos, MIT; keep its notice in any file that adapts its code).
+- `docs/` the brief, research, glossary, user stories, and INSPIRATIONS.md (explorer-macos, PowerClick: ideas only, no code; if code is ever adapted, follow its Rule).
 
 ## Checks specific to this app
 

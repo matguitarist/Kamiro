@@ -17,7 +17,7 @@ swift test            # tests unitaires
 
 ## Remerciements
 
-Kamiro reprend des idées et du code d’[explorer-macos](https://github.com/preslav-panayotov/explorer-macos) de Preslav Panayotov (MIT) ; voir [docs/BORROWED.md](docs/BORROWED.md) et [LICENSES/explorer-macos.txt](LICENSES/explorer-macos.txt). Son menu contextuel s’inspire de [PowerClick](https://powerclick.kilicov.dev/).
+Kamiro s’inspire d’[explorer-macos](https://github.com/preslav-panayotov/explorer-macos), de [PowerClick](https://powerclick.kilicov.dev/) et de projets semblables ; son code lui est propre. Voir [docs/INSPIRATIONS.md](docs/INSPIRATIONS.md).
 
 ## Licence
 
