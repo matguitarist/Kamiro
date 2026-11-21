@@ -474,7 +474,8 @@ Built: Right-click › Copy To and Move To list the pinned folders, then Recent 
 As the user, Settings › Menu lets me hide the actions and New File templates I never use.
 Reference: PowerClick (docs/research/context-menu.md).
 Depends: S-033, S-040
-Status: todo
+Status: done
+Built: Settings › Menu has a switch for each optional right-click action (Open With, Open in New Tab, Quick Look, Copy Path, Copy Info, Duplicate, Copy To, Move To, Compress, Extract Here, Convert, Tags, Pin to Sidebar, Open in Terminal, Open in the code editor, New File, New File from Clipboard) and for each New File type; Open, Cut, Copy, Paste, Rename, Move to Trash, New Folder and Properties always show. New File goes away with its last type, and Show All brings everything back. File › New File and the toolbar's New menu keep every type.
 
 ### S-048 More native formats
 As the user, Convert also offers the formats macOS writes on its own: AVIF, JPEG 2000, BMP and ICO (Windows icon), so the common cases need nothing installed.
@@ -608,7 +609,7 @@ Built: Settings › General › Other Apps › Command Line installs a small zsh
 As the user, Settings has General (new window opens at, Return opens items, default browser, terminal app, code editor), Views (default view, columns, folders first), Sidebar and Menu.
 Screens: settings-general, settings-views, settings-sidebar
 Status: todo
-Progress (2026-11-21): Views has its own tab: new folders' view, sort, groups and Details columns (General's "New folders open as" moved here), and Folders on top, for every folder at once like the Finder's "Keep folders on top". Sidebar has its own tab (parts to show, Connected Shares, connect all shares). General has Folders (new windows open on Home, the home folder, Desktop, Documents, Downloads or a folder chosen with Other…, new tabs too, a folder that's gone opens Home; Recent Files on Home), Keyboard, Open With (Terminal, Code Editor), Other Apps (the kamiro command, S-039) and Language. Still to do: default browser (S-038), Menu (S-047).
+Progress (2026-11-21): Views has its own tab: new folders' view, sort, groups and Details columns (General's "New folders open as" moved here), and Folders on top, for every folder at once like the Finder's "Keep folders on top". Sidebar has its own tab (parts to show, Connected Shares, connect all shares). General has Folders (new windows open on Home, the home folder, Desktop, Documents, Downloads or a folder chosen with Other…, new tabs too, a folder that's gone opens Home; Recent Files on Home), Keyboard, Open With (Terminal, Code Editor), Other Apps (the kamiro command, S-039) and Language. Menu has its own tab (S-047). Still to do: default browser (S-038).
 
 ### S-041 French
 As the user, every screen reads in French when the Mac is in French, with a language choice in Settings.

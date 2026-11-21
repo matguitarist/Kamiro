@@ -37,6 +37,7 @@ extension BrowserModel {
         func group() {
             if let last = menu.items.last, !last.isSeparatorItem { menu.addItem(.separator()) }
         }
+        let shown = MenuChoices.current  // Settings › Menu (S-047)
         let chosen = onItems ? selectedItems : []
         let urls = chosen.map(\.url)
         let files = chosen.filter { !$0.isFolder }
@@ -48,17 +49,17 @@ extension BrowserModel {
         }
         if onItems, !chosen.isEmpty {
             add(String(localized: "Open"), "arrow.up.forward.app") { [weak self] in self?.open() }
-            if !files.isEmpty, folders.isEmpty {
+            if shown.shows(.openWith), !files.isEmpty, folders.isEmpty {
                 menu.addItem(ItemActions.openWithItem(for: files.map(\.url)))
                 menu.addItem(ItemActions.openWithItem(for: files.map(\.url), always: true))
             }
-            if !folders.isEmpty, files.isEmpty {
+            if shown.shows(.openInNewTab), !folders.isEmpty, files.isEmpty {
                 add(String(localized: "Open in New Tab"), "plus.square.on.square") { [weak self] in self?.open(newTab: true) }
             }
             if isVirtual, chosen.count == 1 {
                 add(String(localized: "Show in Enclosing Folder"), "folder") { [weak self] in self?.showInEnclosingFolder() }
             }
-            add(String(localized: "Quick Look"), "eye") { [weak self] in self?.quickLook?() }
+            if shown.shows(.quickLook) { add(String(localized: "Quick Look"), "eye") { [weak self] in self?.quickLook?() } }
             // iCloud Drive and sync folders (S-058).
             if canDownload {
                 add(String(localized: "Download Now"), "icloud.and.arrow.down") { [weak self] in self?.downloadSelection() }
@@ -71,44 +72,48 @@ extension BrowserModel {
             let locked = selectionHasAppFolder
             if !locked { add(String(localized: "Cut"), "scissors") { [weak self] in self?.cutSelection() } }
             add(String(localized: "Copy"), "doc.on.doc") { [weak self] in self?.copySelection() }
-            add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths(urls) }
-            ItemActions.showCopyPathKey(menu.items.last)
-            menu.addItem(ItemActions.copyInfoItem(for: urls))
+            if shown.shows(.copyPath) {
+                add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths(urls) }
+                ItemActions.showCopyPathKey(menu.items.last)
+            }
+            if shown.shows(.copyInfo) { menu.addItem(ItemActions.copyInfoItem(for: urls)) }
             if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
-            if !locked {
+            if !locked, shown.shows(.duplicate) {
                 add(String(localized: "Duplicate"), "plus.rectangle.on.rectangle") { [weak self] in self?.duplicateSelection() }
             }
-            menu.addItem(sendToMenuItem(.copy))
-            if !locked { menu.addItem(sendToMenuItem(.move)) }
-            if !compressTargets.isEmpty {
+            if shown.shows(.copyTo) { menu.addItem(sendToMenuItem(.copy)) }
+            if !locked, shown.shows(.moveTo) { menu.addItem(sendToMenuItem(.move)) }
+            if shown.shows(.compress), !compressTargets.isEmpty {
                 add(compressTitle, "archivebox") { [weak self] in self?.compressSelection() }
                 if compressTargets.count > 1 {
                     add(String(localized: "Compress To…"), "archivebox") { [weak self] in self?.compressSelectionTo() }
                 }
             }
-            if !extractTargets.isEmpty {
+            if shown.shows(.extract), !extractTargets.isEmpty {
                 add(String(localized: "Extract Here"), "arrow.up.bin") { [weak self] in self?.extractSelection() }
             }
-            if let convert = convertMenuItem() { menu.addItem(convert) }
+            if shown.shows(.convert), let convert = convertMenuItem() { menu.addItem(convert) }
             group()
             if !locked {
                 if chosen.count == 1 { add(String(localized: "Rename"), "pencil") { [weak self] in self?.beginRename() } }
                 add(String(localized: "Move to Trash"), "trash") { [weak self] in self?.trashSelection() }
             }
             group()
-            let tags = tagsMenu()
-            tags.image = NSImage(systemSymbolName: "tag", accessibilityDescription: nil)
-            menu.addItem(tags)
+            if shown.shows(.tags) {
+                let tags = tagsMenu()
+                tags.image = NSImage(systemSymbolName: "tag", accessibilityDescription: nil)
+                menu.addItem(tags)
+            }
             // Folders only: a file can't be pinned (S-032).
-            if !folders.isEmpty, files.isEmpty, !pinTargets.isEmpty {
+            if shown.shows(.pinToSidebar), !folders.isEmpty, files.isEmpty, !pinTargets.isEmpty {
                 add(String(localized: "Pin to Sidebar"), "pin") { [weak self] in self?.pinToSidebar() }
             }
             group()
-            if folders.count == 1, files.isEmpty {
+            if shown.shows(.openInTerminal), folders.count == 1, files.isEmpty {
                 let folder = folders[0].url
                 add(ItemActions.openInTerminalTitle, "terminal") { ItemActions.openInTerminal(folder) }
             }
-            if let editor = ItemActions.editor, chosen.allSatisfy({ EditorApp.opens($0.url, isFolder: $0.isFolder) }) {
+            if shown.shows(.openInEditor), let editor = ItemActions.editor, chosen.allSatisfy({ EditorApp.opens($0.url, isFolder: $0.isFolder) }) {
                 add(String(localized: "Open in \(editor.name)"), ItemActions.editorSymbol) { ItemActions.open(urls, in: editor) }
             }
             // A disk listed in /Volumes ejects from here too.
@@ -119,21 +124,27 @@ extension BrowserModel {
             if canPaste { add(String(localized: "Paste"), "doc.on.clipboard") { [weak self] in self?.paste() } }
             group()
             add(String(localized: "New Folder"), "folder.badge.plus") { [weak self] in self?.newFolder() }
-            let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
-            newFile.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
-            newFile.submenu = Self.templateMenu { [weak self] in self?.newFile($0) }
-            menu.addItem(newFile)
-            if canMakeFromClipboard {
+            if shown.showsNewFile {
+                let newFile = NSMenuItem(title: String(localized: "New File"), action: nil, keyEquivalent: "")
+                newFile.image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)
+                newFile.submenu = Self.templateMenu(shown.templates) { [weak self] in self?.newFile($0) }
+                menu.addItem(newFile)
+            }
+            if shown.shows(.newFileFromClipboard), canMakeFromClipboard {
                 add(String(localized: "New File from Clipboard"), "doc.on.clipboard") { [weak self] in self?.newFileFromClipboard() }
             }
             group()
             let here = folder
-            add(ItemActions.openTerminalHereTitle, "terminal") { ItemActions.openInTerminal(here) }
-            if let editor = ItemActions.editor {
+            if shown.shows(.openInTerminal) {
+                add(ItemActions.openTerminalHereTitle, "terminal") { ItemActions.openInTerminal(here) }
+            }
+            if shown.shows(.openInEditor), let editor = ItemActions.editor {
                 add(String(localized: "Open Folder in \(editor.name)"), ItemActions.editorSymbol) { ItemActions.open([here], in: editor) }
             }
-            add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths([here]) }
-            ItemActions.showCopyPathKey(menu.items.last)
+            if shown.shows(.copyPath) {
+                add(String(localized: "Copy Path"), "link") { ItemActions.copyPaths([here]) }
+                ItemActions.showCopyPathKey(menu.items.last)
+            }
         }
         if (onItems && !chosen.isEmpty) || (!isVirtual && state == .ready) {
             group()

@@ -580,6 +580,9 @@ enum Prefs {
     static let connectAllShares = "connectAllShares"
     /// The icons picked for servers and disks, by PlaceIcons key (S-056).
     static let placeIcons = "placeIcons"
+    /// What the right-click menu leaves out, by MenuEntry and FileTemplate names (S-047).
+    static let hiddenMenuEntries = "hiddenMenuEntries"
+    static let hiddenTemplates = "hiddenTemplates"
     static let defaults: UserDefaults = Store.isOverridden
         ? UserDefaults(suiteName: "com.mathieuares.kamiro.test") ?? .standard : .standard
 }

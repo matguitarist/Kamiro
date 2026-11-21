@@ -4151,6 +4151,56 @@
           }
         }
       }
+    },
+    "File › New File and the toolbar’s New menu still list every type.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichier › Nouveau fichier et le menu Nouveau de la barre d’outils proposent toujours tous les types."
+          }
+        }
+      }
+    },
+    "Menu": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu"
+          }
+        }
+      }
+    },
+    "Open, Cut, Copy, Paste, Rename, Move to Trash, New Folder and Properties always show.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir, Couper, Copier, Coller, Renommer, Placer dans la corbeille, Nouveau dossier et Propriétés sont toujours là."
+          }
+        }
+      }
+    },
+    "Right-Click Menu": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu contextuel"
+          }
+        }
+      }
+    },
+    "Show All": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout afficher"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

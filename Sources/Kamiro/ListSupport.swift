@@ -247,11 +247,11 @@ extension FileTemplate {
 }
 
 extension BrowserModel {
-    static func templateMenu(_ make: @escaping (FileTemplate) -> Void) -> NSMenu {
+    static func templateMenu(_ templates: [FileTemplate] = FileTemplate.all, _ make: @escaping (FileTemplate) -> Void) -> NSMenu {
         let menu = NSMenu()
-        for group in FileTemplate.Group.allCases {
+        for group in FileTemplate.Group.allCases where templates.contains(where: { $0.group == group }) {
             menu.addItem(.sectionHeader(title: group.title))
-            for template in FileTemplate.all where template.group == group {
+            for template in templates where template.group == group {
                 let item = MenuAction.item(template.title) { make(template) }
                 item.image = template.icon
                 menu.addItem(item)

@@ -27,6 +27,7 @@ struct SettingsView: View {
             case .general: GeneralSettings()
             case .views: ViewsSettings()
             case .sidebar: SidebarSettings()
+            case .menu: MenuSettings()
             case .appearance: AppearanceSettings()
             case .tools: ToolsSettings()
             case .updates: UpdateSettings()
@@ -40,7 +41,7 @@ struct SettingsView: View {
 
 /// The Settings tabs. Snapshot mode walks through every case.
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, views, sidebar, appearance, tools, updates
+    case general, views, sidebar, menu, appearance, tools, updates
 
     var id: String { rawValue }
 
@@ -49,6 +50,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: String(localized: "General")
         case .views: String(localized: "Views")
         case .sidebar: String(localized: "Sidebar")
+        case .menu: String(localized: "Menu")
         case .appearance: String(localized: "Appearance")
         case .tools: String(localized: "Tools")
         case .updates: String(localized: "Updates")
@@ -60,6 +62,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .general: "gearshape"
         case .views: "rectangle.grid.2x2"
         case .sidebar: "sidebar.left"
+        case .menu: "contextualmenu.and.cursorarrow"
         case .appearance: "paintpalette"
         case .tools: "wrench.and.screwdriver"
         case .updates: "arrow.triangle.2.circlepath"
