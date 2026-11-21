@@ -73,10 +73,12 @@ struct GeneralSettings: View {
     private let editors = ItemActions.installedEditors
     @AppStorage(Prefs.showRecentFiles, store: Prefs.defaults) private var showRecentFiles = true
     @State private var newFolderMode = Store.views.memory.standard.mode
+    @AppStorage(Prefs.newWindowStart, store: Prefs.defaults) private var newWindowStart = StartPlace.home.stored
 
     var body: some View {
         @Bindable var model = model
         Section("Folders") {
+            StartPlacePicker(stored: $newWindowStart)
             Picker(selection: $newFolderMode) {
                 ForEach(ViewMode.allCases, id: \.self) { mode in
                     Label(mode.label, systemImage: mode.symbol).tag(mode)

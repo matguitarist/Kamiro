@@ -557,6 +557,8 @@ enum Prefs {
     static let hiddenSidebarSections = "hiddenSidebarSections"
     /// Home lists recent files (Settings › General › Show on Home); on unless turned off.
     static let showRecentFiles = "showRecentFiles"
+    /// Where new windows and tabs open: a StartPlace, kept as its name or a path (S-040).
+    static let newWindowStart = "newWindowStart"
     /// Network lists each server's mounted shares under it; off, only the servers (S-055).
     static let showConnectedShares = "showConnectedShares"
     /// Opening a server connects all its shares; on unless turned off (S-055).

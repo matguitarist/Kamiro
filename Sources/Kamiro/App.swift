@@ -131,9 +131,11 @@ enum Store {
     /// The home test runs look for iCloud Drive and sync folders in (tools/seed-tree.sh).
     static let cloudHome = URL(filePath: "/tmp/Kamiro-home")
 
-    /// Where a new window opens: the Home page (S-031), or the sample tree in a test run.
+    /// Where a new window or tab opens: Settings › General's choice, the Home page unless changed
+    /// (S-031, S-040); in a test run that hasn't chosen, the sample tree.
     static var startFolder: URL {
-        if isOverridden, FileManager.default.fileExists(atPath: seedFolder.path) { return seedFolder }
-        return VirtualPlace.home.url
+        let stored = Prefs.defaults.string(forKey: Prefs.newWindowStart)
+        if isOverridden, stored == nil, FileManager.default.fileExists(atPath: seedFolder.path) { return seedFolder }
+        return StartPlace(stored: stored).url(home: isOverridden ? cloudHome : FileManager.default.homeDirectoryForCurrentUser)
     }
 }

@@ -35,6 +35,16 @@ enum SelfTest {
             check("the log line reaches the log file",
                   ((try? String(contentsOf: Store.logURL, encoding: .utf8)) ?? "").contains("Self-test line"))
 
+            // S-040: Settings › General › New windows open on.
+            check("a test run's new windows open on the sample tree until something is chosen", Store.startFolder == seed)
+            for (place, expected) in [(StartPlace.folder(seed.appending(path: "Projects")), seed.appending(path: "Projects").path),
+                                      (.folder(seed.appending(path: "Gone")), VirtualPlace.home.url.path),
+                                      (.home, VirtualPlace.home.url.path)] {
+                Prefs.defaults.set(place.stored, forKey: Prefs.newWindowStart)
+                check("New windows open on \(place.title) opens \(expected)", Store.startFolder.path == expected, Store.startFolder.path)
+            }
+            Prefs.defaults.removeObject(forKey: Prefs.newWindowStart)
+
             // S-001, S-002: the sample tree, Finder's order, folders first.
             browser.go(to: seed)
             await browser.waitUntilLoaded()
