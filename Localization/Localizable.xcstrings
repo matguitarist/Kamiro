@@ -3971,6 +3971,106 @@
           }
         }
       }
+    },
+    "Another kamiro command is already in %@; Kamiro leaves it alone.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une autre commande kamiro se trouve déjà dans %@ ; Kamiro n’y touche pas."
+          }
+        }
+      }
+    },
+    "Command Line": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ligne de commande"
+          }
+        }
+      }
+    },
+    "In Terminal, kamiro . opens the folder you’re in, and kamiro and a file shows it in its folder.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans Terminal, kamiro . ouvre le dossier où vous êtes, et kamiro suivi d’un fichier le montre dans son dossier."
+          }
+        }
+      }
+    },
+    "Installs the kamiro command in %@, to open folders from Terminal.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installe la commande kamiro dans %@, pour ouvrir des dossiers depuis Terminal."
+          }
+        }
+      }
+    },
+    "Install…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installer…"
+          }
+        }
+      }
+    },
+    "Other Apps": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autres apps"
+          }
+        }
+      }
+    },
+    "Remove…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer…"
+          }
+        }
+      }
+    },
+    "The kamiro command in %@ opens another copy of Kamiro.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La commande kamiro dans %@ ouvre une autre copie de Kamiro."
+          }
+        }
+      }
+    },
+    "Update…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mettre à jour…"
+          }
+        }
+      }
+    },
+    "macOS refused the change.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS a refusé la modification."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

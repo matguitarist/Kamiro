@@ -28,7 +28,7 @@ struct KamiroApp: App {
 
     var body: some Scene {
         WindowGroup(id: Self.browserID, for: WindowStart.self) { $start in
-            ContentView(start: start?.url ?? Store.startFolder)
+            ContentView(start: start?.url ?? Store.startFolder, select: start?.select)
                 .environment(model)
                 .themed()
                 .overlay { if GridOverlay.enabled { GridOverlay() } }
@@ -36,6 +36,8 @@ struct KamiroApp: App {
         }
         .defaultSize(width: 1080, height: 680)
         .windowToolbarStyle(.unified)
+        // Folders and files sent from outside go to ExternalOpen, not to a new empty window.
+        .handlesExternalEvents(matching: [])
         .commands {
             SidebarCommands()
             ToolbarCommands()
@@ -72,6 +74,11 @@ struct KamiroApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    /// Folders and files sent by other apps, the kamiro command (S-039), or a drop on the Dock icon.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        ExternalOpen.open(urls)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Started from a terminal, the process is not a foreground app yet.
         NSApp.setActivationPolicy(.regular)

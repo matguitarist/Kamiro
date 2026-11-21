@@ -601,7 +601,8 @@ Status: todo
 
 ### S-039 Open Kamiro from the terminal
 As the user, I run `kamiro .` or `kamiro ~/file.txt` to open a folder or reveal a file; Settings installs the command.
-Status: todo
+Status: done
+Built: Settings › General › Other Apps › Command Line installs a small zsh script as /usr/local/bin/kamiro (macOS asks for an administrator's password when that folder isn't writable), updates one written for another copy of Kamiro, removes it, and leaves alone a kamiro it didn't write. `kamiro` with no path opens the folder you're in; each folder opens in a new window, each file shows selected in its folder, and a path that doesn't exist is named on stderr with exit 1. The same path serves any folder or file another app sends (Open With, a drop on the Dock icon): launched for it, Kamiro uses its first window instead of opening a second.
 
 ### S-040 Settings
 As the user, Settings has General (new window opens at, Return opens items, default browser, terminal app, code editor), Views (default view, columns, folders first), Sidebar and Menu.

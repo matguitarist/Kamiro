@@ -5,6 +5,8 @@ import SwiftUI
 /// forward a window already showing the same value, so two tabs on one folder need two values.
 struct WindowStart: Codable, Hashable {
     var url: URL
+    /// An item to show selected there (a file another app or the kamiro command sent).
+    var select: URL?
     var id = UUID()
 }
 

@@ -120,6 +120,8 @@ final class BrowserModel {
     @ObservationIgnored nonisolated(unsafe) private var hiddenWatch: (any NSObjectProtocol)?
     /// Opens a folder in a new window, or a new tab of this one when true (set by the window's view).
     @ObservationIgnored var openWindow: ((URL, Bool) -> Void)?
+    /// What the window shows selected when it opens (a file another app sent).
+    @ObservationIgnored var startSelection: Set<URL> = []
     /// Shows or hides Quick Look (set by the table).
     @ObservationIgnored var quickLook: (() -> Void)?
     @ObservationIgnored let log: LogStore
@@ -163,7 +165,7 @@ final class BrowserModel {
         guard !started else { return }
         started = true
         restoreView()
-        load(select: [])
+        load(select: Set(startSelection.map(\.canonical)))
     }
 
     // MARK: Each folder's view (S-021)

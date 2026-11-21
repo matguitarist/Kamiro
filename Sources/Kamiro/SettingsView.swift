@@ -116,6 +116,7 @@ struct GeneralSettings: View {
                 }
             }
         }
+        OtherAppsSettings()
         Section("Language") {
             Picker("Language", selection: $model.language) {
                 Text("System (\(AppLanguage.systemName))").tag(AppLanguage.system)
@@ -133,6 +134,40 @@ struct GeneralSettings: View {
                     Button("Restart Now") { AppLanguage.relaunch() }
                 }
             }
+        }
+    }
+}
+
+/// Settings › General › Other Apps: the kamiro command (S-039).
+struct OtherAppsSettings: View {
+    private var command: CommandLineStore { CommandLineStore.shared }
+
+    var body: some View {
+        Section("Other Apps") {
+            LabeledContent {
+                switch command.status {
+                case .missing: Button("Install…") { command.install() }
+                case .outdated: Button("Update…") { command.install() }
+                case .installed: Button("Remove…") { command.remove() }
+                case .foreign: EmptyView()
+                }
+            } label: {
+                Text("Command Line")
+                Text(commandNote)
+                if let failure = command.failure {
+                    Text(failure).foregroundStyle(.red)
+                }
+            }
+        }
+        .onAppear { command.refresh() }
+    }
+
+    private var commandNote: String {
+        switch command.status {
+        case .missing: String(localized: "Installs the kamiro command in \(command.folder.path), to open folders from Terminal.")
+        case .installed: String(localized: "In Terminal, kamiro . opens the folder you’re in, and kamiro and a file shows it in its folder.")
+        case .outdated: String(localized: "The kamiro command in \(command.folder.path) opens another copy of Kamiro.")
+        case .foreign: String(localized: "Another kamiro command is already in \(command.folder.path); Kamiro leaves it alone.")
         }
     }
 }

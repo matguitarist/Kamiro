@@ -12,8 +12,10 @@ struct ContentView: View {
     @AppStorage(Prefs.showInspector, store: Prefs.defaults) private var showInspector = false
     @FocusState private var filterFocused: Bool
 
-    init(start: URL) {
-        _browser = State(initialValue: BrowserModel(start: start, log: Store.log))
+    init(start: URL, select: URL? = nil) {
+        let browser = BrowserModel(start: start, log: Store.log)
+        browser.startSelection = Set([select].compactMap { $0 })
+        _browser = State(initialValue: browser)
     }
 
     var body: some View {
@@ -62,6 +64,7 @@ struct ContentView: View {
             browser.openProperties = { url in openWindow(id: KamiroApp.propertiesID, value: url) }
             browser.startIfNeeded()
             MenuState.shared.activate(browser)
+            ExternalOpen.windowAppeared(browser, openWindow: openWindow)
         }
         .task {
             // The first window runs the agent modes.
