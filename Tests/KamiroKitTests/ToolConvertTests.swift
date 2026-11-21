@@ -143,10 +143,10 @@ private func installed(_ command: String) -> URL? {
         #expect(Media.kind(of: url) == .video && !Media.isNative(url), "\(url.lastPathComponent)")
         #expect(Conversion.choices(for: [url]).isEmpty, "\(url.lastPathComponent)")
     }
-    #expect(Conversion.choices(for: [webm], tools: ["ffmpeg"]) == [.mp4, .animatedGIF, .audio])
-    #expect(Conversion.choices(for: [mkv], tools: ["ffmpeg"]) == [.mp4, .webm, .animatedGIF, .audio])
+    #expect(Conversion.choices(for: [webm], tools: ["ffmpeg"]) == [.mp4, .mov, .animatedGIF, .audio, .mp3])
+    #expect(Conversion.choices(for: [mkv], tools: ["ffmpeg"]) == [.mp4, .mov, .webm, .animatedGIF, .audio, .mp3])
     #expect(Conversion.choices(for: [mov]) == [.mp4, .animatedGIF, .audio])
-    #expect(Conversion.choices(for: [mov], tools: ["ffmpeg"]) == [.mp4, .webm, .animatedGIF, .audio])
+    #expect(Conversion.choices(for: [mov], tools: ["ffmpeg"]) == [.mp4, .webm, .animatedGIF, .audio, .mp3])
     #expect(Conversion.mp4.needs(for: mov) == [] && Conversion.webm.needs(for: mov) == [.ffmpeg])
 }
 
@@ -158,6 +158,42 @@ private func installed(_ command: String) -> URL? {
     #expect(ToolConvert.ffmpegArguments(.webm, input, output).contains("libvpx-vp9"))
     #expect(ToolConvert.ffmpegArguments(.mp4, input, output).contains("libx264"))
     #expect(ToolConvert.ffmpegArguments(.audio, input, output).contains("-vn"))
+    // A video's MP3 is its sound only; a song's keeps its tags and cover.
+    let fromVideo = ToolConvert.ffmpegArguments(.mp3, input, output)
+    #expect(fromVideo.contains("libmp3lame") && fromVideo.contains("-vn") && !fromVideo.contains("attached_pic"))
+    let song = ToolConvert.ffmpegArguments(.flac, URL(filePath: "/a/song.ogg"), URL(filePath: "/s/converted.flac"))
+    #expect(song.contains("-map_metadata") && song.contains("attached_pic") && song.contains("flac"))
+    #expect(ToolConvert.ffmpegArguments(.wav, URL(filePath: "/a/song.ogg"), output).contains("pcm_s16le"))
+}
+
+// MARK: S-061 Sound files
+
+@Test func soundFilesMacOSCantOpenTakeFFmpeg() {
+    let wma = URL(filePath: "/a/song.wma"), ape = URL(filePath: "/a/song.ape"), wav = URL(filePath: "/a/song.wav")
+    #expect(Media.kind(of: wma) == .audio && !Media.isNative(wma) && Media.kind(of: ape) == .audio)
+    #expect(Conversion.choices(for: [wma]).isEmpty)
+    #expect(Conversion.choices(for: [wma], tools: ["ffmpeg"]) == [.m4a, .mp3, .wav, .flac, .aiff, .alac])
+    #expect(Media.isNative(wav) && Conversion.choices(for: [wav]) == [.m4a, .flac, .aiff, .alac])
+    #expect(Conversion.choices(for: [wav], tools: ["ffmpeg"]) == [.m4a, .mp3, .flac, .aiff, .alac])
+    #expect(Conversion.mp3.needs(for: wav) == [.ffmpeg] && Conversion.flac.needs(for: wav) == [])
+}
+
+@Test(.enabled(if: installed("ffmpeg") != nil)) func realFFmpegMakesMP3AndKeepsTags() async throws {
+    let folder = try tempFolder()
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let ffmpeg = installed("ffmpeg")!
+    let song = folder.appending(path: "song.flac")
+    try await ToolRun.run(ffmpeg, ["-nostdin", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
+                                   "-metadata", "title=Kamiro Tone", "-c:a", "flac", song.path], cancel: CancelFlag())
+    let seen = Mutex<[Double]>([])
+    let mp3 = try await Converter.convert(song, to: .mp3, tools: ["ffmpeg": ffmpeg]) { fraction in seen.withLock { $0.append(fraction) } }
+    #expect(mp3.lastPathComponent == "song.mp3" && seen.withLock { $0.last ?? 0 } >= 0.85)
+    for made in [mp3, try await Converter.convert(song, to: .alac, tools: ["ffmpeg": ffmpeg])] {
+        let titles = try await AVURLAsset(url: made).load(.commonMetadata).filter { $0.commonKey == .commonKeyTitle }
+        let title = try await titles.first?.load(.stringValue)
+        #expect(title == "Kamiro Tone", "\(made.lastPathComponent)")
+    }
+    #expect(Media.audioCodec(of: folder.appending(path: "song.m4a")) == kAudioFormatAppleLossless)
 }
 
 @Test(.enabled(if: installed("ffmpeg") != nil)) func realFFmpegConvertsAWebM() async throws {

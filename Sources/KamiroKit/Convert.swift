@@ -6,12 +6,18 @@ import UniformTypeIdentifiers
 
 /// What a file is, for Convert (S-045).
 public enum Media {
-    public enum Kind: Sendable, Equatable { case image, video, pdf }
+    public enum Kind: Sendable, Equatable { case image, video, audio, pdf }
 
     private static let readableImages = Set((CGImageSourceCopyTypeIdentifiers() as? [String]) ?? [])
     static let writableImages = Set((CGImageDestinationCopyTypeIdentifiers() as? [String]) ?? [])
     /// Movies AVFoundation opens. AVI is left to FFmpeg: the codecs inside are rarely ones macOS plays.
     private static let nativeVideos = Set(AVURLAsset.audiovisualTypes().map(\.rawValue)).subtracting(["public.avi"])
+    /// Sound files Core Audio opens (MP3, AAC, ALAC, WAV, AIFF, FLAC, CAF…) (S-061).
+    private static let nativeAudio = Set(AVURLAsset.audiovisualTypes().compactMap { UTType($0.rawValue) }
+        .filter { $0.conforms(to: .audio) && !$0.conforms(to: .movie) }.map(\.identifier))
+    /// Movies and sound files FFmpeg reads that this Mac may have no type for (no app declares them).
+    static let ffmpegVideoExtensions: Set<String> = ["webm", "mkv", "avi", "flv", "wmv", "ogv", "mpg", "mpeg", "ts", "m2ts", "vob", "3gp"]
+    static let ffmpegAudioExtensions: Set<String> = ["ogg", "oga", "opus", "wma", "ape", "mka", "wv", "tta", "dsf", "dff", "amr", "ac3"]
     /// Pictures macOS can't read that ImageMagick can (S-052).
     static let magickExtensions: Set<String> = ["svg", "svgz", "xcf", "eps", "epsf", "ai", "pcx", "xpm", "xbm", "sgi",
                                                 "ras", "sun", "mng", "miff", "dpx"]
@@ -26,6 +32,10 @@ public enum Media {
         if magickExtensions.contains(url.pathExtension.lowercased()) { return .image }
         if type.conforms(to: .pdf) { return .pdf }
         if type.conforms(to: .movie) { return .video }
+        if type.conforms(to: .audio) { return .audio }
+        let ext = url.pathExtension.lowercased()
+        if ffmpegVideoExtensions.contains(ext) { return .video }
+        if ffmpegAudioExtensions.contains(ext) { return .audio }
         return nil
     }
 
@@ -36,24 +46,51 @@ public enum Media {
         case .pdf: true
         case .image: readableImages.contains(type.identifier)
         case .video: nativeVideos.contains(type.identifier)
+        case .audio: nativeAudio.contains(type.identifier)
         }
+    }
+
+    /// The codec inside a sound file (AAC or Apple Lossless in an .m4a), nil when Core Audio can't open it.
+    public static func audioCodec(of url: URL) -> AudioFormatID? {
+        audioFormat(of: url)?.mFormatID
+    }
+
+    /// The file's own format; the file is kept open while it's read, since the format points into it.
+    private static func audioFormat(of url: URL) -> AudioStreamBasicDescription? {
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        return withExtendedLifetime(file) { file.fileFormat.streamDescription.pointee }
+    }
+
+    /// 24 for a lossless or PCM source deeper than 16 bits, else 16: what WAV, AIFF, FLAC and ALAC keep.
+    static func bitDepth(of url: URL) -> Int {
+        guard let format = audioFormat(of: url) else { return 16 }
+        let bits: UInt32 = switch format.mFormatID {
+        case kAudioFormatLinearPCM: format.mBitsPerChannel
+        // FLAC and ALAC keep the source's depth in their flags: 1 is 16 bits, 2 is 20, 3 is 24, 4 is 32.
+        case kAudioFormatFLAC, kAudioFormatAppleLossless: [1: 16, 2: 20, 3: 24, 4: 32][format.mFormatFlags] ?? 16
+        default: 16
+        }
+        return bits > 16 ? 24 : 16
     }
 }
 
 /// One way to convert files, offered in the right-click menu's Convert submenu (S-045, S-048, S-050 to S-052).
 public enum Conversion: String, CaseIterable, Sendable, Identifiable {
     case jpeg, png, heic, avif, webp, jpeg2000, tiff, gif, bmp, icns, ico
-    case mp4, webm, animatedGIF, audio
+    case mp4, mov, webm, animatedGIF, audio
+    /// Sound files (S-061); MP3 also takes a video's sound.
+    case m4a, mp3, wav, flac, aiff, alac
     /// Images and PDFs, smaller for email.
     case smaller
 
     public var id: String { rawValue }
 
-    public enum Group: Sendable { case image, video, email }
+    public enum Group: Sendable { case image, video, sound, email }
 
     public var group: Group {
         switch self {
-        case .mp4, .webm, .animatedGIF, .audio: .video
+        case .mp4, .mov, .webm, .animatedGIF, .audio: .video
+        case .m4a, .mp3, .wav, .flac, .aiff, .alac: .sound
         case .smaller: .email
         default: .image
         }
@@ -91,8 +128,13 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         case .gif, .animatedGIF: "gif"
         case .icns: "icns"
         case .mp4: "mp4"
+        case .mov: "mov"
         case .webm: "webm"
-        case .audio: "m4a"
+        case .audio, .m4a, .alac: "m4a"
+        case .mp3: "mp3"
+        case .wav: "wav"
+        case .flac: "flac"
+        case .aiff: "aiff"
         case .smaller: Media.kind(of: source) == .pdf ? "pdf" : "jpg"
         }
     }
@@ -114,6 +156,12 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         case .video:
             guard kind == .video else { return nil }
             return native && self != .webm ? [] : [.ffmpeg]
+        case .sound:
+            switch kind {
+            case .audio: return native && self != .mp3 ? [] : [.ffmpeg]
+            case .video: return self == .mp3 ? [.ffmpeg] : nil
+            default: return nil
+            }
         }
     }
 
@@ -127,8 +175,20 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
     public func isSameFormat(as source: URL) -> Bool {
         guard let type = Media.type(of: source) else { return false }
         if let imageType { return type == imageType }
-        if self == .webm { return type.identifier == "org.webmproject.webm" }
-        return self == .mp4 && type == .mpeg4Movie
+        return switch self {
+        case .webm: type.identifier == "org.webmproject.webm"
+        case .mp4: type == .mpeg4Movie
+        case .mov: type == .quickTimeMovie
+        case .mp3: type == .mp3
+        case .wav: type == .wav
+        case .aiff: type.conforms(to: .aiff)
+        case .flac: type.identifier == "org.xiph.flac"
+        // AAC and Apple Lossless share .m4a: the codec inside tells them apart.
+        case .m4a, .alac:
+            type.conforms(to: .mpeg4Audio)
+                && Media.audioCodec(of: source) == (self == .alac ? kAudioFormatAppleLossless : kAudioFormatMPEG4AAC)
+        default: false
+        }
     }
 
     /// What can be done to every one of `urls`; formats all of them are already in are left out,
@@ -140,7 +200,9 @@ public enum Conversion: String, CaseIterable, Sendable, Identifiable {
         if kinds.allSatisfy({ $0 == .image }) {
             offered = [.jpeg, .png, .heic, .avif, .webp, .jpeg2000, .tiff, .gif, .bmp, .icns, .ico, .smaller]
         } else if kinds.allSatisfy({ $0 == .video }) {
-            offered = [.mp4, .webm, .animatedGIF, .audio]
+            offered = [.mp4, .mov, .webm, .animatedGIF, .audio, .mp3]
+        } else if kinds.allSatisfy({ $0 == .audio }) {
+            offered = [.m4a, .mp3, .wav, .flac, .aiff, .alac]
         } else if kinds.allSatisfy({ $0 == .image || $0 == .pdf }) {
             offered = [.smaller]
         } else {
@@ -203,15 +265,16 @@ public enum Converter {
         if needs.contains(.imageMagick), let magick = tools[CommandTool.imageMagick.id] {
             input = try await ToolConvert.magick(source, tool: magick, staging: staging, cancel: cancel)
         }
-        if conversion.group == .video, let ffmpeg = tools[CommandTool.ffmpeg.id],
-           needs.contains(.ffmpeg) || conversion == .animatedGIF {
-            // FFmpeg's palette makes better GIFs than a frame-by-frame copy, so it wins when it's there.
+        if conversion.group == .video || conversion.group == .sound, let ffmpeg = tools[CommandTool.ffmpeg.id],
+           needs.contains(.ffmpeg) || conversion == .animatedGIF || [.wav, .flac, .aiff, .alac].contains(conversion) {
+            // FFmpeg's palette makes better GIFs than a frame-by-frame copy, and it keeps a song's tags and
+            // cover in WAV, FLAC, AIFF and ALAC, which Core Audio drops: it wins when it's there.
             try await ToolConvert.ffmpeg(input, conversion, tool: ffmpeg, to: out, cancel: cancel, progress: progress)
         } else if conversion == .webp, let cwebp = tools[CommandTool.cwebp.id],
                   needs.contains(.cwebp) || ToolConvert.isAnimatedGIF(input) {
             try await ToolConvert.webp(input, cwebp: cwebp, to: out, staging: staging, cancel: cancel)
         } else {
-            try await natively(input, to: conversion, out: out, cancel: cancel)
+            try await natively(input, to: conversion, out: out, cancel: cancel, progress: progress)
         }
         if cancel.isCancelled { throw CancellationError() }
         let target = folder.appending(path: targetName(for: source, conversion, smallerWord: smallerWord))
@@ -219,10 +282,14 @@ public enum Converter {
         return target.canonical
     }
 
-    static func natively(_ source: URL, to conversion: Conversion, out: URL, cancel: CancelFlag) async throws {
+    static func natively(_ source: URL, to conversion: Conversion, out: URL, cancel: CancelFlag,
+                         progress: @escaping @Sendable (Double) -> Void = { _ in }) async throws {
         switch conversion {
         case .mp4: try await export(source, preset: AVAssetExportPresetHighestQuality, as: .mp4, to: out, cancel: cancel)
-        case .audio:
+        case .mov: try await export(source, preset: AVAssetExportPresetHighestQuality, as: .mov, to: out, cancel: cancel)
+        case .wav, .flac, .aiff, .alac: try sound(source, to: conversion, out: out, cancel: cancel, progress: progress)
+        case .mp3: throw Failure.failed("Converting to MP3 takes FFmpeg.")
+        case .audio, .m4a:
             if try await AVURLAsset(url: source).loadTracks(withMediaType: .audio).isEmpty {
                 throw Failure.failed("“\(source.lastPathComponent)” has no sound.")
             }
@@ -317,6 +384,53 @@ public enum Converter {
         guard let document = PDFDocument(url: source) else { throw Failure.unreadable(source.lastPathComponent) }
         guard document.write(to: out, withOptions: [.saveImagesAsJPEGOption: true, .optimizeImagesForScreenOption: true]) else {
             throw Failure.failed("Couldn't write the smaller PDF.")
+        }
+    }
+
+    // MARK: Sound
+
+    /// Decodes with Core Audio and writes WAV, AIFF, FLAC or Apple Lossless at the source's rate,
+    /// channels and depth (16 or 24 bits). M4A goes through AVFoundation's export, which keeps the tags.
+    static func sound(_ source: URL, to conversion: Conversion, out: URL, cancel: CancelFlag,
+                      progress: @Sendable (Double) -> Void) throws {
+        let input: AVAudioFile
+        do { input = try AVAudioFile(forReading: source) } catch { throw Failure.unreadable(source.lastPathComponent) }
+        let format = input.processingFormat
+        let depth = Media.bitDepth(of: source)
+        var settings: [String: Any] = [AVSampleRateKey: format.sampleRate, AVNumberOfChannelsKey: format.channelCount]
+        switch conversion {
+        case .wav, .aiff:
+            settings[AVFormatIDKey] = kAudioFormatLinearPCM
+            settings[AVLinearPCMBitDepthKey] = depth
+            settings[AVLinearPCMIsFloatKey] = false
+            settings[AVLinearPCMIsBigEndianKey] = conversion == .aiff
+            settings[AVLinearPCMIsNonInterleaved] = false
+        case .flac:
+            settings[AVFormatIDKey] = kAudioFormatFLAC
+            settings[AVEncoderBitDepthHintKey] = depth
+        default:
+            settings[AVFormatIDKey] = kAudioFormatAppleLossless
+            settings[AVEncoderBitDepthHintKey] = depth
+        }
+        let total = input.length
+        guard total > 0, let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1 << 16) else {
+            throw Failure.unreadable(source.lastPathComponent)
+        }
+        do {
+            // The writer goes out of scope before the move, so its file is closed and complete.
+            let output = try AVAudioFile(forWriting: out, settings: settings, commonFormat: format.commonFormat,
+                                         interleaved: format.isInterleaved)
+            while input.framePosition < total {
+                if cancel.isCancelled { throw CancellationError() }
+                try input.read(into: buffer)
+                if buffer.frameLength == 0 { break }
+                try output.write(from: buffer)
+                progress(Double(input.framePosition) / Double(total))
+            }
+        } catch let error as CancellationError {
+            throw error
+        } catch {
+            throw Failure.failed("Couldn't write \(conversion.ext(for: source).uppercased()): \(error.localizedDescription)")
         }
     }
 

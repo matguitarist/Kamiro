@@ -102,7 +102,10 @@ private func video(in folder: URL) async throws -> URL {
     #expect(!Conversion.choices(for: [png]).contains(.png) && Conversion.choices(for: [png]).contains(.jpeg))
     #expect(Conversion.choices(for: [png, jpg]).contains(.png) && Conversion.choices(for: [png, jpg]).contains(.smaller))
     #expect(Conversion.choices(for: [mov]) == [.mp4, .animatedGIF, .audio])
-    #expect(Conversion.choices(for: [mp4]) == [.animatedGIF, .audio])
+    #expect(Conversion.choices(for: [mp4]) == [.mov, .animatedGIF, .audio])
+    let wav = URL(filePath: "/p/g.wav"), mp3 = URL(filePath: "/p/h.mp3")
+    #expect(Conversion.choices(for: [wav, mp3]) == [.m4a, .wav, .flac, .aiff, .alac])
+    #expect(Conversion.choices(for: [wav, mov]).isEmpty && Conversion.choices(for: [wav, png]).isEmpty)
     #expect(Conversion.choices(for: [png, pdf]) == [.smaller])
     #expect(Conversion.choices(for: [png, mov]).isEmpty && Conversion.choices(for: [txt]).isEmpty)
     // WebP is offered only where ImageIO can write it.
@@ -128,11 +131,53 @@ private func video(in folder: URL) async throws -> URL {
     let mp4 = try await Converter.convert(clip, to: .mp4)
     let tracks = try await AVURLAsset(url: mp4).loadTracks(withMediaType: .video)
     #expect(mp4.lastPathComponent == "clip.mp4" && !tracks.isEmpty)
+    let mov = try await Converter.convert(mp4, to: .mov)
+    #expect(mov.lastPathComponent == "clip 2.mov")
     let gif = try await Converter.convert(clip, to: .animatedGIF)
     let frames = CGImageSourceCreateWithURL(gif as CFURL, nil).map(CGImageSourceGetCount) ?? 0
     #expect(gif.lastPathComponent == "clip.gif" && frames == 20)
     await #expect(throws: Converter.Failure.self) { try await Converter.convert(clip, to: .audio) }
     #expect(!FileManager.default.fileExists(atPath: folder.appending(path: "clip.m4a").path))
+}
+
+/// One second of a 440 Hz tone, 44.1 kHz stereo, 24-bit WAV.
+private func tone(in folder: URL) throws -> URL {
+    let url = folder.appending(path: "tone.wav")
+    let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 2)!
+    let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44100)!
+    buffer.frameLength = 44100
+    for channel in 0..<2 {
+        for frame in 0..<44100 { buffer.floatChannelData![channel][frame] = Float(sin(Double(frame) * 2 * .pi * 440 / 44100) * 0.5) }
+    }
+    let file = try AVAudioFile(forWriting: url, settings: [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 44100,
+                                                          AVNumberOfChannelsKey: 2, AVLinearPCMBitDepthKey: 24,
+                                                          AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false],
+                               commonFormat: .pcmFormatFloat32, interleaved: false)
+    try file.write(from: buffer)
+    return url
+}
+
+@Test func soundConvertsWithCoreAudio() async throws {
+    let folder = try tempFolder()
+    defer { try? FileManager.default.removeItem(at: folder) }
+    let wav = try tone(in: folder)
+    #expect(Media.kind(of: wav) == .audio && Media.bitDepth(of: wav) == 24)
+    let codecs: [Conversion: AudioFormatID] = [.m4a: kAudioFormatMPEG4AAC, .flac: kAudioFormatFLAC,
+                                               .aiff: kAudioFormatLinearPCM, .alac: kAudioFormatAppleLossless]
+    for conversion in [Conversion.m4a, .flac, .aiff, .alac] {
+        let made = try await Converter.convert(wav, to: conversion)
+        let file = try AVAudioFile(forReading: made)
+        #expect(file.fileFormat.streamDescription.pointee.mFormatID == codecs[conversion], "\(conversion)")
+        #expect(file.length >= 44100 && file.fileFormat.channelCount == 2, "\(conversion) \(file.length)")
+        if conversion != .m4a { #expect(Media.bitDepth(of: made) == 24, "\(conversion)") }
+    }
+    // AAC and Apple Lossless both end in .m4a; the codec tells which one a file already is.
+    let alac = folder.appending(path: "tone 2.m4a")
+    #expect(FileManager.default.fileExists(atPath: alac.path))
+    #expect(Conversion.alac.isSameFormat(as: alac) && !Conversion.m4a.isSameFormat(as: alac))
+    #expect(Conversion.choices(for: [alac]) == [.m4a, .wav, .flac, .aiff])
+    // MP3 takes FFmpeg.
+    await #expect(throws: Converter.Failure.self) { try await Converter.convert(wav, to: .mp3) }
 }
 
 @Test func stoppedConversionLeavesNothing() async throws {

@@ -152,14 +152,25 @@ enum ToolConvert {
                 if let fraction = reader.withLock({ $0.read(text) }) { progress(fraction) }
                 heard.withLock { $0 = String(($0 + text).suffix(8000)) }
             }
-        } catch Converter.Failure.failed where conversion == .audio && heard.withLock({ $0.contains("matches no streams") }) {
+        } catch Converter.Failure.failed where [.audio, .mp3].contains(conversion) && heard.withLock({ $0.contains("matches no streams") }) {
             throw Converter.Failure.failed("“\(input.lastPathComponent)” has no sound.")
         }
     }
 
     static func ffmpegArguments(_ conversion: Conversion, _ input: URL, _ output: URL) -> [String] {
         let start = ["-nostdin", "-hide_banner", "-y", "-i", input.path]
+        // A song keeps its tags, and its cover where the format holds one; a video gives only its sound.
+        let song = Media.kind(of: input) == .audio
+        let tags = ["-map", "0:a:0", "-map_metadata", "0"]
+        let cover = song ? ["-map", "0:v:0?", "-c:v", "copy", "-disposition:v:0", "attached_pic"] : ["-vn"]
+        let depth = song ? Media.bitDepth(of: input) : 16
         let middle: [String] = switch conversion {
+        case .m4a: tags + cover + ["-c:a", "aac", "-b:a", "256k"]
+        case .alac: tags + cover + ["-c:a", "alac"]
+        case .flac: tags + cover + ["-c:a", "flac"]
+        case .mp3: tags + cover + ["-c:a", "libmp3lame", "-q:a", "2", "-id3v2_version", "3"]
+        case .wav: tags + ["-vn", "-c:a", depth > 16 ? "pcm_s24le" : "pcm_s16le"]
+        case .aiff: tags + ["-vn", "-c:a", depth > 16 ? "pcm_s24be" : "pcm_s16be"]
         case .webm:
             ["-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-row-mt", "1",
              "-deadline", "good", "-cpu-used", "4", "-c:a", "libopus", "-b:a", "128k"]

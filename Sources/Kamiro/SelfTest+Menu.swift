@@ -1,3 +1,4 @@
+import AVFoundation
 import AppKit
 import KamiroKit
 
@@ -199,6 +200,18 @@ extension SelfTest {
         try? FileManager.default.removeItem(at: url(smaller))
         browser.selection = [url("notes.md")]
         check("a text file has no Convert", !titles(browser.contextMenu(onItems: true)).contains(t("Convert")))
+        // S-061: a sound file converts to the other sound formats, made by macOS.
+        let tone = url("Tone.wav")
+        writeTone(to: tone)
+        for _ in 0..<30 where !browser.items.contains(where: { $0.url == tone }) { try? await Task.sleep(for: .milliseconds(100)) }
+        browser.selection = [tone]
+        let sounds = browser.contextMenu(onItems: true).items.first { $0.title == t("Convert") }?.submenu?.items.map(\.title) ?? []
+        check("a sound file's Convert has M4A, FLAC and Apple Lossless, not WAV, and no MP3 without FFmpeg",
+              sounds == ["M4A (AAC)", "FLAC", "AIFF", t("Apple Lossless (ALAC)")], "\(sounds)")
+        browser.convertSelection(to: .flac)
+        await TransferCenter.shared.waitUntilIdle()
+        check("Convert › FLAC makes “Tone.flac” beside it", exists("Tone.flac"))
+        for name in ["Tone.wav", "Tone.flac"] { try? FileManager.default.removeItem(at: url(name)) }
         await browser.waitUntilLoaded()
 
         // S-046: Copy To and Move To, as transfers, remembered as recent folders.
@@ -335,5 +348,19 @@ extension SelfTest {
         } catch {
             return false
         }
+    }
+}
+
+extension SelfTest {
+    /// A second of a 440 Hz tone, as a WAV, for Convert's sound files (S-061).
+    static func writeTone(to url: URL) {
+        guard let format = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 44100),
+              let samples = buffer.floatChannelData?[0] else { return }
+        buffer.frameLength = 44100
+        for frame in 0..<44100 { samples[frame] = Float(sin(Double(frame) * 2 * .pi * 440 / 44100) * 0.5) }
+        let settings: [String: Any] = [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 44100, AVNumberOfChannelsKey: 1,
+                                       AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false]
+        try? AVAudioFile(forWriting: url, settings: settings).write(from: buffer)
     }
 }

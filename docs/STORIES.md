@@ -581,6 +581,15 @@ Acceptance:
 Status: done
 Built: Cloud lists iCloud Drive, each sync app's folder by name, then cloud disks (a WebDAV server moves there from Network). Hidden in Settings, they go back under Locations. The section is left out when there is nothing in it.
 
+### S-061 Convert sound files
+As the user, I right-click songs and recordings to convert them to M4A, MP3, WAV, FLAC, AIFF or Apple Lossless, and turn a video into a QuickTime movie or an MP3 of its sound.
+Depends: S-045, S-051
+Acceptance:
+- [unit] WAV, AIFF, FLAC and Apple Lossless keep the source's rate, channels and depth (24 bits stays 24); AAC and Apple Lossless .m4a files are told apart by their codec; MP3, and sound files macOS can't open (WMA, APE, Opus…), take FFmpeg, which keeps the tags.
+- [self] A WAV's Convert offers M4A (AAC), FLAC, AIFF and Apple Lossless, and no MP3 without FFmpeg; Convert › FLAC makes “Tone.flac” beside it.
+Status: done
+Built: Right-click › Convert on sound files offers M4A (AAC), MP3, WAV, FLAC, AIFF and Apple Lossless (ALAC), leaving out the one they're already in. macOS makes M4A (AVFoundation, 256 kbps-class AAC, tags kept) and WAV, AIFF, FLAC and ALAC (Core Audio, with a progress bar). With FFmpeg found, MP3 (LAME, VBR quality 2) shows, sound files macOS can't open (WMA, APE, Opus, Ogg, WavPack, DSD…) convert too, and WAV, FLAC, AIFF and ALAC go through FFmpeg so the tags and cover art come along. Videos add QuickTime Movie, and Audio Only (MP3) with FFmpeg, after a separator under Audio Only (M4A). Movies and sound files with no type on this Mac (MKV or WMA with no app that declares them) are still recognized by their extension.
+
 ## M6 System and polish (1.0.0)
 
 ### S-038 Make Kamiro the default file browser

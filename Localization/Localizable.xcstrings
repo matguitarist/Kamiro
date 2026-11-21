@@ -3351,6 +3351,36 @@
         }
       }
     },
+    "QuickTime Movie": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidéo QuickTime"
+          }
+        }
+      }
+    },
+    "Apple Lossless (ALAC)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Lossless (ALAC)"
+          }
+        }
+      }
+    },
+    "Audio Only (MP3)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio seulement (MP3)"
+          }
+        }
+      }
+    },
     "Smaller for Email": {
       "localizations": {
         "fr": {
