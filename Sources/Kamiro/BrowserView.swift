@@ -7,6 +7,7 @@ struct BrowserView: View {
     let model: BrowserModel
     let showStatusBar: Bool
     @AppStorage(Prefs.iconSize, store: Prefs.defaults) private var iconSize = IconSize.standard
+    @AppStorage(Prefs.rowSize, store: Prefs.defaults) private var rowSize = RowSize.standard
     @AppStorage(Prefs.showColumnPreview, store: Prefs.defaults) private var showColumnPreview = true
 
     var body: some View {
@@ -108,7 +109,7 @@ extension BrowserView {
                          reveal: model.revealToken, focus: model.focusToken,
                          cutVersion: FileClipboard.shared.version, renameToken: model.renameToken,
                          groupVersion: model.groupVersion, sizesVersion: model.sizesVersion,
-                         cloudVersion: model.cloudVersion)
+                         cloudVersion: model.cloudVersion, rowSize: RowSize.clamped(rowSize))
         }
     }
 }
@@ -161,6 +162,7 @@ enum PrivacySettings {
 struct StatusBar: View {
     let model: BrowserModel
     @AppStorage(Prefs.iconSize, store: Prefs.defaults) private var iconSize = IconSize.standard
+    @AppStorage(Prefs.rowSize, store: Prefs.defaults) private var rowSize = RowSize.standard
 
     /// In search results, the one selected item's folder follows the counts, as in the Finder.
     private var statusText: String {
@@ -175,7 +177,7 @@ struct StatusBar: View {
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .accessibilityElement(children: .combine)
-            .padding(.horizontal, model.mode == .icons ? 140 : 0)
+            .padding(.horizontal, model.mode == .columns ? 0 : 140)
             .frame(maxWidth: .infinity)
             .padding(.vertical, Space.xs)
             .overlay(alignment: .trailing) {
@@ -192,10 +194,29 @@ struct StatusBar: View {
                     .frame(width: 120)
                     .padding(.trailing, Space.md)
                     .help("Icon size")
+                } else if model.mode == .details {
+                    Slider(value: rowSizeValue, in: 0...Double(RowSize.steps.count - 1), step: 1) {
+                        Text("Row size")
+                    } minimumValueLabel: {
+                        Image(systemName: "list.bullet").imageScale(.small)
+                    } maximumValueLabel: {
+                        Image(systemName: "list.bullet").imageScale(.medium)
+                    }
+                    .labelsHidden()
+                    .controlSize(.mini)
+                    .frame(width: 120)
+                    .padding(.trailing, Space.md)
+                    .help("Row size (Control-scroll)")
                 }
             }
             .background(.bar)
             .overlay(alignment: .top) { Divider() }
+    }
+}
+
+extension StatusBar {
+    private var rowSizeValue: Binding<Double> {
+        Binding(get: { Double(RowSize.clamped(rowSize)) }, set: { rowSize = RowSize.clamped(Int($0.rounded())) })
     }
 }
 
@@ -284,13 +305,9 @@ struct BrowserToolbar: ToolbarContent {
             }
         }
         ToolbarItem(placement: .primaryAction) {
-            Menu {
-                NewItemsMenu(newFolder: { model.newFolder() }, newFile: { model.newFile($0) },
-                             fromClipboard: { model.newFileFromClipboard() })
-            } label: {
-                Label("New", systemImage: "plus")
-            }
-            .menuIndicator(.hidden)
+            // An AppKit menu, not a SwiftUI one: macOS 27 hides SwiftUI menus' icons, and this
+            // one should look like the right-click menu's New items.
+            Button("New", systemImage: "plus") { model.newItemsMenu().popUpBelowClickedControl() }
             .disabled(model.state != .ready)
             .help("Make a new folder or file here")
         }

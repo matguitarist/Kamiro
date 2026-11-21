@@ -555,6 +555,8 @@ enum Prefs {
     static let returnOpensItems = "returnOpensItems"
     static let showStatusBar = "showStatusBar"
     static let iconSize = "iconSize"
+    /// The details view's row size, an index into RowSize.steps.
+    static let rowSize = "rowSize"
     static let showHidden = "showHidden"
     static let showInspector = "showInspector"
     /// The column view's last column for a selected file: its preview, name and facts.

@@ -16,6 +16,54 @@ public enum IconSize {
     }
 }
 
+/// The details view's row sizes: icon, text and row height in points. Ctrl-scroll or
+/// the status bar's slider steps through them, like Windows File Explorer's zoom.
+public enum RowSize {
+    public struct Step: Equatable, Sendable {
+        public let icon: Double
+        public let font: Double
+        public let row: Double
+    }
+
+    public static let steps: [Step] = [
+        Step(icon: 16, font: 13, row: 24),
+        Step(icon: 20, font: 13, row: 28),
+        Step(icon: 24, font: 14, row: 32),
+        Step(icon: 32, font: 15, row: 40),
+        Step(icon: 48, font: 16, row: 56),
+    ]
+    /// A bit bigger than the Finder's 16-point list.
+    public static let standard = 1
+
+    public static func clamped(_ index: Int) -> Int { min(max(index, 0), steps.count - 1) }
+    public static func step(_ index: Int) -> Step { steps[clamped(index)] }
+}
+
+/// Turns scroll-wheel deltas into zoom steps: one per wheel notch, one per few points of a
+/// trackpad's smooth scroll, so a light swipe doesn't jump through every size.
+public struct ZoomScroll: Sendable {
+    private var pending: Double = 0
+    public init() {}
+
+    /// Positive steps make things bigger (scrolling up, away from you).
+    public mutating func steps(delta: Double, precise: Bool) -> Int {
+        let threshold = precise ? 16.0 : 1.0
+        pending += delta
+        let steps = Int(pending / threshold)
+        pending -= Double(steps) * threshold
+        return steps
+    }
+
+    public mutating func reset() { pending = 0 }
+}
+
+extension IconSize {
+    /// The icon size one Ctrl-scroll step from `size`.
+    public static func zoomed(_ size: Double, by steps: Int) -> Double {
+        min(max(size + Double(steps) * 16, range.lowerBound), range.upperBound)
+    }
+}
+
 /// A column of the details view. Name is always shown.
 public enum ListColumn: String, Codable, Sendable, CaseIterable {
     case name, modified, created, added, size, kind, ext, tags, comments, cloud

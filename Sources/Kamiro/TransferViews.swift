@@ -381,21 +381,7 @@ private struct FileSummary: View {
     }
 }
 
-/// New Folder and the New File templates, for the File menu and the toolbar.
-struct NewItemsMenu: View {
-    let newFolder: () -> Void
-    let newFile: (FileTemplate) -> Void
-    let fromClipboard: () -> Void
-
-    var body: some View {
-        Button("New Folder", systemImage: "folder.badge.plus", action: newFolder)
-        Divider()
-        NewFileItems(newFile: newFile)
-        Divider()
-        Button("New File from Clipboard", systemImage: "doc.on.clipboard", action: fromClipboard)
-    }
-}
-
+/// The New File templates, for File › New File.
 struct NewFileItems: View {
     let newFile: (FileTemplate) -> Void
 

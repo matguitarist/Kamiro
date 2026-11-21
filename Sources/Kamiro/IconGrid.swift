@@ -257,6 +257,21 @@ final class FileGrid: NSCollectionView, NSUserInterfaceValidations {
         if window != nil { coordinator?.update(iconSize: coordinator?.iconSize ?? IconSize.standard) }
     }
 
+    /// Control-scroll (or Command-scroll) makes icons bigger or smaller.
+    private var zoom = ZoomScroll()
+
+    override func scrollWheel(with event: NSEvent) {
+        guard ZoomKeys.zooms(event) else {
+            zoom.reset()
+            super.scrollWheel(with: event)
+            return
+        }
+        let steps = zoom.steps(delta: event.scrollingDeltaY, precise: event.hasPreciseScrollingDeltas)
+        guard steps != 0 else { return }
+        let current = Prefs.defaults.object(forKey: Prefs.iconSize) as? Double ?? IconSize.standard
+        Prefs.defaults.set(IconSize.zoomed(current, by: steps), forKey: Prefs.iconSize)
+    }
+
     override func becomeFirstResponder() -> Bool {
         let became = super.becomeFirstResponder()
         if became { MenuState.shared.listFocused = true }

@@ -4201,6 +4201,26 @@
           }
         }
       }
+    },
+    "Row size": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille des lignes"
+          }
+        }
+      }
+    },
+    "Row size (Control-scroll)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille des lignes (Contrôle + défilement)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

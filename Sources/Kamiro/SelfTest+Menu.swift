@@ -114,6 +114,27 @@ extension SelfTest {
             }
             check("…and macOS 27 shows them, submenus included", menus.allSatisfy(shown))
         }
+        // The toolbar's New menu is AppKit's too, so its icons show like the right-click menu's.
+        let newMenu = browser.newItemsMenu()
+        let newLines = newMenu.items.filter { !$0.isSeparatorItem && !$0.isSectionHeader }
+        check("the toolbar's New menu lists New Folder, every file type and From Clipboard, each with an icon",
+              newLines.count == FileTemplate.all.count + 2 && newLines.allSatisfy { $0.image != nil })
+        if #available(macOS 27, *) {
+            check("…and macOS 27 shows them", newLines.allSatisfy { $0.preferredImageVisibility == .visible })
+        }
+        // Ctrl-scroll and the status bar's slider set the details view's row size.
+        if let details = browser.details, let table = details.table,
+           let row = (0..<details.rows.count).first(where: { details.item(at: $0) != nil }) {
+            let before = details.rowSize
+            details.rowSize = RowSize.steps.count - 1
+            let big = details.tableView(table, heightOfRow: row)
+            details.rowSize = before
+            check("Details rows grow with the row size",
+                  table.rowHeight == RowSize.step(before).row && big == RowSize.steps[RowSize.steps.count - 1].row,
+                  "\(table.rowHeight) \(big)")
+        } else {
+            check("the menu test runs in the details view", false)
+        }
         check("submenus go one level deep at most",
               menus.allSatisfy { $0.items.compactMap(\.submenu).allSatisfy { $0.items.allSatisfy { $0.submenu == nil } } })
 

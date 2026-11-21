@@ -29,6 +29,22 @@ final class FileTable: NSTableView, QLPreviewPanelDataSource, QLPreviewPanelDele
         if window != nil { coordinator?.update() }
     }
 
+    /// Control-scroll (or Command-scroll) makes rows bigger or smaller, like Ctrl-wheel in
+    /// Windows File Explorer.
+    private var zoom = ZoomScroll()
+
+    override func scrollWheel(with event: NSEvent) {
+        guard ZoomKeys.zooms(event) else {
+            zoom.reset()
+            super.scrollWheel(with: event)
+            return
+        }
+        let steps = zoom.steps(delta: event.scrollingDeltaY, precise: event.hasPreciseScrollingDeltas)
+        guard steps != 0 else { return }
+        let current = Prefs.defaults.object(forKey: Prefs.rowSize) as? Int ?? RowSize.standard
+        Prefs.defaults.set(RowSize.clamped(current + steps), forKey: Prefs.rowSize)
+    }
+
     override func becomeFirstResponder() -> Bool {
         let became = super.becomeFirstResponder()
         if became { MenuState.shared.listFocused = true }

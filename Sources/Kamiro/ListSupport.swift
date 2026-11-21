@@ -266,3 +266,11 @@ extension BrowserModel {
         return DropRule.kind(sources: urls, destination: destination, option: mask == .copy, command: mask == .generic)
     }
 }
+
+/// Which scrolls zoom the list instead of scrolling it.
+enum ZoomKeys {
+    static func zooms(_ event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        return flags.contains(.control) || flags.contains(.command)
+    }
+}

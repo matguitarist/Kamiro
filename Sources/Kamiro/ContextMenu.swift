@@ -20,7 +20,47 @@ extension NSMenu {
     }
 }
 
+extension NSMenu {
+    /// Opens under the toolbar button that was just clicked, left edges lined up, like a
+    /// SwiftUI toolbar menu; from the keyboard (no click), at the pointer.
+    func popUpBelowClickedControl() {
+        guard let event = NSApp.currentEvent, [.leftMouseDown, .leftMouseUp].contains(event.type),
+              let frame = event.window?.contentView?.superview,
+              let hit = frame.hitTest(frame.convert(event.locationInWindow, from: nil)) else {
+            popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+            return
+        }
+        // The hit view can be a small part of the button: climb to the control itself.
+        var anchor = hit
+        while !(anchor is NSControl), let parent = anchor.superview, parent !== frame { anchor = parent }
+        if !(anchor is NSControl) { anchor = hit }
+        let gap = Space.xs
+        let below = anchor.isFlipped ? anchor.bounds.maxY + gap : anchor.bounds.minY - gap
+        popUp(positioning: nil, at: NSPoint(x: anchor.bounds.minX, y: below), in: anchor)
+    }
+}
+
 extension BrowserModel {
+    /// The toolbar's New menu: New Folder, every New File type, and New File from Clipboard,
+    /// with the same icons as the right-click menu.
+    func newItemsMenu() -> NSMenu {
+        let menu = NSMenu()
+        let folder = MenuAction.item(String(localized: "New Folder")) { [weak self] in self?.newFolder() }
+        folder.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: nil)
+        menu.addItem(folder)
+        menu.addItem(.separator())
+        let templates = Self.templateMenu { [weak self] in self?.newFile($0) }
+        for item in templates.items {
+            templates.removeItem(item)
+            menu.addItem(item)
+        }
+        menu.addItem(.separator())
+        let clipboard = MenuAction.item(String(localized: "New File from Clipboard")) { [weak self] in self?.newFileFromClipboard() }
+        clipboard.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil)
+        menu.addItem(clipboard)
+        return menu.showingImages()
+    }
+
     /// The list's right-click menu. It follows what's under the pointer: items get Open, Copy and
     /// the like; empty space gets Paste and New. What doesn't apply is left out, not dimmed.
     func contextMenu(onItems: Bool) -> NSMenu {

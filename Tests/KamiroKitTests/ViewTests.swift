@@ -109,3 +109,22 @@ private func scratchFile() -> URL {
     again.change { $0.setStandardSort(.name) }
     #expect(again.memory.standard.order == ItemOrder(key: .name, ascending: true, foldersFirst: false))
 }
+
+@Test func rowSizesStayInRange() {
+    #expect(RowSize.clamped(-3) == 0)
+    #expect(RowSize.clamped(99) == RowSize.steps.count - 1)
+    #expect(RowSize.step(RowSize.standard).icon > RowSize.steps[0].icon)
+    #expect(RowSize.steps == RowSize.steps.sorted { $0.row < $1.row })
+}
+
+@Test func zoomScrollStepsPerNotchOrPerSwipe() {
+    var wheel = ZoomScroll()
+    #expect(wheel.steps(delta: 1, precise: false) == 1)
+    #expect(wheel.steps(delta: -2, precise: false) == -2)
+    var pad = ZoomScroll()
+    #expect(pad.steps(delta: 10, precise: true) == 0)
+    #expect(pad.steps(delta: 10, precise: true) == 1)
+    #expect(pad.steps(delta: -30, precise: true) == -1)
+    #expect(IconSize.zoomed(250, by: 1) == IconSize.range.upperBound)
+    #expect(IconSize.zoomed(64, by: -1) == 48)
+}

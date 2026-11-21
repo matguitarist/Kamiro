@@ -16,6 +16,8 @@ struct DetailsTable: NSViewRepresentable {
     let groupVersion: Int
     let sizesVersion: Int
     let cloudVersion: Int
+    /// An index into RowSize.steps.
+    let rowSize: Int
 
     func makeCoordinator() -> DetailsCoordinator { DetailsCoordinator(model: model) }
 
@@ -80,6 +82,7 @@ struct DetailsTable: NSViewRepresentable {
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
+        context.coordinator.rowSize = rowSize
         context.coordinator.update()
     }
 }
@@ -143,6 +146,9 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
     private var cutVersion = -1
     private var renameToken = 0
     private var viewVersion = -1
+    /// The row size asked for, and the one the rows show.
+    var rowSize = RowSize.standard
+    private var shownRowSize = -1
     private var applying = false
     /// The name being edited; the list doesn't reload meanwhile.
     var rename: InlineRename?
@@ -178,6 +184,13 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         if viewVersion != model.viewVersion {
             viewVersion = model.viewVersion
             applyColumns()
+        }
+        if shownRowSize != rowSize {
+            shownRowSize = rowSize
+            let step = RowSize.step(rowSize)
+            table.rowHeight = step.row
+            // The new height and cells come with the reload below.
+            version = -1
         }
         if version != model.itemsVersion || groupVersion != model.groupVersion {
             if version != model.itemsVersion { FileExtras.shared.forget() }
@@ -286,6 +299,12 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
 
     func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { item(at: row) != nil }
 
+    /// Group headers keep one height; items follow the row size.
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        if rows.indices.contains(row), case .header = rows[row] { return RowSize.steps[RowSize.standard].row }
+        return RowSize.step(rowSize).row
+    }
+
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         if rows.indices.contains(row), case .header(let header) = rows[row] {
             let view = tableView.makeView(withIdentifier: GroupHeaderView.identifier, owner: nil) as? GroupHeaderView ?? GroupHeaderView()
@@ -294,11 +313,12 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         }
         guard let tableColumn, let column = ListColumn(rawValue: tableColumn.identifier.rawValue),
               let item = item(at: row) else { return nil }
-        let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: nil) as? NSTableCellView
+        let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: nil) as? FileCell
             ?? Self.makeCell(column)
+        cell.apply(RowSize.step(rowSize), column: column)
         cell.textField?.stringValue = Self.text(column, item, sizes: model.folderSizes)
         if column == .name {
-            cell.imageView?.image = IconCache.shared.icon(for: item)
+            cell.imageView?.image = IconCache.shared.icon(for: item, size: RowSize.step(rowSize).icon)
             cell.toolTip = item.name
         } else if column == .cloud {
             let status = model.cloud[item.url]
@@ -338,8 +358,8 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
 
     // MARK: Cells
 
-    static func makeCell(_ column: ListColumn) -> NSTableCellView {
-        let cell = NSTableCellView()
+    static func makeCell(_ column: ListColumn) -> FileCell {
+        let cell = FileCell()
         cell.identifier = column.identifier
         let text = NSTextField(labelWithString: "")
         text.translatesAutoresizingMaskIntoConstraints = false
@@ -358,11 +378,13 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
             image.translatesAutoresizingMaskIntoConstraints = false
             cell.addSubview(image)
             cell.imageView = image
+            let width = image.widthAnchor.constraint(equalToConstant: 16)
+            let height = image.heightAnchor.constraint(equalToConstant: 16)
+            cell.iconConstraints = [width, height]
             constraints += [
                 image.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: Space.xs),
                 image.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
-                image.widthAnchor.constraint(equalToConstant: 16),
-                image.heightAnchor.constraint(equalToConstant: 16),
+                width, height,
                 text.leadingAnchor.constraint(equalTo: image.trailingAnchor, constant: Space.sm - 2),
             ]
         } else if column == .cloud {
@@ -413,6 +435,19 @@ final class DetailsCoordinator: NSObject, NSTableViewDataSource, NSTableViewDele
         formatter.doesRelativeDateFormatting = true
         return formatter
     }()
+}
+
+/// A details cell whose icon and text follow the row size.
+final class FileCell: NSTableCellView {
+    var iconConstraints: [NSLayoutConstraint] = []
+    private var shown: RowSize.Step?
+
+    func apply(_ step: RowSize.Step, column: ListColumn) {
+        guard shown != step else { return }
+        shown = step
+        textField?.font = .systemFont(ofSize: step.font)
+        for constraint in iconConstraints { constraint.constant = step.icon }
+    }
 }
 
 /// One row of the details view: an item, or a group's header (S-022).
