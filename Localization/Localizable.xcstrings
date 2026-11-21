@@ -4071,6 +4071,86 @@
           }
         }
       }
+    },
+    "All Folders": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tous les dossiers"
+          }
+        }
+      }
+    },
+    "Before files, sorted any way. Off, folders and files mix.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avant les fichiers, quel que soit le tri. Désactivé, dossiers et fichiers se mélangent."
+          }
+        }
+      }
+    },
+    "Columns in Details": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colonnes de la vue Détails"
+          }
+        }
+      }
+    },
+    "Folders on top": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dossiers en premier"
+          }
+        }
+      }
+    },
+    "Folders you already changed keep their view. View › Use as Defaults also sets these.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les dossiers déjà modifiés gardent leur présentation. Présentation › Utiliser comme valeurs par défaut règle aussi ces choix."
+          }
+        }
+      }
+    },
+    "New Folders": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveaux dossiers"
+          }
+        }
+      }
+    },
+    "Sort By": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trier par"
+          }
+        }
+      }
+    },
+    "Views": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Présentations"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

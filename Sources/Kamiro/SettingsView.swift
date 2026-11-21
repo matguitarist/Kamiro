@@ -25,6 +25,7 @@ struct SettingsView: View {
         Form {
             switch tab {
             case .general: GeneralSettings()
+            case .views: ViewsSettings()
             case .sidebar: SidebarSettings()
             case .appearance: AppearanceSettings()
             case .tools: ToolsSettings()
@@ -39,13 +40,14 @@ struct SettingsView: View {
 
 /// The Settings tabs. Snapshot mode walks through every case.
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, sidebar, appearance, tools, updates
+    case general, views, sidebar, appearance, tools, updates
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .general: String(localized: "General")
+        case .views: String(localized: "Views")
         case .sidebar: String(localized: "Sidebar")
         case .appearance: String(localized: "Appearance")
         case .tools: String(localized: "Tools")
@@ -56,6 +58,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .general: "gearshape"
+        case .views: "rectangle.grid.2x2"
         case .sidebar: "sidebar.left"
         case .appearance: "paintpalette"
         case .tools: "wrench.and.screwdriver"
@@ -72,22 +75,12 @@ struct GeneralSettings: View {
     @AppStorage(Prefs.editor, store: Prefs.defaults) private var editor = ""
     private let editors = ItemActions.installedEditors
     @AppStorage(Prefs.showRecentFiles, store: Prefs.defaults) private var showRecentFiles = true
-    @State private var newFolderMode = Store.views.memory.standard.mode
     @AppStorage(Prefs.newWindowStart, store: Prefs.defaults) private var newWindowStart = StartPlace.home.stored
 
     var body: some View {
         @Bindable var model = model
         Section("Folders") {
             StartPlacePicker(stored: $newWindowStart)
-            Picker(selection: $newFolderMode) {
-                ForEach(ViewMode.allCases, id: \.self) { mode in
-                    Label(mode.label, systemImage: mode.symbol).tag(mode)
-                }
-            } label: {
-                Text("New folders open as")
-                Text("Folders you already changed keep their view. View › Use as Defaults also sets this.")
-            }
-            .onChange(of: newFolderMode) { _, mode in Store.views.setStandardMode(mode) }
             Toggle("Recent Files on Home", isOn: $showRecentFiles)
         }
         Section("Keyboard") {
@@ -136,6 +129,66 @@ struct GeneralSettings: View {
             }
         }
     }
+}
+
+/// Settings › Views: how folders never changed show (their view, sort, groups and columns),
+/// and folders on top in every folder (S-040). View › Use as Defaults sets the same defaults.
+struct ViewsSettings: View {
+    @State private var standard = Store.views.memory.standard
+
+    var body: some View {
+        Section {
+            Picker("View", selection: binding(\.mode) { $0.setStandardMode($1) }) {
+                ForEach(ViewMode.allCases, id: \.self) { mode in
+                    Label(mode.label, systemImage: mode.symbol).tag(mode)
+                }
+            }
+            Picker("Sort By", selection: binding(\.order.key) { $0.setStandardSort($1) }) {
+                ForEach(SortKey.allCases, id: \.self) { key in Text(key.title).tag(key) }
+            }
+            Picker("Group By", selection: binding(\.groupBy) { $0.setStandardGroup($1) }) {
+                ForEach(GroupBy.allCases, id: \.self) { group in Text(group.title).tag(group) }
+            }
+        } header: {
+            Text("New Folders")
+        } footer: {
+            Text("Folders you already changed keep their view. View › Use as Defaults also sets these.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        Section("Columns in Details") {
+            // Cloud Status comes on by itself in cloud folders (S-058).
+            ForEach(ListColumn.allCases.filter { $0 != .name && $0 != .cloud }, id: \.self) { column in
+                Toggle(column.title, isOn: Binding(
+                    get: { standard.columns.contains(column) },
+                    set: { shown in change { $0.setStandardColumn(column, shown: shown) } }))
+            }
+        }
+        Section("All Folders") {
+            Toggle(isOn: Binding(get: { standard.order.foldersFirst }, set: { on in
+                change { $0.setFoldersFirst(on) }
+                NotificationCenter.default.post(name: BrowserModel.foldersFirstChanged, object: nil)
+            })) {
+                Text("Folders on top")
+                Text("Before files, sorted any way. Off, folders and files mix.")
+            }
+        }
+        .onAppear { standard = Store.views.memory.standard }
+    }
+
+    private func change(_ body: (inout ViewMemory) -> Void) {
+        Store.views.change(body)
+        standard = Store.views.memory.standard
+    }
+
+    private func binding<Value>(_ path: KeyPath<FolderView, Value>, set: @escaping (inout ViewMemory, Value) -> Void) -> Binding<Value> {
+        Binding(get: { standard[keyPath: path] }, set: { value in change { set(&$0, value) } })
+    }
+}
+
+extension SortKey {
+    /// The same name as its column.
+    var title: String { ListColumn(rawValue: rawValue)?.title ?? rawValue }
 }
 
 /// Settings › General › Other Apps: the kamiro command (S-039).

@@ -118,6 +118,7 @@ final class BrowserModel {
     @ObservationIgnored private var remembered: [URL: Set<URL>] = [:]
     @ObservationIgnored private var started = false
     @ObservationIgnored nonisolated(unsafe) private var hiddenWatch: (any NSObjectProtocol)?
+    @ObservationIgnored nonisolated(unsafe) private var foldersFirstWatch: (any NSObjectProtocol)?
     /// Opens a folder in a new window, or a new tab of this one when true (set by the window's view).
     @ObservationIgnored var openWindow: ((URL, Bool) -> Void)?
     /// What the window shows selected when it opens (a file another app sent).
@@ -137,10 +138,22 @@ final class BrowserModel {
         hiddenWatch = NotificationCenter.default.addObserver(forName: HiddenFiles.changed, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         }
+        // Settings › Views › Folders on top applies to every folder, these windows too.
+        foldersFirstWatch = NotificationCenter.default.addObserver(forName: Self.foldersFirstChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.restoring = true
+                self.order.foldersFirst = Store.views.memory.foldersFirst
+                self.restoring = false
+            }
+        }
     }
+
+    static let foldersFirstChanged = Notification.Name("KamiroFoldersFirstChanged")
 
     deinit {
         if let hiddenWatch { NotificationCenter.default.removeObserver(hiddenWatch) }
+        if let foldersFirstWatch { NotificationCenter.default.removeObserver(foldersFirstWatch) }
     }
 
     var folder: URL { history.current }

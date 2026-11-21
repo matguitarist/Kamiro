@@ -608,7 +608,7 @@ Built: Settings › General › Other Apps › Command Line installs a small zsh
 As the user, Settings has General (new window opens at, Return opens items, default browser, terminal app, code editor), Views (default view, columns, folders first), Sidebar and Menu.
 Screens: settings-general, settings-views, settings-sidebar
 Status: todo
-Progress (2026-11-21): Sidebar has its own tab (parts to show, Connected Shares, connect all shares). General has Folders (new windows open on Home, the home folder, Desktop, Documents, Downloads or a folder chosen with Other…, new tabs too, a folder that's gone opens Home; new folders open as Details, Icons or Columns; Recent Files on Home), Keyboard, Open With (Terminal, Code Editor) and Language. Still to do: default browser (S-038), a Views tab once columns and folders first join the default view, Menu.
+Progress (2026-11-21): Views has its own tab: new folders' view, sort, groups and Details columns (General's "New folders open as" moved here), and Folders on top, for every folder at once like the Finder's "Keep folders on top". Sidebar has its own tab (parts to show, Connected Shares, connect all shares). General has Folders (new windows open on Home, the home folder, Desktop, Documents, Downloads or a folder chosen with Other…, new tabs too, a folder that's gone opens Home; Recent Files on Home), Keyboard, Open With (Terminal, Code Editor), Other Apps (the kamiro command, S-039) and Language. Still to do: default browser (S-038), Menu (S-047).
 
 ### S-041 French
 As the user, every screen reads in French when the Mac is in French, with a language choice in Settings.

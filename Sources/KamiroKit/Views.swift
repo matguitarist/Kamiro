@@ -127,9 +127,34 @@ public struct ViewMemory: Codable, Equatable, Sendable {
         standard = view
     }
 
-    /// The view new folders open in (Settings › General). Folders already shown keep theirs.
+    /// The view new folders open in (Settings › Views). Folders already shown keep theirs.
     public mutating func setStandardMode(_ mode: ViewMode) {
         standard.mode = mode
+    }
+
+    /// Shows or hides a column in new folders' details (Settings › Views). Name stays.
+    public mutating func setStandardColumn(_ column: ListColumn, shown: Bool) {
+        guard standard.columns.contains(column) != shown else { return }
+        standard.toggle(column)
+    }
+
+    /// How new folders sort (Settings › Views): dates and sizes newest and largest first, like the Finder.
+    public mutating func setStandardSort(_ key: SortKey) {
+        standard.order = ItemOrder(key: key, ascending: key == .name || key == .kind || key == .ext,
+                                   foldersFirst: standard.order.foldersFirst)
+    }
+
+    public mutating func setStandardGroup(_ group: GroupBy) {
+        standard.groupBy = group
+    }
+
+    /// Folders on top of files in every folder, sorted any way (Settings › Views), like the
+    /// Finder's "Keep folders on top": one choice for all, so folders already shown follow it too.
+    public var foldersFirst: Bool { standard.order.foldersFirst }
+
+    public mutating func setFoldersFirst(_ on: Bool) {
+        standard.order.foldersFirst = on
+        for key in folders.keys { folders[key]?.order.foldersFirst = on }
     }
 }
 
@@ -157,6 +182,12 @@ public final class ViewStore {
 
     public func setStandardMode(_ mode: ViewMode) {
         memory.setStandardMode(mode)
+        save()
+    }
+
+    /// Any other change to the defaults or to every folder (Settings › Views), saved at once.
+    public func change(_ body: (inout ViewMemory) -> Void) {
+        body(&memory)
         save()
     }
 

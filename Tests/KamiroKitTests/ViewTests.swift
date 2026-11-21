@@ -83,3 +83,29 @@ private func scratchFile() -> URL {
     #expect(memory.view(for: URL(filePath: "/tmp/new")).mode == .icons)
     #expect(memory.view(for: shown).mode == .details)
 }
+
+@Test func settingsViewsChangesNewFoldersAndFoldersFirstEverywhere() {
+    let file = scratchFile()
+    defer { try? FileManager.default.removeItem(at: file) }
+    let photos = URL(filePath: "/tmp/a/Photos")
+    let store = ViewStore(url: file)
+    store.remember(FolderView(order: ItemOrder(key: .size, ascending: false)), for: photos)
+    store.change {
+        $0.setStandardColumn(.created, shown: true)
+        $0.setStandardColumn(.kind, shown: false)
+        $0.setStandardColumn(.name, shown: false)
+        $0.setStandardSort(.modified)
+        $0.setStandardGroup(.kind)
+        $0.setFoldersFirst(false)
+    }
+    let again = ViewStore(url: file)
+    let fresh = again.view(for: URL(filePath: "/tmp/a/New"))
+    #expect(fresh.columns == [.name, .modified, .size, .created])
+    #expect(fresh.order == ItemOrder(key: .modified, ascending: false, foldersFirst: false))
+    #expect(fresh.groupBy == .kind)
+    #expect(again.view(for: photos).order == ItemOrder(key: .size, ascending: false, foldersFirst: false),
+            "a folder already changed keeps its sort but follows folders first")
+    #expect(!again.memory.foldersFirst)
+    again.change { $0.setStandardSort(.name) }
+    #expect(again.memory.standard.order == ItemOrder(key: .name, ascending: true, foldersFirst: false))
+}
