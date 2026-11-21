@@ -328,6 +328,8 @@ enum SelfTest {
         check("New File is in the File menu and the right-click menu, with every template",
               templates(menuNewFile) == FileTemplate.all.count && templates(contextNewFile) == FileTemplate.all.count,
               "\(templates(menuNewFile)), \(templates(contextNewFile))")
+        check("…each template shows its file kind's icon",
+              contextNewFile?.items.filter { titles.contains($0.title) }.allSatisfy { $0.image != nil } ?? false)
 
         // S-044: New File from Clipboard, on the test pasteboard.
         let board = FileClipboard.shared.pasteboard

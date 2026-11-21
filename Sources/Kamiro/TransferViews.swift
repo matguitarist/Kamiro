@@ -403,7 +403,7 @@ struct NewFileItems: View {
         ForEach(FileTemplate.Group.allCases, id: \.self) { group in
             Section(group.title) {
                 ForEach(FileTemplate.all.filter { $0.group == group }) { template in
-                    Button(template.title) { newFile(template) }
+                    Button(template.title, systemImage: template.symbol) { newFile(template) }
                 }
             }
         }

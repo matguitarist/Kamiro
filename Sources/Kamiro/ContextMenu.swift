@@ -5,10 +5,29 @@ import UniformTypeIdentifiers
 
 // MARK: - The right-click menu (S-033)
 
+extension NSMenu {
+    /// macOS 27 hides menu item images unless an item asks to show them; the right-click
+    /// menu keeps its symbols, like the Finder's. Submenus too.
+    @discardableResult
+    func showingImages() -> NSMenu {
+        if #available(macOS 27, *) {
+            for item in items {
+                if item.image != nil { item.preferredImageVisibility = .visible }
+                item.submenu?.showingImages()
+            }
+        }
+        return self
+    }
+}
+
 extension BrowserModel {
     /// The list's right-click menu. It follows what's under the pointer: items get Open, Copy and
     /// the like; empty space gets Paste and New. What doesn't apply is left out, not dimmed.
     func contextMenu(onItems: Bool) -> NSMenu {
+        buildContextMenu(onItems: onItems).showingImages()
+    }
+
+    private func buildContextMenu(onItems: Bool) -> NSMenu {
         let menu = NSMenu()
         func add(_ title: String, _ symbol: String, _ action: @escaping () -> Void) {
             let item = MenuAction.item(title, handler: action)

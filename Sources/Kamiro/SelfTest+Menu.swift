@@ -107,6 +107,12 @@ extension SelfTest {
         check("groups are separated once, never at the ends", wellGrouped)
         check("every line has an icon",
               menus.allSatisfy { $0.items.filter { !$0.isSeparatorItem }.allSatisfy { $0.image != nil } })
+        if #available(macOS 27, *) {
+            func shown(_ menu: NSMenu) -> Bool {
+                menu.items.allSatisfy { ($0.image == nil || $0.preferredImageVisibility == .visible) && ($0.submenu.map(shown) ?? true) }
+            }
+            check("…and macOS 27 shows them, submenus included", menus.allSatisfy(shown))
+        }
         check("submenus go one level deep at most",
               menus.allSatisfy { $0.items.compactMap(\.submenu).allSatisfy { $0.items.allSatisfy { $0.submenu == nil } } })
 

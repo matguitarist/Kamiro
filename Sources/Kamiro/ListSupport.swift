@@ -220,13 +220,41 @@ final class InlineRename: NSObject, NSTextFieldDelegate {
 
 // MARK: - New File templates and drops
 
+extension FileTemplate {
+    /// The SF Symbol for this kind of file, drawn like the rest of the right-click menu.
+    var symbol: String {
+        switch id {
+        case "empty": "doc"
+        case "text": "doc.text"
+        case "rtf": "doc.richtext"
+        case "markdown": "doc.plaintext"
+        case "json": "curlybraces"
+        case "xml": "chevron.left.forwardslash.chevron.right"
+        case "yaml": "list.bullet.indent"
+        case "csv": "tablecells"
+        case "html": "globe"
+        case "css": "paintbrush.pointed"
+        case "javascript": "j.square"
+        case "typescript": "t.square"
+        case "python": "chevron.left.chevron.right"
+        case "shell": "apple.terminal"
+        case "swift": "swift"
+        default: "doc"
+        }
+    }
+
+    var icon: NSImage? { NSImage(systemSymbolName: symbol, accessibilityDescription: nil) }
+}
+
 extension BrowserModel {
     static func templateMenu(_ make: @escaping (FileTemplate) -> Void) -> NSMenu {
         let menu = NSMenu()
         for group in FileTemplate.Group.allCases {
             menu.addItem(.sectionHeader(title: group.title))
             for template in FileTemplate.all where template.group == group {
-                menu.addItem(MenuAction.item(template.title) { make(template) })
+                let item = MenuAction.item(template.title) { make(template) }
+                item.image = template.icon
+                menu.addItem(item)
             }
         }
         return menu
