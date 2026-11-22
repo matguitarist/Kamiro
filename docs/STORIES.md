@@ -633,12 +633,35 @@ Acceptance:
 Status: done
 Built: Settings › General › Terminal, a picker with each installed terminal's icon. Terminal, Ghostty, iTerm, Warp and Hyper open the folder like a document; kitty, Alacritty and WezTerm start a new instance with the folder as an argument. The menus name the chosen app: "Open in Ghostty" on a folder, pin or disk, "Open Ghostty Here" on empty space.
 
+### S-062 Bigger Details rows and zoom
+As the user, I make the Details rows and icons bigger or smaller with Ctrl-scroll or the status bar's slider, like Windows File Explorer's zoom, and the toolbar's New menu shows the same icons as the right-click menu.
+Depends: S-002, S-019
+Acceptance:
+- [unit] Row sizes go from 16 to 48 pt icons in five steps and stay in range; a wheel notch is one step, a trackpad swipe one step per 16 points.
+- [self] Ctrl-scroll in the details view and the icon view changes the size; the toolbar's New menu items carry icons.
+Status: done
+Built: Details rows start a step bigger than the Finder's (20 pt icons, 28 pt rows) and go from 16 to 48 pt icons. Ctrl-scroll (or ⌘-scroll) zooms the details rows and the icon view, and the status bar's slider does the same. The toolbar's + menu is an AppKit menu with the right-click menu's icons.
+
+### S-063 See what fills a folder
+As the user, I right-click a folder (or empty space) and choose Show Disk Usage to see a map of what takes room inside it, at every depth, like WinDirStat or DaisyDisk, and zoom into the folders that matter.
+Depends: S-023, S-033
+Acceptance:
+- [unit] The map's tiles fill their box with areas in proportion to their sizes and stay close to square; the scan's total matches FolderSize, counts hard links once, stays on the folder's disk, and folds a folder's smallest files into one “smaller items” tile.
+- [self] Show Disk Usage on the sample tree opens “Disk Usage — Kamiro-seed” with the same total as Properties; double-clicking Photos zooms into it and the path bar goes back up; Show in Kamiro selects the item in the browser.
+- [snap] disk-usage, light and dark.
+UX:
+- Flow: right-click a folder › Show Disk Usage, or File › Show Disk Usage (⌥⌘U) for the selected folder or the one on screen → a window measures it with a count and Stop → the map and a list of the biggest items → click a tile to select it in the list, double-click a folder to zoom in, the path bar or ⌘↑ to zoom out → right-click a tile or row: Show in Kamiro, Open, Copy Path
+- Surface: a window of its own per folder (it's a place people look around in, not a step of a task)
+- States: measuring “Measuring… 12,345 items, 3.2 GB” with Stop; can't read “Kamiro can't read this folder.”; empty “This folder is empty.”
+- Words: “Show Disk Usage”, “Disk Usage — %@”, “Smaller items” / « Afficher l'utilisation du disque », « Utilisation du disque — %@ », « Éléments plus petits »
+- Access: tiles are one accessibility element per item read as name and size; the list is the keyboard way through the map
+Status: doing
+
 ## Later
 - Dual pane (side-by-side folders in one tab), with F5 copy / F6 move to the other pane.
 - Batch rename with a live preview; rules from PowerClick (prefix, suffix, case, sequence, date).
 - Gallery view.
 - Workspaces (saved sets of tabs).
-- Disk usage map of a folder.
 - Browse inside archives as folders.
 - Read QR codes and barcodes in images and PDFs (PowerClick).
 - Transcribe audio and video on device (PowerClick).
