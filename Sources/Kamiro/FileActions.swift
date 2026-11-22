@@ -235,6 +235,19 @@ extension BrowserModel {
         for url in (chosen.isEmpty ? [folder] : Array(chosen.prefix(10))) { openProperties?(url) }
     }
 
+    /// Show Disk Usage (S-063): the one selected folder, or the folder on screen.
+    var diskUsageTarget: URL? {
+        let chosen = selectedItems
+        if chosen.count == 1, chosen[0].isFolder, chosen[0].url.isFileURL { return chosen[0].url }
+        if chosen.isEmpty, !isVirtual, folder.isFileURL, state == .ready { return folder }
+        return nil
+    }
+
+    func showDiskUsage() {
+        guard let url = diskUsageTarget else { NSSound.beep(); return }
+        openDiskUsage?(url)
+    }
+
     func deleteImmediately() {
         guard let urls = pendingDelete else { return }
         pendingDelete = nil

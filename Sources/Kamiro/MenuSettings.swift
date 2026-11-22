@@ -33,6 +33,7 @@ extension MenuEntry {
         case .pinToSidebar: String(localized: "Pin to Sidebar")
         case .openInTerminal: ItemActions.openInTerminalTitle
         case .openInEditor: ItemActions.editor.map { String(localized: "Open in \($0.name)") }
+        case .diskUsage: String(localized: "Show Disk Usage")
         case .newFile: String(localized: "New File")
         case .newFileFromClipboard: String(localized: "New File from Clipboard")
         }
@@ -55,6 +56,7 @@ extension MenuEntry {
         case .pinToSidebar: "pin"
         case .openInTerminal: "terminal"
         case .openInEditor: ItemActions.editorSymbol
+        case .diskUsage: DiskUsageActions.symbol
         case .newFile: "doc.badge.plus"
         case .newFileFromClipboard: "doc.on.clipboard"
         }

@@ -62,6 +62,7 @@ struct ContentView: View {
         .onAppear {
             browser.openWindow = { url, asTab in Tabs.open(url, besides: asTab ? Tabs.front : nil, with: openWindow) }
             browser.openProperties = { url in openWindow(id: KamiroApp.propertiesID, value: url) }
+            browser.openDiskUsage = { url in openWindow(id: KamiroApp.diskUsageID, value: url) }
             browser.startIfNeeded()
             MenuState.shared.activate(browser)
             ExternalOpen.windowAppeared(browser, openWindow: openWindow)

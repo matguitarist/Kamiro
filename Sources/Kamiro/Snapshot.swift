@@ -27,11 +27,13 @@ enum Snapshot {
         case home
         case icloud
         case icloudIcons = "icloud-icons"
+        case diskUsage = "disk-usage"
 
         /// Pages shot in their own window instead of the main one.
         var windowID: String? {
             switch self {
             case .properties, .propertiesFolder, .propertiesDisk: KamiroApp.propertiesID
+            case .diskUsage: KamiroApp.diskUsageID
             default: nil
             }
         }
@@ -83,6 +85,15 @@ enum Snapshot {
                 await browser.waitUntilLoaded()
                 browser.showProperties()
                 try? await Task.sleep(for: .seconds(1.5))
+            case .diskUsage:
+                browser.go(to: seed)
+                await browser.waitUntilLoaded()
+                browser.openDiskUsage?(seed)
+                for _ in 0..<50 where DiskUsageModel.latest?.state != .ready { try? await Task.sleep(for: .seconds(0.1)) }
+                if let model = DiskUsageModel.latest, let photos = model.shown?.children.first(where: { $0.name == "Photos" }) {
+                    model.selection = photos.id
+                }
+                try? await Task.sleep(for: .seconds(0.5))
             case .propertiesDisk:
                 browser.openProperties?(URL(filePath: "/"))
                 try? await Task.sleep(for: .seconds(1.5))
@@ -198,6 +209,8 @@ enum Snapshot {
                 await browser.waitUntilLoaded()
             case .properties, .propertiesFolder, .propertiesDisk:
                 NSApp.windows.filter { $0.identifier?.rawValue.contains(KamiroApp.propertiesID) == true }.forEach { $0.close() }
+            case .diskUsage:
+                NSApp.windows.filter { $0.identifier?.rawValue.contains(KamiroApp.diskUsageID) == true }.forEach { $0.close() }
             default: return
             }
             try? await Task.sleep(for: .seconds(0.5))

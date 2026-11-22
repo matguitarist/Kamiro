@@ -4,7 +4,7 @@ import Foundation
 /// Paste, Rename, Move to Trash, New Folder and Properties always show.
 public enum MenuEntry: String, CaseIterable, Sendable {
     case openWith, openInNewTab, quickLook, copyPath, copyInfo, duplicate, copyTo, moveTo
-    case compress, extract, convert, tags, pinToSidebar, openInTerminal, openInEditor
+    case compress, extract, convert, tags, pinToSidebar, openInTerminal, openInEditor, diskUsage
     case newFile, newFileFromClipboard
 }
 

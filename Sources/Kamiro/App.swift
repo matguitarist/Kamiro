@@ -17,6 +17,7 @@ struct KamiroApp: App {
     static let browserID = "browser"
     static let logID = "log"
     static let propertiesID = "properties"
+    static let diskUsageID = "disk-usage"
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var model = AppModel(log: Store.log)
@@ -52,6 +53,13 @@ struct KamiroApp: App {
             if let url { PropertiesView(url: url).themed() }
         }
         .windowResizability(.contentSize)
+        .windowToolbarStyle(.unified(showsTitle: true))
+        .commandsRemoved()
+
+        WindowGroup(id: Self.diskUsageID, for: URL.self) { $url in
+            if let url { DiskUsageView(url: url).themed() }
+        }
+        .defaultSize(width: 960, height: 620)
         .windowToolbarStyle(.unified(showsTitle: true))
         .commandsRemoved()
 

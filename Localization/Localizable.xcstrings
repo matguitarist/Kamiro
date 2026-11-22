@@ -4221,6 +4221,206 @@
           }
         }
       }
+    },
+    "%@ in %@ items": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ dans %2$@ éléments"
+          }
+        }
+      }
+    },
+    "%@ items, %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ éléments, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "Archives": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archives"
+          }
+        }
+      }
+    },
+    "Disk Usage — %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisation du disque — %@"
+          }
+        }
+      }
+    },
+    "Disk usage map": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carte de l’utilisation du disque"
+          }
+        }
+      }
+    },
+    "Double-click a folder to look inside it.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double-cliquez sur un dossier pour voir ce qu’il contient."
+          }
+        }
+      }
+    },
+    "Kamiro can’t read this folder.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamiro ne peut pas lire ce dossier."
+          }
+        }
+      }
+    },
+    "Measure Again": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesurer à nouveau"
+          }
+        }
+      }
+    },
+    "Measuring…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mesure en cours…"
+          }
+        }
+      }
+    },
+    "Music": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musique"
+          }
+        }
+      }
+    },
+    "Open in Kamiro": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir dans Kamiro"
+          }
+        }
+      }
+    },
+    "Other": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autres"
+          }
+        }
+      }
+    },
+    "Show Disk Usage": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher l’utilisation du disque"
+          }
+        }
+      }
+    },
+    "Show in Kamiro": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher dans Kamiro"
+          }
+        }
+      }
+    },
+    "Show the folder this one is in": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le dossier qui contient celui-ci"
+          }
+        }
+      }
+    },
+    "Smaller items": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éléments plus petits"
+          }
+        }
+      }
+    },
+    "Smaller items (%@)": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Éléments plus petits (%@)"
+          }
+        }
+      }
+    },
+    "This folder is empty.": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce dossier est vide."
+          }
+        }
+      }
+    },
+    "Zoom In": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoomer"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

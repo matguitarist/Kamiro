@@ -188,6 +188,9 @@ extension BrowserModel {
         }
         if (onItems && !chosen.isEmpty) || (!isVirtual && state == .ready) {
             group()
+            if shown.shows(.diskUsage), diskUsageTarget != nil {
+                add(String(localized: "Show Disk Usage"), DiskUsageActions.symbol) { [weak self] in self?.showDiskUsage() }
+            }
             add(String(localized: "Properties"), "info.circle") { [weak self] in self?.showProperties() }
         }
         if let last = menu.items.last, last.isSeparatorItem { menu.removeItem(last) }

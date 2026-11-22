@@ -174,6 +174,7 @@ enum SelfTest {
             await externalOpen(browser: browser, seed: seed)
             await viewsSettings(browser: browser, seed: seed)
             await menuSettings(browser: browser, seed: seed)
+            await diskUsage(browser: browser, seed: seed)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)

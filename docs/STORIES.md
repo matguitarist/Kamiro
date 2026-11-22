@@ -646,7 +646,7 @@ Built: Details rows start a step bigger than the Finder's (20 pt icons, 28 pt ro
 As the user, I right-click a folder (or empty space) and choose Show Disk Usage to see a map of what takes room inside it, at every depth, like WinDirStat or DaisyDisk, and zoom into the folders that matter.
 Depends: S-023, S-033
 Acceptance:
-- [unit] The map's tiles fill their box with areas in proportion to their sizes and stay close to square; the scan's total matches FolderSize, counts hard links once, stays on the folder's disk, and folds a folder's smallest files into one “smaller items” tile.
+- [unit] The map's tiles fill their box with areas in proportion to their sizes and stay close to square; the scan's total matches FolderSize, counts hard links once, and folds a folder's smallest files into one “smaller items” tile.
 - [self] Show Disk Usage on the sample tree opens “Disk Usage — Kamiro-seed” with the same total as Properties; double-clicking Photos zooms into it and the path bar goes back up; Show in Kamiro selects the item in the browser.
 - [snap] disk-usage, light and dark.
 UX:
@@ -655,7 +655,8 @@ UX:
 - States: measuring “Measuring… 12,345 items, 3.2 GB” with Stop; can't read “Kamiro can't read this folder.”; empty “This folder is empty.”
 - Words: “Show Disk Usage”, “Disk Usage — %@”, “Smaller items” / « Afficher l'utilisation du disque », « Utilisation du disque — %@ », « Éléments plus petits »
 - Access: tiles are one accessibility element per item read as name and size; the list is the keyboard way through the map
-Status: doing
+Status: done
+Built: File › Show Disk Usage (⌥⌘U) and Right-click › Show Disk Usage (on one folder, or on empty space for the folder on screen; Settings › Menu can hide it) open a window per folder. It measures in the background with a running count and Stop, the same way as Properties (size on disk, hard links once, hidden files, other apps' containers left out), staying on the folder's own disk. The map is a squarified treemap colored by kind (pictures, movies, music, documents, apps, archives, code, other), folders opened in place three levels deep when there's room; a folder's files past its 200 biggest fold into one “Smaller items” tile. Beside it, the folder's items biggest first. Click selects, double-click zooms in, the path bar and ⌘↑ zoom out, Measure Again keeps the folder on screen. Right-click a tile or row: Zoom In, Open (Open in Kamiro for folders), Show in Kamiro, Copy Path. The footer names the item under the pointer with its share of the folder.
 
 ## Later
 - Dual pane (side-by-side folders in one tab), with F5 copy / F6 move to the other pane.

@@ -15,6 +15,8 @@ final class MenuState: ObservableObject {
     /// File › Compress and Extract Here (S-035).
     @Published private(set) var compressTitle: String?
     @Published private(set) var canExtract = false
+    /// File › Show Disk Usage (S-063).
+    @Published private(set) var canShowDiskUsage = false
     @Published private(set) var isReady = false
     /// The window shows a tag's items or search results (S-027, S-029).
     @Published private(set) var isVirtual = false
@@ -40,6 +42,7 @@ final class MenuState: ObservableObject {
         canPin = !browser.pinTargets.isEmpty
         compressTitle = browser.compressTargets.isEmpty ? nil : browser.compressTitle
         canExtract = !browser.extractTargets.isEmpty
+        canShowDiskUsage = browser.diskUsageTarget != nil
         // A tag's items aren't a folder: nothing can be made or pasted there.
         isReady = browser.state == .ready && !browser.isVirtual
         isVirtual = browser.isVirtual
@@ -77,6 +80,9 @@ struct KamiroCommands: Commands {
             Button("Properties") { menu.browser?.showProperties() }
                 .keyboardShortcut("i")
                 .disabled(!(menu.isReady || menu.hasSelection))
+            Button("Show Disk Usage") { menu.browser?.showDiskUsage() }
+                .keyboardShortcut("u", modifiers: [.command, .option])
+                .disabled(!menu.canShowDiskUsage)
             Divider()
             Button("New Folder") { menu.browser?.newFolder() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
