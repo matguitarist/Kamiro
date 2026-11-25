@@ -1,5 +1,6 @@
 import AVFoundation
 import AppKit
+import AppTestKit
 import KamiroKit
 import ProcessKit
 

@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 import LogKitUI
 import Quartz
@@ -8,25 +9,11 @@ import Quartz
 ///   APP_STORE=/tmp/Kamiro-self.json ~/Applications/Kamiro.app/Contents/MacOS/Kamiro --selftest
 /// (tools/selftest.sh does this.) Add a check for every story with logic.
 @MainActor
-enum SelfTest {
-    static var requested: Bool { CommandLine.arguments.contains("--selftest") }
-    /// Read by AppDelegate.applicationWillTerminate.
-    static var exitCode: Int32 = 0
-    private static var failures = 0
-    private static var count = 0
-
+extension SelfTest {
     static func runIfRequested(app: AppModel, browser: BrowserModel) {
-        guard requested else { return }
-        // Print each line at once, so a crash keeps the lines before it.
-        setvbuf(stdout, nil, _IOLBF, 0)
         let seed = Store.seedFolder
-        guard Store.isOverridden, Store.url.path.hasPrefix("/tmp/") || Store.url.path.hasPrefix("/private/tmp/"),
-              FileManager.default.fileExists(atPath: seed.path) else {
-            print("SELFTEST refused: set APP_STORE to a file in /tmp and run tools/seed-tree.sh first")
-            finish(code: 1)
-            return
-        }
-        Task {
+        run(refusal: "set APP_STORE to a file in /tmp and run tools/seed-tree.sh first",
+            allowed: FileManager.default.fileExists(atPath: seed.path)) {
             // The log.
             app.log.post(.info, "Self-test line", source: "SelfTest")
             try? await Task.sleep(for: .seconds(0.3))
@@ -175,9 +162,6 @@ enum SelfTest {
             await viewsSettings(browser: browser, seed: seed)
             await menuSettings(browser: browser, seed: seed)
             await diskUsage(browser: browser, seed: seed)
-
-            print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
-            finish(code: failures == 0 ? 0 : 1)
         }
     }
 
@@ -428,19 +412,5 @@ enum SelfTest {
         await pause(0.9)
         await browser.waitUntilLoaded()
         check("a folder held under a drag opens after 0.7 s", browser.folder == url("Photos"))
-    }
-
-    static func check(_ name: String, _ ok: Bool, _ detail: String = "") {
-        count += 1
-        if !ok { failures += 1 }
-        print(ok ? "PASS \(name)" : "FAIL \(name)\(detail.isEmpty ? "" : ": \(detail)")")
-    }
-
-    /// Quits through NSApp.terminate, never exit(), and closes sheets first:
-    /// an open sheet refuses terminate, and the run would wait forever.
-    static func finish(code: Int32) {
-        exitCode = code
-        for window in NSApp.windows { if let sheet = window.attachedSheet { window.endSheet(sheet) } }
-        NSApp.terminate(nil)
     }
 }

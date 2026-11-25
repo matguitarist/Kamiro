@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 
 /// S-039: the kamiro command, and folders and files sent by other apps.

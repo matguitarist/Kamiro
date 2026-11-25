@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 import LogKitUI
 import SwiftUI
@@ -103,7 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The self-test's result becomes the exit code, after a normal quit.
     func applicationWillTerminate(_ notification: Notification) {
         Store.log.flushFile()
-        if SelfTest.requested { exit(SelfTest.exitCode) }
+        SelfTest.exitIfRequested()
     }
 }
 
@@ -112,9 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 /// there, for tests, snapshots, and the self-test.
 enum Store {
     /// True when APP_STORE points somewhere else (tests, snapshots, self-test).
-    static var isOverridden: Bool {
-        !(ProcessInfo.processInfo.environment["APP_STORE"] ?? "").isEmpty
-    }
+    static var isOverridden: Bool { TestRun.isTestRun() }
 
     static var folder: URL {
         let dir = URL.applicationSupportDirectory.appending(path: "Kamiro", directoryHint: .isDirectory)
@@ -122,11 +121,9 @@ enum Store {
         return dir
     }
 
+    /// APP_STORE outside /tmp quits with 1 before anything is read or written.
     static var url: URL {
-        if let path = ProcessInfo.processInfo.environment["APP_STORE"], !path.isEmpty {
-            return URL(fileURLWithPath: path)
-        }
-        return folder.appending(path: "settings.json")
+        TestRun.store() ?? folder.appending(path: "settings.json")
     }
 
     /// The app's log: next to APP_STORE in a test run, ~/Library/Logs/Kamiro otherwise.

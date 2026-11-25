@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 
 extension SelfTest {

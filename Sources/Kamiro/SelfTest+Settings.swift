@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 
 /// S-040: Settings › Views.

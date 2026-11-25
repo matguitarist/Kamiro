@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 
 /// S-057 and S-058: iCloud Drive, sync folders and cloud status, on the test home in /tmp

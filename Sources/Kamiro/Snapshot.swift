@@ -1,5 +1,5 @@
 import AppKit
-import IOKit.pwr_mgt
+import AppTestKit
 import KamiroKit
 import SwiftUI
 
@@ -218,96 +218,67 @@ enum Snapshot {
     }
 
     static func runIfRequested(app: AppModel, browser: BrowserModel, openSettings: OpenSettingsAction, openWindow: OpenWindowAction) {
-        let env = ProcessInfo.processInfo.environment
-        guard let dir = env["APP_SNAPSHOT"], !dir.isEmpty else { return }
         // Snapshots never run against the real settings.
-        guard Store.isOverridden else {
-            print("SNAPSHOT refused: set APP_STORE to a file in /tmp")
-            NSApp.terminate(nil)
-            return
-        }
-        let only = env["APP_SNAPSHOT_PAGES"].map { Set($0.split(separator: ",").map(String.init)) }
+        guard let run = SnapshotRun.requested(layout: { GridProbes.shared.write(to: $0.path, window: $1) }) else { return }
         Task {
-            // A sleeping display gives screencapture nothing. Declaring user
-            // activity wakes it; the assertion keeps it on until the run quits.
-            var activity: IOPMAssertionID = 0
-            IOPMAssertionDeclareUserActivity("Snapshots" as CFString, kIOPMUserActiveLocal, &activity)
-            var awake: IOPMAssertionID = 0
-            IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString,
-                                        IOPMAssertionLevel(kIOPMAssertionLevelOn), "Snapshots" as CFString, &awake)
-            try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
-            try? await Task.sleep(for: .seconds(1.5))
-            let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
-            if env["APP_SNAPSHOT_MIN"] != nil, let main {
-                // The window clamps to its content's minimum size.
-                main.setContentSize(NSSize(width: 1, height: 1))
-                try? await Task.sleep(for: .seconds(0.5))
-            }
-            for mode in ["light", "dark"] {
-                NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
-                for page in Page.allCases where only?.contains(page.rawValue) ?? true {
+            await run.start()
+            let main = WindowShot.mainWindow()
+            let pages = Page.allCases.filter { run.wants($0.rawValue) }
+            await run.forEachAppearance { look in
+                for page in pages {
                     await page.show(in: browser)
-                    try? await Task.sleep(for: .seconds(0.8))
-                    let path = "\(dir)/\(page.rawValue)-\(mode).png"
+                    await run.pause()
                     if page == .columnsMenu {
-                        captureHeaderMenu(of: browser, to: path, window: main)
+                        captureHeaderMenu(of: browser, run: run, look: look, window: main)
                     } else if page == .tabs {
                         // The new tab is in front; its window draws the tab bar.
-                        capture(to: path, window: NSApp.keyWindow)
+                        await run.capture(page.rawValue, look, window: NSApp.keyWindow, area: .automatic)
                     } else if let id = page.windowID {
                         let own = NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue.contains(id) == true }
                         own?.makeKeyAndOrderFront(nil)
-                        try? await Task.sleep(for: .seconds(0.3))
-                        capture(to: path, window: own)
+                        await run.pause(.seconds(0.3))
+                        await run.capture(page.rawValue, look, window: own, area: .automatic)
                     } else {
-                        capture(to: path, window: main)
+                        // A sheet or a popover (the transfers) is a window of its own: the window's screen area is shot.
+                        await run.capture(page.rawValue, look, window: main, area: .automatic)
                     }
                     await page.cleanUp(in: browser)
                 }
                 if browser.isEditingPath { browser.cancelEditingPath() }
             }
-            if only == nil || only?.contains("log") == true {
+            if run.wants("log") {
                 openWindow(id: KamiroApp.logID)
-                try? await Task.sleep(for: .seconds(1))
+                await run.pause(.seconds(1))
                 let log = NSApp.windows.first { $0.isVisible && $0.identifier?.rawValue.contains(KamiroApp.logID) == true }
-                for mode in ["light", "dark"] {
-                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
-                    try? await Task.sleep(for: .seconds(0.8))
-                    capture(to: "\(dir)/log-\(mode).png", window: log)
+                await run.forEachAppearance { look in
+                    await run.pause()
+                    await run.capture("log", look, window: log)
                 }
                 log?.close()
-                try? await Task.sleep(for: .seconds(0.4))
+                await run.pause(.seconds(0.4))
             }
-            if only == nil || only?.contains("settings") == true {
-                openSettings()
-                try? await Task.sleep(for: .seconds(1))
-                for mode in ["light", "dark"] {
-                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
-                    for tab in SettingsTab.allCases {
-                        app.settingsTab = tab
-                        try? await Task.sleep(for: .seconds(0.8))
-                        let settings = NSApp.windows.first { $0.isVisible && $0 !== main && !$0.isSheet && $0.identifier?.rawValue.contains(KamiroApp.logID) != true }
-                        capture(to: "\(dir)/settings-\(tab.rawValue)-\(mode).png", window: settings)
-                    }
-                }
-            }
-            print("SNAPSHOT done \(dir)")
-            // An open sheet refuses terminate, and the run would wait forever.
-            for window in NSApp.windows { if let sheet = window.attachedSheet { window.endSheet(sheet) } }
-            NSApp.terminate(nil)
+            await run.shootSettings(tabs: SettingsTab.allCases.map(\.rawValue), open: { openSettings() },
+                                    select: { app.settingsTab = SettingsTab(rawValue: $0) ?? .general },
+                                    window: { WindowShot.otherWindow { $0.identifier?.rawValue.contains(KamiroApp.logID) != true } })
+            run.finish()
         }
     }
 
     /// Opens the list header's right-click menu and shoots the window's screen area while
     /// it's open: the menu blocks this task, so a timer in the menu's run loop mode shoots.
-    private static func captureHeaderMenu(of browser: BrowserModel, to path: String, window: NSWindow?) {
+    private static func captureHeaderMenu(of browser: BrowserModel, run: SnapshotRun, look: Appearance, window: NSWindow?) {
+        guard let window else {
+            print("SNAPSHOT no window")
+            return
+        }
+        let url = run.url(Page.columnsMenu.rawValue, look)
         guard let table = browser.details?.table, let header = table.headerView, let menu = header.menu else {
-            capture(to: path, window: window)
+            WindowShot.captureNow(window, to: url, area: .automatic, layout: run.layout)
             return
         }
         let timer = Timer(timeInterval: 0.8, repeats: false) { _ in
             MainActor.assumeIsolated {
-                capture(to: path, window: window, wholeArea: true)
+                WindowShot.captureNow(window, to: url, area: .screen, layout: run.layout)
                 browser.details?.table?.headerView?.menu?.cancelTracking()
             }
         }
@@ -315,54 +286,5 @@ enum Snapshot {
         let column = table.column(withIdentifier: ListColumn.kind.identifier)
         let x = column >= 0 ? table.rect(ofColumn: column).minX + Space.lg : header.bounds.midX
         menu.popUp(positioning: nil, at: NSPoint(x: x, y: header.bounds.maxY), in: header)
-    }
-
-    /// Captures the real window with screencapture, so glass, sidebars, and
-    /// materials look exactly as on screen. That needs Screen Recording
-    /// permission for the app that started this one (your terminal, or Claude).
-    /// Without it, falls back to drawing the view hierarchy, which leaves
-    /// sidebars and glass blank.
-    private static func capture(to path: String, window: NSWindow? = nil, wholeArea: Bool = false) {
-        // Another app can hide this one while snapshots run (computer use hides
-        // apps it does not control). Hidden windows cannot be captured.
-        if NSApp.isHidden { NSApp.unhideWithoutActivation() }
-        guard let window = window ?? NSApp.windows.first(where: { $0.canBecomeMain && !$0.isSheet }) else {
-            print("SNAPSHOT no window")
-            return
-        }
-        // Active, like a window someone is using: real accent colors and focus rings.
-        NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
-        let size = window.contentView?.bounds.size ?? .zero
-        GridProbes.shared.write(to: path.replacingOccurrences(of: ".png", with: "-layout.json"), window: size)
-        try? FileManager.default.removeItem(atPath: path)
-        // The first capture of a run sometimes misses the window. Try three times.
-        // A sheet or a popover is a window of its own: shoot the screen area of the window instead.
-        var arguments = ["-x", "-o", "-l", String(window.windowNumber), path]
-        if wholeArea || window.attachedSheet != nil || TransferCenter.shared.popoverShown, let top = NSScreen.screens.first?.frame.maxY {
-            // Popovers can reach past the window's edge: take them in too.
-            let popovers = NSApp.windows.filter { $0.isVisible && String(describing: type(of: $0)).contains("Popover") }
-            let frame = popovers.reduce(window.frame) { $0.union($1.frame) }
-            arguments = ["-x", "-R", "\(Int(frame.minX)),\(Int(top - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))", path]
-        }
-        for _ in 1...3 {
-            let shot = Process()
-            shot.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            shot.arguments = arguments
-            try? shot.run()
-            shot.waitUntilExit()
-            if FileManager.default.fileExists(atPath: path) {
-                print("SNAPSHOT \(path)")
-                return
-            }
-            Thread.sleep(forTimeInterval: 0.5)
-        }
-        guard let view = window.contentView?.superview ?? window.contentView,
-              let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
-        view.cacheDisplay(in: view.bounds, to: rep)
-        if let data = rep.representation(using: .png, properties: [:]) {
-            try? data.write(to: URL(fileURLWithPath: path))
-            print("SNAPSHOT \(path) (fallback: no Screen Recording permission, sidebars and glass are blank)")
-        }
     }
 }

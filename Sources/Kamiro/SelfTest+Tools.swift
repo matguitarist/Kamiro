@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 
 /// S-049: Settings › Tools, on a run where no tool is installed, then with a fake one.

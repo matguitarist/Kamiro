@@ -1,4 +1,5 @@
 import AppKit
+import AppTestKit
 import KamiroKit
 
 /// S-031 and S-032: the Home page and pinned folders.
