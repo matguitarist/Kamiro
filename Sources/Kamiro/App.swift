@@ -32,6 +32,7 @@ struct KamiroApp: App {
         WindowGroup(id: Self.browserID, for: WindowStart.self) { $start in
             ContentView(start: start?.url ?? Store.startFolder, select: start?.select)
                 .environment(model)
+                .whatsNew(app: "Kamiro", repository: "matguitarist/Kamiro")
                 .themed()
                 .overlay { if GridOverlay.enabled { GridOverlay() } }
                 .frame(minWidth: 760, minHeight: 440)

@@ -257,6 +257,8 @@ enum Snapshot {
                 log?.close()
                 await run.pause(.seconds(0.4))
             }
+            await run.shoot("whats-new", window: { WindowShot.mainWindow()?.attachedSheet },
+                           show: { WhatsNewState.shared.shown = .sample }, hide: { WhatsNewState.shared.shown = nil })
             await run.shootSettings(tabs: SettingsTab.allCases.map(\.rawValue), open: { openSettings() },
                                     select: { app.settingsTab = SettingsTab(rawValue: $0) ?? .general },
                                     window: { WindowShot.otherWindow { $0.identifier?.rawValue.contains(KamiroApp.logID) != true } })
