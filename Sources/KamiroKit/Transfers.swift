@@ -1,7 +1,6 @@
-import Darwin
+import FileKit
 import Foundation
 import ProcessKit
-import Synchronization
 
 public enum TransferKind: Sendable, Equatable {
     case copy, move
@@ -61,7 +60,7 @@ public struct TransferOutcome: Sendable, Equatable {
 }
 
 /// Copies and moves with progress, cancel, and conflict answers. Copies clone on APFS
-/// (copyfile with COPYFILE_CLONE), so a copy on the same disk finishes at once.
+/// (FileKit's FileClone.copy), so a copy on the same disk finishes at once.
 public enum TransferEngine {
     /// Bytes and files under `urls`, counted before a transfer starts.
     public static func measure(_ url: URL) -> (bytes: Int64, files: Int) {
@@ -79,14 +78,6 @@ public enum TransferEngine {
             files += 1
         }
         return (bytes, files)
-    }
-
-    /// True when both are on the same volume, where a move is a rename.
-    public static func sameVolume(_ a: URL, _ b: URL) -> Bool {
-        let va = try? a.resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier as? NSObject
-        let vb = try? b.resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier as? NSObject
-        guard let va, let vb else { return false }
-        return va.isEqual(vb)
     }
 
     /// Copies or moves `sources` into `destination`. `copyWord` names copies made in their own
@@ -160,20 +151,19 @@ public enum TransferEngine {
             }
 
             do {
-                if kind == .move, sameVolume(source, destination) {
+                if kind == .move, FileClone.sameVolume(source, destination) {
                     try files.moveItem(at: source, to: target)
                     moves.append(FileMove(from: source, to: target))
                     state.doneBytes += sizes[index].bytes
                 } else {
                     let base = state.doneBytes
                     do {
-                        try copyTree(source, to: target, cancel: cancel) { bytes in
+                        // Nothing half-copied stays behind.
+                        try FileClone.copy(source, to: target, stop: { cancel.isCancelled }) { bytes in
                             state.doneBytes += bytes
                             progress(state)
                         }
                     } catch {
-                        // Nothing half-copied stays behind.
-                        try? files.removeItem(at: target)
                         state.doneBytes = base
                         throw error
                     }
@@ -195,28 +185,6 @@ public enum TransferEngine {
         outcome.change = .batch([.trashed(replaced), .moved(moves), .made(made)].filter { !$0.isEmpty })
         return outcome
     }
-
-    /// Copies a file, link or folder tree, cloning where the disk can. Calls `copied` with
-    /// each file's size. Throws CancellationError when cancelled between files.
-    static func copyTree(_ source: URL, to target: URL, cancel: CancelFlag, copied: (Int64) -> Void) throws {
-        if cancel.isCancelled { throw CancellationError() }
-        let values = try source.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey])
-        if values.isDirectory == true, values.isSymbolicLink != true {
-            try FileManager.default.createDirectory(at: target, withIntermediateDirectories: false)
-            let children = try FileManager.default.contentsOfDirectory(at: source, includingPropertiesForKeys: nil)
-            for child in children {
-                try copyTree(child, to: target.appending(path: child.lastPathComponent), cancel: cancel, copied: copied)
-            }
-            // Permissions, extended attributes and tags, once the folder is full.
-            _ = copyfile(source.path, target.path, nil, copyfile_flags_t(COPYFILE_METADATA))
-        } else {
-            let flags = copyfile_flags_t(COPYFILE_ALL | COPYFILE_CLONE | COPYFILE_NOFOLLOW | COPYFILE_EXCL)
-            guard copyfile(source.path, target.path, nil, flags) == 0 else {
-                throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
-            }
-            copied(Int64(values.fileSize ?? 0))
-        }
-    }
 }
 
 /// Which way a drop goes: ⌥ copies, ⌘ moves, otherwise a move on the same disk and a copy
@@ -225,7 +193,7 @@ public enum DropRule {
     public static func kind(sources: [URL], destination: URL, option: Bool, command: Bool) -> TransferKind {
         if option { return .copy }
         if command { return .move }
-        return sources.allSatisfy { TransferEngine.sameVolume($0, destination) } ? .move : .copy
+        return sources.allSatisfy { FileClone.sameVolume($0, destination) } ? .move : .copy
     }
 
     /// A drop that would do nothing: moving items into the folder they're already in,

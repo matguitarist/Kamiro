@@ -1,17 +1,13 @@
 import CoreServices
+import FileKit
 import Foundation
 
-/// A folder's size as the disk counts it (S-023): allocated size, hard links counted once,
-/// hidden files included. Stops as soon as its task is cancelled.
+/// A folder's size as the disk counts it (S-023), from FileKit: allocated size, hard links
+/// counted once, hidden files included, other apps' data left out. Stops as soon as its task is
+/// cancelled.
 public enum FolderSize {
-    static let keys: [URLResourceKey] = [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .linkCountKey,
-                                         .fileIdentifierKey, .isDirectoryKey]
-
     /// Other apps' data: reading it asks people for permission, so it's left out.
-    static let skipped: Set<String> = {
-        let library = URL.homeDirectory.appending(path: "Library").canonical.path
-        return [library + "/Containers", library + "/Group Containers"]
-    }()
+    static let skipped: Set<String> = Set(FileKit.FolderSize.otherAppsData.map(\.canonical.path))
 
     /// Throws FolderError.denied when the folder itself can't be read: its size isn't known,
     /// which is not the same as zero.
@@ -21,29 +17,12 @@ public enum FolderSize {
 
     /// Size on disk and how many items are inside, at every depth, hidden ones included (Properties).
     public static func summary(_ folder: URL) throws -> (bytes: Int64, items: Int) {
-        guard let handle = opendir(folder.path) else { throw FolderError.denied }
-        closedir(handle)
-        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: keys, options: [],
-                                                          errorHandler: { _, _ in true }) else { return (0, 0) }
-        var total: Int64 = 0
-        var linked: Set<UInt64> = []
-        var count = 0
-        var items = 0
-        while let url = walker.nextObject() as? URL {
-            count += 1
-            if count % 256 == 0, Task.isCancelled { throw CancellationError() }
-            guard let values = try? url.resourceValues(forKeys: Set(keys)) else { continue }
-            items += 1
-            if values.isDirectory == true {
-                if skipped.contains(url.canonical.path) { walker.skipDescendants() }
-                continue
-            }
-            // A file with several names is counted the first time only.
-            if (values.linkCount ?? 1) > 1, let id = values.fileIdentifier, !linked.insert(id).inserted { continue }
-            total += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+        do {
+            let found = try FileKit.FolderSize.summary(of: folder, options: .init(skipping: FileKit.FolderSize.otherAppsData))
+            return (found.allocated, found.items)
+        } catch FileKit.FolderSize.Failure.unreadable {
+            throw FolderError.denied
         }
-        if Task.isCancelled { throw CancellationError() }
-        return (total, items)
     }
 
     /// How long to wait before measuring a folder again after a change inside it: ten times what

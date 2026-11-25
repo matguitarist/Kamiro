@@ -12,12 +12,15 @@ let package = Package(
         .package(url: "https://github.com/matguitarist/ProcessKit", from: "0.1.1"),
         // Compress and Extract: zips checked for Zip Slip and made beside their target.
         .package(url: "https://github.com/matguitarist/ArchiveKit", from: "0.1.1"),
+        // Folder sizes and cloned copies.
+        .package(url: "https://github.com/matguitarist/FileKit", from: "0.1.0"),
     ],
     targets: [
         // File logic with no SwiftUI (paths, names, transfers), so tests run without the app.
         .target(name: "KamiroKit", dependencies: [.product(name: "LogKit", package: "LogKit"),
                                                  .product(name: "ProcessKit", package: "ProcessKit"),
-                                                 .product(name: "ArchiveKit", package: "ArchiveKit")]),
+                                                 .product(name: "ArchiveKit", package: "ArchiveKit"),
+                                                 .product(name: "FileKit", package: "FileKit")]),
         .executableTarget(
             name: "Kamiro",
             dependencies: ["KamiroKit", .product(name: "Sparkle", package: "Sparkle"),
