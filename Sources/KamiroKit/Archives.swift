@@ -41,13 +41,14 @@ public enum Archive {
         let staging = try stagingFolder(near: folder)
         defer { try? FileManager.default.removeItem(at: staging) }
         let archive = staging.appending(path: "archive.zip")
-        try await stoppable(cancel) {
+        try await sentence {
             if sources.count == 1 {
                 // A folder's top entry is named after it; a file sits at the top on its own.
                 let isFolder = (try? first.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-                try await Zip.pack(first, to: archive, keepParent: isFolder)
+                try await Zip.pack(first, to: archive, keepParent: isFolder, cancel: cancel)
             } else {
-                try await Zip.pack(first.deletingLastPathComponent(), to: archive, items: sources.map(\.lastPathComponent))
+                try await Zip.pack(first.deletingLastPathComponent(), to: archive, items: sources.map(\.lastPathComponent),
+                                   cancel: cancel)
             }
         }
         if cancel.isCancelled { throw CancellationError() }
@@ -66,7 +67,7 @@ public enum Archive {
         let staging = try stagingFolder(near: folder)
         defer { try? FileManager.default.removeItem(at: staging) }
         let out = staging.appending(path: "out")
-        try await stoppable(cancel) { try await Zip.unpack(zip, into: out) }
+        try await sentence { try await Zip.unpack(zip, into: out, cancel: cancel) }
         if cancel.isCancelled { throw CancellationError() }
         let files = FileManager.default
         // Archives made on a Mac by other tools carry their resource forks in __MACOSX.
@@ -100,18 +101,11 @@ public enum Archive {
         return url
     }
 
-    /// Runs ArchiveKit's `work`, stopped when `cancel` is set (ArchiveKit stops when its task is
-    /// cancelled); its errors become `Failure.tool` with ArchiveKit's sentence or the tool's last words.
-    private static func stoppable(_ cancel: CancelFlag, _ work: @escaping @Sendable () async throws -> Void) async throws {
-        if cancel.isCancelled { throw CancellationError() }
-        let job = Task { try await work() }
-        let watch = Task {
-            while !Task.isCancelled, !cancel.isCancelled { try? await Task.sleep(for: .milliseconds(50)) }
-            if cancel.isCancelled { job.cancel() }
-        }
-        defer { watch.cancel() }
+    /// Runs ArchiveKit's `work` (stopped by its `cancel` flag, or by cancelling the task); its errors
+    /// become `Failure.tool` with ArchiveKit's sentence, in the app's language, or the tool's last words.
+    private static func sentence(_ work: () async throws -> Void) async throws {
         do {
-            try await withTaskCancellationHandler { try await job.value } onCancel: { job.cancel() }
+            try await work()
         } catch let error as ArchiveError {
             throw Failure.tool(error.localizedDescription)
         }
