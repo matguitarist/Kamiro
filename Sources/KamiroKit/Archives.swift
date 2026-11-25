@@ -1,8 +1,9 @@
+import ArchiveKit
 import Foundation
 import ProcessKit
 
-/// Zip archives the Finder's way (S-035): `ditto`, so names, permissions, extended attributes
-/// and resource forks survive, and the result opens anywhere. Work happens in a staging folder
+/// Zip archives the Finder's way (S-035), through ArchiveKit: ditto, so names, permissions, extended
+/// attributes and resource forks survive, and the result opens anywhere. Work happens in a staging folder
 /// on the same disk and is moved into place at the end: a stopped or failed job leaves nothing.
 public enum Archive {
     public enum Failure: Error, Equatable, LocalizedError {
@@ -40,20 +41,14 @@ public enum Archive {
         let staging = try stagingFolder(near: folder)
         defer { try? FileManager.default.removeItem(at: staging) }
         let archive = staging.appending(path: "archive.zip")
-        if sources.count == 1 {
-            // --keepParent names a folder's top entry after it; for a file it would also add the
-            // file's own parent folder.
-            let isFolder = (try? first.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            try await run(["-c", "-k", "--sequesterRsrc"] + (isFolder ? ["--keepParent"] : []) + [first.path, archive.path], cancel: cancel)
-        } else {
-            // ditto archives one folder: the items go in one, as clones on APFS, at its top level.
-            let top = staging.appending(path: "items")
-            try FileManager.default.createDirectory(at: top, withIntermediateDirectories: false)
-            for source in sources {
-                if cancel.isCancelled { throw CancellationError() }
-                try FileManager.default.copyItem(at: source, to: top.appending(path: source.lastPathComponent))
+        try await stoppable(cancel) {
+            if sources.count == 1 {
+                // A folder's top entry is named after it; a file sits at the top on its own.
+                let isFolder = (try? first.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+                try await Zip.pack(first, to: archive, keepParent: isFolder)
+            } else {
+                try await Zip.pack(first.deletingLastPathComponent(), to: archive, items: sources.map(\.lastPathComponent))
             }
-            try await run(["-c", "-k", "--sequesterRsrc", top.path, archive.path], cancel: cancel)
         }
         if cancel.isCancelled { throw CancellationError() }
         let destination = target ?? folder.appending(path: name(for: sources, in: folder, several: several))
@@ -63,14 +58,16 @@ public enum Archive {
     }
 
     /// Extracts `zip` next to it, like Archive Utility: a lone top-level item comes out as
-    /// itself, several go in a folder named after the archive. Returns what was made.
+    /// itself, several go in a folder named after the archive. Returns what was made. A zip
+    /// with an entry that would land outside its folder is refused before anything is written.
     @concurrent
     public static func extract(_ zip: URL, cancel: CancelFlag = CancelFlag()) async throws -> URL {
         let folder = zip.deletingLastPathComponent().canonical
         let staging = try stagingFolder(near: folder)
         defer { try? FileManager.default.removeItem(at: staging) }
         let out = staging.appending(path: "out")
-        try await run(["-x", "-k", zip.path, out.path], cancel: cancel)
+        try await stoppable(cancel) { try await Zip.unpack(zip, into: out) }
+        if cancel.isCancelled { throw CancellationError() }
         let files = FileManager.default
         // Archives made on a Mac by other tools carry their resource forks in __MACOSX.
         let items = try files.contentsOfDirectory(at: out, includingPropertiesForKeys: nil)
@@ -103,30 +100,20 @@ public enum Archive {
         return url
     }
 
-    /// Runs ditto; stops it when `cancel` is set.
-    private static func run(_ arguments: [String], cancel: CancelFlag) async throws {
-        let process = Process()
-        process.executableURL = URL(filePath: "/usr/bin/ditto")
-        process.arguments = arguments
-        let errors = FileManager.default.temporaryDirectory.appending(path: "Kamiro-ditto-\(UUID().uuidString).log")
-        FileManager.default.createFile(atPath: errors.path, contents: nil)
-        defer { try? FileManager.default.removeItem(at: errors) }
-        let log = try FileHandle(forWritingTo: errors)
-        defer { try? log.close() }
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = log
-        try process.run()
-        while process.isRunning {
-            if cancel.isCancelled {
-                process.terminate()
-                process.waitUntilExit()
-                throw CancellationError()
-            }
-            try? await Task.sleep(for: .milliseconds(50))
+    /// Runs ArchiveKit's `work`, stopped when `cancel` is set (ArchiveKit stops when its task is
+    /// cancelled); its errors become `Failure.tool` with ArchiveKit's sentence or the tool's last words.
+    private static func stoppable(_ cancel: CancelFlag, _ work: @escaping @Sendable () async throws -> Void) async throws {
+        if cancel.isCancelled { throw CancellationError() }
+        let job = Task { try await work() }
+        let watch = Task {
+            while !Task.isCancelled, !cancel.isCancelled { try? await Task.sleep(for: .milliseconds(50)) }
+            if cancel.isCancelled { job.cancel() }
         }
-        guard process.terminationStatus == 0 else {
-            let message = (try? String(contentsOf: errors, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
-            throw Failure.tool(message?.isEmpty == false ? message! : "ditto failed (\(process.terminationStatus)).")
+        defer { watch.cancel() }
+        do {
+            try await withTaskCancellationHandler { try await job.value } onCancel: { job.cancel() }
+        } catch let error as ArchiveError {
+            throw Failure.tool(error.localizedDescription)
         }
     }
 }

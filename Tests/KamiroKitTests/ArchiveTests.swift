@@ -1,4 +1,5 @@
 import Foundation
+import ProcessKit
 import Testing
 @testable import KamiroKit
 
@@ -91,6 +92,17 @@ private func names(_ folder: URL) throws -> Set<String> {
     try Data("not a zip".utf8).write(to: bad)
     await #expect(throws: Archive.Failure.self) { try await Archive.extract(bad) }
     #expect(try names(dir) == ["bad.zip"])
+}
+
+@Test func aZipThatWritesOutsideItsFolderIsRefused() async throws {
+    let dir = try scratch()
+    let made = dir.appending(path: "made")
+    try FileManager.default.createDirectory(at: made, withIntermediateDirectories: true)
+    try FileManager.default.createSymbolicLink(atPath: made.appending(path: "escape").path, withDestinationPath: "/etc")
+    try Shell.runSync("/usr/bin/zip", ["-qy", dir.appending(path: "evil.zip").path, "escape"], in: made).check()
+    try FileManager.default.removeItem(at: made)
+    await #expect(throws: Archive.Failure.self) { try await Archive.extract(dir.appending(path: "evil.zip")) }
+    #expect(try names(dir) == ["evil.zip"])
 }
 
 @Test func aStoppedJobLeavesNothing() async throws {
