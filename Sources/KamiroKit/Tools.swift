@@ -1,4 +1,5 @@
 import Foundation
+import ProcessKit
 
 /// A free command-line tool Kamiro can use when it's installed (Settings › Tools, S-049).
 /// Native first: nothing needs one, Kamiro never bundles or downloads one, and what a tool
@@ -33,7 +34,7 @@ public struct InstalledTool: Hashable, Sendable {
 public enum ToolFinder {
     /// Where Homebrew (Apple silicon, then Intel) and MacPorts put programs. An app started from
     /// the Dock has none of them on its PATH, so Kamiro looks here itself.
-    public static let standardFolders = ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"].map { URL(filePath: $0) }
+    public static let standardFolders = Shell.standardFolders
 
     /// The first executable named after the tool in `folders`.
     public static func locate(_ tool: CommandTool, in folders: [URL] = standardFolders) -> URL? {
@@ -45,7 +46,7 @@ public enum ToolFinder {
     @concurrent
     public static func find(_ tool: CommandTool, in folders: [URL] = standardFolders) async -> InstalledTool? {
         guard let url = locate(tool, in: folders),
-              let output = run(url, tool.versionArguments),
+              let output = await run(url, tool.versionArguments),
               let version = version(in: output) else { return nil }
         return InstalledTool(tool: tool, url: url, version: version)
     }
@@ -75,23 +76,10 @@ public enum ToolFinder {
     }
 
     /// Runs the program for at most a few seconds; its output when it ends well, nil otherwise.
-    static func run(_ url: URL, _ arguments: [String], seconds: Double = 5) -> String? {
-        let process = Process()
-        process.executableURL = url
-        process.arguments = arguments
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        process.standardInput = FileHandle.nullDevice
-        do { try process.run() } catch { return nil }
-        // A tool that hangs is stopped, and counts as broken.
-        DispatchQueue.global().asyncAfter(deadline: .now() + seconds) { [process] in
-            if process.isRunning { process.terminate() }
-        }
-        // Read until it ends, so a chatty tool never blocks on a full pipe.
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationReason == .exit, process.terminationStatus == 0 else { return nil }
-        return String(decoding: data, as: UTF8.self)
+    /// A tool that hangs is stopped, and counts as broken.
+    static func run(_ url: URL, _ arguments: [String], seconds: Int = 5) async -> String? {
+        let options = Shell.Options(stderr: .merged, timeout: .seconds(seconds))
+        guard let output = try? await Shell.run(url.path, arguments, options: options), output.succeeded else { return nil }
+        return output.text
     }
 }

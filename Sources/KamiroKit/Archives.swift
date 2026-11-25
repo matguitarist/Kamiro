@@ -1,4 +1,5 @@
 import Foundation
+import ProcessKit
 
 /// Zip archives the Finder's way (S-035): `ditto`, so names, permissions, extended attributes
 /// and resource forks survive, and the result opens anywhere. Work happens in a staging folder

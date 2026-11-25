@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import ProcessKit
 import Synchronization
 
 public enum TransferKind: Sendable, Equatable {
@@ -47,13 +48,8 @@ public struct ConflictAnswer: Sendable, Equatable {
     }
 }
 
-/// Set from any thread; the transfer stops at the next file.
-public final class CancelFlag: Sendable {
-    private let flag = Mutex(false)
-    public init() {}
-    public func cancel() { flag.withLock { $0 = true } }
-    public var isCancelled: Bool { flag.withLock { $0 } }
-}
+/// Set from any thread; the transfer stops at the next file, and a tool it runs stops at once.
+public typealias CancelFlag = Shell.CancelFlag
 
 public struct TransferOutcome: Sendable, Equatable {
     /// For Undo.

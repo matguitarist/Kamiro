@@ -1,4 +1,5 @@
 import Foundation
+import ProcessKit
 import Synchronization
 
 /// A file server found on the local network with Bonjour, for the sidebar's Network section.
@@ -118,22 +119,18 @@ public enum ShareList {
 
     /// One `smbutil view`; throws with its message when it fails.
     public static func runSMBUtil(_ options: [String], host: String) throws -> String {
-        let process = Process()
-        process.executableURL = URL(filePath: "/usr/bin/smbutil")
-        process.arguments = ["view"] + options + ["//\(host)"]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        try process.run()
-        // A server that doesn't answer gives up after 15 seconds.
-        let deadline = Date.now.addingTimeInterval(15)
-        while process.isRunning, Date.now < deadline { Thread.sleep(forTimeInterval: 0.05) }
-        if process.isRunning { process.terminate() }
-        let output = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        guard process.terminationStatus == 0 else {
-            throw Failure.unreachable(output.trimmingCharacters(in: .whitespacesAndNewlines))
+        let output: Shell.Output
+        do {
+            // A server that doesn't answer gives up after 15 seconds.
+            output = try Shell.runSync("/usr/bin/smbutil", ["view"] + options + ["//\(host)"],
+                                       options: Shell.Options(stderr: .merged, timeout: .seconds(15)))
+        } catch ShellError.timedOut(let partial) {
+            output = partial
         }
-        return output
+        guard output.succeeded else {
+            throw Failure.unreachable(output.text.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return output.text
     }
 
     /// The server page's items: each share a folder, the mounted ones at their place in /Volumes.

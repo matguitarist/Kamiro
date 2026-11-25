@@ -1,53 +1,27 @@
 import Foundation
 import ImageIO
+import ProcessKit
 import Synchronization
 import UniformTypeIdentifiers
 
 /// Runs an optional tool (S-049) for a conversion: its output streams to `output` as it
 /// comes, Stop ends it, and a failure reports the tool's last words.
 public enum ToolRun {
+    /// `output` gets each line with its ending, stdout and stderr together.
     @concurrent
     public static func run(_ url: URL, _ arguments: [String], cancel: CancelFlag,
                            output: @escaping @Sendable (String) -> Void = { _ in }) async throws {
-        // A conversion can run for minutes: it blocks a thread of its own, not one of Swift's.
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                continuation.resume(with: Result { try runToEnd(url, arguments, cancel: cancel, output: output) })
-            }
+        let name = url.lastPathComponent
+        let result: Shell.Output
+        do {
+            result = try await Shell.run(url.path, arguments, options: Shell.Options(
+                stderr: .merged, cancel: cancel, onLine: { output($0 + "\n") }))
+        } catch is ShellError {
+            throw Converter.Failure.failed("Couldn't start \(name).")
         }
-    }
-
-    private static func runToEnd(_ url: URL, _ arguments: [String], cancel: CancelFlag,
-                                 output: @Sendable (String) -> Void) throws {
-        if cancel.isCancelled { throw CancellationError() }
-        let process = Process()
-        process.executableURL = url
-        process.arguments = arguments
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        process.standardInput = FileHandle.nullDevice
-        do { try process.run() } catch { throw Converter.Failure.failed("Couldn't start \(url.lastPathComponent).") }
-        let running = process
-        let watch = DispatchSource.makeTimerSource(queue: .global())
-        watch.schedule(deadline: .now(), repeating: .milliseconds(100))
-        watch.setEventHandler { if cancel.isCancelled, running.isRunning { running.terminate() } }
-        watch.resume()
-        defer { watch.cancel() }
-        var tail = ""
-        let handle = pipe.fileHandleForReading
-        while true {
-            let data = handle.availableData
-            if data.isEmpty { break }
-            let text = String(decoding: data, as: UTF8.self)
-            output(text)
-            tail = String((tail + text).suffix(4000))
-        }
-        process.waitUntilExit()
-        if cancel.isCancelled { throw CancellationError() }
-        guard process.terminationReason == .exit, process.terminationStatus == 0 else {
-            let last = tail.split(whereSeparator: \.isNewline).last { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-            throw Converter.Failure.failed("\(url.lastPathComponent): \(last.map(String.init) ?? "failed (\(process.terminationStatus)).")")
+        guard result.succeeded else {
+            let last = result.lines.last { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            throw Converter.Failure.failed("\(name): \(last ?? "failed (\(result.status)).")")
         }
     }
 }

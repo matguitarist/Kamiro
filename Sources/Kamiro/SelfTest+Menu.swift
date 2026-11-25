@@ -1,6 +1,7 @@
 import AVFoundation
 import AppKit
 import KamiroKit
+import ProcessKit
 
 /// S-033: the right-click menu, and the disks' menus on the Home page.
 extension SelfTest {
@@ -318,7 +319,8 @@ extension SelfTest {
         let renamed = URL(filePath: "/Volumes/Kamiro Disk 2").canonical
         defer {
             for mount in [first, renamed] where FileManager.default.fileExists(atPath: mount.path) {
-                _ = run("/usr/bin/hdiutil", ["detach", mount.path, "-force"])
+                _ = try? Shell.runSync("/usr/bin/hdiutil", ["detach", mount.path, "-force"],
+                                       options: Shell.Options(stdout: .discard, stderr: .discard))
             }
             try? FileManager.default.removeItem(atPath: image)
         }
@@ -353,22 +355,8 @@ extension SelfTest {
     }
 
     private static func shell(_ tool: String, _ arguments: [String]) async -> Bool {
-        await Task.detached { run(tool, arguments) }.value
-    }
-
-    nonisolated private static func run(_ tool: String, _ arguments: [String]) -> Bool {
-        let process = Process()
-        process.executableURL = URL(filePath: tool)
-        process.arguments = arguments
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        do {
-            try process.run()
-            process.waitUntilExit()
-            return process.terminationStatus == 0
-        } catch {
-            return false
-        }
+        let quiet = Shell.Options(stdout: .discard, stderr: .discard)
+        return (try? await Shell.run(tool, arguments, options: quiet))?.succeeded == true
     }
 }
 

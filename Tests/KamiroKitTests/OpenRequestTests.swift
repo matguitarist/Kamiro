@@ -1,4 +1,5 @@
 import Foundation
+import ProcessKit
 import Testing
 @testable import KamiroKit
 
@@ -54,17 +55,9 @@ private func scratch() throws -> URL {
     try Data().write(to: dir.appending(path: "a b.txt"))
 
     func run(_ arguments: [String]) throws -> (Int32, String) {
-        let process = Process()
-        process.executableURL = tool
-        process.arguments = arguments
-        process.currentDirectoryURL = dir
-        process.environment = ["PATH": bin.path + ":/usr/bin:/bin"]
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        try process.run()
-        process.waitUntilExit()
-        return (process.terminationStatus, String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self))
+        let output = try Shell.runSync(tool.path, arguments, options: Shell.Options(
+            directory: dir, environment: ["PATH": bin.path + ":/usr/bin:/bin"], inheritsEnvironment: false, stderr: .merged))
+        return (output.status, output.text)
     }
     let real = (dir.path.hasPrefix("/var/") ? "/private" : "") + dir.path  // the shell sees /private/var
     let none = try run([])
