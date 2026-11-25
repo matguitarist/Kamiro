@@ -21,6 +21,9 @@ extension SelfTest {
             app.log.flushFile()
             check("the log line reaches the log file",
                   ((try? String(contentsOf: Store.logURL, encoding: .utf8)) ?? "").contains("Self-test line"))
+            let issue = RepositoryLinks(repository: "matguitarist/Kamiro").newIssue(app: "Kamiro").absoluteString
+            check("Help › Report a Problem opens a new GitHub issue with the version and macOS filled in",
+                  issue.hasPrefix("https://github.com/matguitarist/Kamiro/issues/new?body=") && issue.contains("macOS"), issue)
 
             // S-040: Settings › General › New windows open on.
             check("a test run's new windows open on the sample tree until something is chosen", Store.startFolder == seed)

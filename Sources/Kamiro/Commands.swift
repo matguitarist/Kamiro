@@ -187,11 +187,6 @@ struct KamiroCommands: Commands {
             Button("Edit Address") { menu.browser?.beginEditingPath() }
                 .keyboardShortcut("l")
         }
-        CommandGroup(before: .windowList) {
-            Button("Log") { openWindow(id: KamiroApp.logID) }
-                .keyboardShortcut("j", modifiers: [.command, .option])
-            Divider()
-        }
     }
 }
 

@@ -1,6 +1,66 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ Help": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aide %@"
+          }
+        }
+      }
+    },
+    "%@ on GitHub": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sur GitHub"
+          }
+        }
+      }
+    },
+    "About %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À propos de %@"
+          }
+        }
+      }
+    },
+    "Report a Problem…": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signaler un problème…"
+          }
+        }
+      }
+    },
+    "Show Log": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le journal"
+          }
+        }
+      }
+    },
+    "What’s New in %@": {
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveautés de %@"
+          }
+        }
+      }
+    },
     "“%@”": {
       "localizations": {
         "fr": {

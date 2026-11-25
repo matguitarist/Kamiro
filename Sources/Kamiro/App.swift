@@ -44,10 +44,11 @@ struct KamiroApp: App {
             SidebarCommands()
             ToolbarCommands()
             KamiroCommands(menu: MenuState.shared)
-            CommandGroup(after: .appInfo) {
-                Button("Check for Updates…") { Updater.shared.checkForUpdates() }
-                    .disabled(!Updater.shared.isAvailable)
-            }
+            // The main scene is a WindowGroup: Show Log opens the Log window, nothing else.
+            StandardCommands(app: "Kamiro", repository: "matguitarist/Kamiro",
+                             updates: AppUpdates(isAvailable: Updater.shared.isAvailable) { Updater.shared.checkForUpdates() },
+                             log: .window(Self.logID), logShortcut: KeyboardShortcut("j", modifiers: [.command, .option]),
+                             mainWindow: nil)
         }
 
         WindowGroup(id: Self.propertiesID, for: URL.self) { $url in
